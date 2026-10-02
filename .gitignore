@@ -1,0 +1,21 @@
+# Documentos de trabajo y especificaciones binarias locales
+*.docx
+*.doc
+*.pdf
+*.xlsx
+*.xls
+*.pptx
+*.ppt
+~$*.docx
+~$*.doc
+~$*.xlsx
+
+# Archivos de entorno y logs
+.env
+*.log
+
+# Carpetas de sistema operativo e IDEs
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
