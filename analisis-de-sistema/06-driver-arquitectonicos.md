@@ -2,111 +2,84 @@
 
 > **Documento:** `analisis-de-sistema/06-driver-arquitectonicos.md`  
 > **Versión de Especificación:** 2.2 (Oficial – SIGIC Ferretería)  
-> **Enfoque Metodológico:** Análisis de Requisitos Significativos para la Arquitectura (ASRs – *Architectural Significant Requirements*)  
+> **Disciplina:** Análisis de Requisitos Significativos para la Arquitectura (ASRs – *Architectural Significant Requirements*)  
+> **Metodología:** Alineado a la Guía 03 (Trazabilidad RNF / Restricciones / RF hacia Decisiones Arquitectónicas)
 
 ---
 
 ## 1. Definición y Matriz de Fuerzas Arquitectónicas
 
-Los **Drivers Arquitectónicos** representan el conjunto de requisitos funcionales críticos, atributos de calidad no negociables y restricciones técnicas/de negocio que moldean de manera determinante la estructura interna del software. En el caso de **SIGIC Ferretería**, la arquitectura debe resolver la tensión inherente entre dos dinámicas contrapuestas:
-1. La necesidad de **atención presencial ultrarrápida y sub-segundo** en mostrador físico para evitar colas de maestros de obra.
-2. La exposición de un **canal e-commerce B2B/B2C omnicanal abierto a Internet**, donde cientos de clientes remotos consultan, cotizan y compiten por el mismo inventario físico.
+Los **Drivers Arquitectónicos** (o Requisitos Significativos para la Arquitectura - ASRs) son aquellas fuerzas funcionales críticas, atributos de calidad (RNFs) y restricciones técnicas o del negocio que condicionan de manera directa la topología, los patrones y la estructura interna del software.
 
-A continuación se analizan y justifican los **cinco drivers arquitectónicos rectores** del sistema:
+En el caso específico de **SIGIC Ferretería**, el sistema debe resolver la tensión y concurrencia entre dos modelos operativos contrapuestos:
+1. **Mostrador Físico POS (In-Store):** Operación presencial en red de área local (LAN), intensiva en teclado numérico y escáner óptico de código de barras, donde constructores y maestros de obra exigen atención y cobro con latencias sub-segundo para evitar colas en horas punta.
+2. **Portal E-commerce Multicanal (B2B/B2C):** Operación remota sobre Internet, donde cientos de clientes y contratistas navegan catálogos, consultan precios preferenciales según perfil y compiten por el mismo inventario físico de materiales pesados (cemento, fierro corrugado, perfiles).
 
----
-
-## 2. Driver 1: Consistencia Transaccional Estricta de Inventario (ACID)
-
-### Justificación de Negocio y Técnica
-En el rubro ferretero de Huamanga, la sobreventa de materiales pesados y estructurales (como varillas de fierro corrugado o bolsas de cemento Portland) acarrea un perjuicio financiero directo, costos adicionales de transporte en flete y pérdida inmediata de confianza comercial con contratistas e ingenieros de obra.
-- **Tensión Operativa:** Si el mostrador físico y el portal web leen únicamente un saldo estático de inventario, un cliente presencial y un usuario web pueden comprar en el mismo segundo las últimas unidades existentes, generando una rotura de stock crítica.
-- **Mecanismo Arquitectónico de Solución:**
-  1. **Modelo de Magnitudes Segregadas:**
-     $$\text{Stock Disponible} = \text{Stock Físico} - \text{Stock Comprometido}$$
-     El *Stock Físico* solo se debita ante un movimiento real de salida en el Kardex (venta confirmada o guía interna recibida). El *Stock Comprometido* acumula las reservas web activas con TTL y las guías de salida en tránsito.
-  2. **Bloqueo Pesimista Fino a Nivel de Fila (*Row-Level Locking*):**
-     Toda reserva o débito se realiza mediante la sentencia atómica:
-     ```sql
-     UPDATE inventario 
-     SET comprometido = comprometido + :cantidad 
-     WHERE almacen_id = :almacen_id 
-       AND producto_id = :producto_id 
-       AND (fisico - comprometido) >= :cantidad;
-     ```
-     Si la consulta afecta 0 filas, el sistema aborta la transacción inmediatamente e informa al cliente que el material se ha agotado.
-  3. **Adquisición Determinista de Bloqueos:**
-     Para transacciones compuestas por múltiples ítems, los registros de inventario se bloquean en **orden ascendente de ID de producto** (`ORDER BY producto_id ASC`), erradicando la posibilidad de bloqueos mutuos (*deadlocks*).
+A continuación se formaliza la matriz integral de Drivers Arquitectónicos que sustentan el diseño de la solución:
 
 ---
 
-## 3. Driver 2: Prioridad de Rendimiento de la Venta Física en Mostrador
+## 2. Matriz Formal de Drivers Arquitectónicos
 
-### Justificación de Negocio y Técnica
-El mostrador físico es la principal fuente de ingresos inmediatos en efectivo de la ferretería. Una lentitud de 5 segundos al buscar un artículo o al procesar un cobro ocasiona aglomeraciones intolerables en la sala de ventas y reclamos del cliente presencial.
-- **Tensión Operativa:** Picos de concurrencia en el portal web (campañas de descuentos, consultas simultáneas de cotizaciones por contratistas) generan una sobrecarga que, sin aislamiento, saturaría las conexiones de base de datos y la CPU del servidor central.
-- **Mecanismo Arquitectónico de Solución:**
-  1. **Segregación de Pools de Conexión en PgBouncer:**
-     PgBouncer opera en modo transacción con dos pools estrictamente separados:
-     - `pool_pos`: Reservado con conexiones dedicadas de máxima prioridad para terminales de mostrador, garantizando tiempos de respuesta sub-segundo ($p95 \le 1$ s en búsqueda y $\le 2$ s en confirmación).
-     - `pool_web`: Limitado con cuotas de contención para el tráfico del e-commerce.
-  2. **Desacoplamiento del Modelo de Lectura Web:**
-     El catálogo público de Next.js SSR consulta un modelo de lectura optimizado con caché temporal de hasta 30 segundos, sin tocar las tablas transaccionales de inventario en mostrador.
-  3. **Métrica Rectora de Degradación:**
-     Bajo una prueba de estrés de 20 terminales POS y 200 sesiones web concurrentes (generando 50 req/s), la degradación del tiempo de cobro en mostrador debe ser estrictamente **$\le 10$ %**.
+| ID | Driver Arquitectónico | Origen (RF / Atributo de Calidad / Restricción) | ¿Por qué influye en la arquitectura? | Decisión que responde |
+| :--- | :--- | :--- | :--- | :--- |
+| **DA-01** | **Concurrencia e Integridad Transaccional de Inventario Multicanal** | • `RF-INV-001`, `RF-INV-003`<br>• `RF-WEB-002`, `RF-WEB-005`<br>• `RNF-CON-001`, `RNF-CON-002`, `RNF-CON-003` | La sobreventa de materiales estructurales (fierro, cemento) genera costos logísticos de flete inasumibles y rotura de contratos. La coexistencia de ventas rápidas en mostrador y reservas en e-commerce compitiendo por el mismo stock exige garantizar que Stock Disponible = Físico - Comprometido de forma atómica (ACID), con bloqueos pesimistas ordenados (`ORDER BY producto_id ASC`) y actualizaciones condicionadas, eliminando *deadlocks* y sobreventa a cero. | **ADR-001:** Monolito Modular con Núcleo Transaccional Unificado<br>**ADR-003:** Estrategia de Concurrencia Pesimista Fina, Fórmulas Segregadas y TTL Dinámico |
+| **DA-02** | **Prioridad Transaccional y Rendimiento de Venta en Mostrador** | • `RF-POS-001`, `RF-POS-003`, `RF-POS-004`<br>• `RNF-PERF-001`, `RNF-PERF-004`, `RNF-PERF-005`<br>• Restricciones de Stack | El mostrador físico es el motor primario de facturación y flujo de caja diario. Ráfagas de consultas masivas de contratistas en el portal web (50 req/s) no deben degradar la latencia de cobro en mostrador ($\le 1$ s búsqueda, $\le 2$ s cobro en p95; degradación máx. $\le 10$ %). Requiere aislamiento físico/lógico del pool de conexiones en PgBouncer y consultas de catálogo desacopladas mediante modelo de lectura. | **ADR-004:** Segregación de Conexiones en PgBouncer y Desacoplamiento de Lecturas Web (CQRS Ligero)<br>**ADR-007:** Segregación de Frontends: SPA React 18 (POS) y Next.js 14 SSR (Web) |
+| **DA-03** | **Segregación de Identidad y Superficie de Seguridad (Principio de Mínimo Privilegio)** | • `RF-PRE-002`, `RF-WEB-001`, `RF-CAJ-001`<br>• `RNF-SEG-001`, `RNF-SEG-003`, `RNF-SEG-005`<br>• Ley N.° 29733 | El sistema atiende a colaboradores internos (cajeros, almaceneros, despachadores, tesorería) y clientes externos (público general, maestros de obra, contratistas). Exponer las mismas APIs o credenciales abriría vectores de escalada de privilegios o exposición de endpoints de caja. Exige dos superficies de API en ASP.NET Core con firma asimétrica RS256, hashing Argon2id y validación estricta de claims RBAC en servidor. | **ADR-005:** Dualidad de Dominios de Identidad, Autenticación Asimétrica RS256 y RBAC en Servidor |
+| **DA-04** | **Desacoplamiento Operativo de Fronteras Externas (Tributaria, Bancaria y Logística)** | • `RF-POS-006`, `RF-POS-007`, `RF-POS-008`<br>• `RF-WEB-003`<br>• Restricciones de Frontera (Sec. 2) | SIGIC no debe asumir responsabilidades de terceros: no firma criptográficamente XMLs con certificados `.pfx` ni se conecta directamente a SUNAT (delega a PSE/OSE vía payload estándar JSON/XML); no posee webhooks bancarios automáticos con bancos locales (utiliza captura de código de operación único y consola de tesorería); no efectúa rastreo satelital GPS en tiempo real de flotas. Requiere puertos y adaptadores desacoplados. | **ADR-002:** Clean Architecture con Puertos y Adaptadores para Fronteras Externas<br>**ADR-006:** Desacoplamiento Operativo de Pagos: Consola Backoffice Asíncrona y Adaptadores de Pasarela |
+| **DA-05** | **Desacoplamiento Omnicanal de Frontends sobre API REST Unificada** | • `RF-POS-011`, `RF-WEB-001`, `RF-WEB-002`<br>• `RNF-USA-001`, `RNF-USA-002`<br>• Restricciones de Stack (Backend Core) | Dos canales de experiencia de usuario dispares (SPA React para cajeros sin ratón con escáner, y Portal Next.js con SEO y SSR para clientes móviles) deben compartir exactamente el mismo motor de negocio ferretero (cálculo de IGV, validación de stock, listas de precios 1, 2 y 3) sin duplicar lógica en clientes ni exponer dependencias directas a base de datos. | **ADR-001:** Monolito Modular con Núcleo Transaccional Unificado<br>**ADR-007:** Segregación de Frontends: SPA React 18 (POS) y Next.js 14 SSR (Web) |
+| **DA-06** | **Mantenibilidad, Extensibilidad y Evolución del Dominio Ferretero** | • `RF-INV-002`, `RF-INV-005`<br>• `RF-PRE-001`, `RF-PRE-002`<br>• `RNF-SEG-004`, `RNF-DIS-001` | La ferretería proyecta incorporar nuevos almacenes físicos, sucursales en distritos de Ayacucho, nuevas pasarelas de pago y políticas de descuentos mayoristas escalonados. La arquitectura debe aislar las entidades y reglas de negocio puras (kardex ponderado, unidades de medida y factores, transiciones de guías) de los frameworks tecnológicos (PostgreSQL, ASP.NET Core, librerías de UI) facilitando pruebas unitarias y mantenimiento evolutivo sin regresiones. | **ADR-002:** Clean Architecture con Puertos y Adaptadores para Fronteras Externas |
+| **DA-07** | **Aislamiento Operacional frente a Carga Analítica Masiva (OLTP vs. OLAP)** | • `RF-REP-001`, `RF-REP-002`, `RF-REP-003`, `RF-REP-007`<br>• `RNF-PERF-002`, `RNF-PERF-003`<br>• Restricciones Tecnológicas | El cálculo mensual de Kardex valorizado por Costo Promedio Ponderado sobre más de 50 000 movimientos y los reportes de márgenes brutos por familia/canal saturan la CPU y bloquean tablas si se ejecutan sobre la base transaccional. La arquitectura debe aislar el motor de base de datos OLTP (`sigic_oltp`) del Datamart en esquema estrella (`sigic_olap`), alimentado por un proceso ETL asíncrono nocturno. | **ADR-008:** Aislamiento de Base de Datos Transaccional (OLTP) y Datamart Dimensional (OLAP) con ETL Asíncrono |
 
 ---
 
-## 4. Driver 3: Aislamiento Operacional y Analítico (OLTP vs. OLAP)
+## 3. Análisis Profundo de las Fuerzas Críticas del Negocio Ferretero
 
-### Justificación de Negocio y Técnica
-La valorización del Kardex mensual con método de Costo Promedio Ponderado sobre más de 50 000 movimientos, así como los reportes de márgenes brutos y utilidades por línea de producto, demandan agregaciones matemáticas masivas sobre tablas de hechos históricas.
-- **Tensión Operativa:** Si estas consultas analíticas se ejecutan directamente sobre las tablas operativas de PostgreSQL (`sigic_oltp`), provocarían bloqueos de lectura extendidos, consumo intensivo de memoria de trabajo (*work_mem*) y degradación crítica en las cajas de mostrador.
-- **Mecanismo Arquitectónico de Solución:**
-  1. **Esquema Estrella Segregado (`sigic_olap`):**
-     Creación de un Datamart dimensional aislado con la tabla de hechos `Fact_Ventas` y dimensiones conformadas (`Dim_Tiempo`, `Dim_Producto`, `Dim_Cliente`, `Dim_Canal`, `Dim_Almacen`).
-  2. **Pipeline ETL Asíncrono Desacoplado:**
-     Proceso de extracción y transformación programado en ventana nocturna que consolida las ventas cerradas y reservas liberadas de ambos canales.
-  3. **Alojamiento en Servidor y Almacenamiento Independientes:**
-     El procesamiento OLAP reside en un servidor dedicado (4 vCPU, 16 GB RAM), asegurando que el motor OLTP mantenga su memoria *shared_buffers* enfocada exclusivamente en la transaccionalidad de ventas y reservas.
+### 3.1. Fuerza 1: Concurrencia de Inventario en Materiales de Alta Rotación (DA-01)
+- **Problema de Negocio:** Una bolsa de cemento Portland Tipo I o una varilla de fierro de 1/2" se venden en volúmenes elevados simultáneamente a maestros de obra en caja y a ingenieros residentes mediante el portal web. Un desfase de 1 segundo de disponibilidad causa sobreventa, conllevando sobrecostos por flete de devolución y penalidades por incumplimiento en obra.
+- **Tensión Técnica:** Si se utiliza un bloqueo a nivel de tabla o transacción larga, el POS se congela. Si se usa consistencia eventual o caché pura, ocurre sobreventa.
+- **Respuesta Arquitectónica:** Modelo matemático de magnitudes segregadas:
+  $$\text{Stock Disponible} = \text{Stock Físico} - \text{Stock Comprometido}$$
+  Se implementa un bloqueo pesimista ultra-corto de fila (`SELECT ... FOR UPDATE` + `UPDATE` condicionado) con orden determinista (`ORDER BY producto_id ASC`) en el checkout y venta POS, respaldado por un worker en segundo plano que libera reservas con TTL dinámico (20 min para pasarela con tarjeta; 1 hora de comprobante y 4 horas de validación para pagos manuales).
 
----
+### 3.2. Fuerza 2: Rendimiento y Prioridad de Caja en Mostrador (DA-02)
+- **Problema de Negocio:** La caja física procesa el 85 % de los ingresos inmediatos de la empresa. Las colas en ferretería con clientes cargando materiales generan cancelación de compras y frustración.
+- **Tensión Técnica:** Durante eventos o picos de tráfico en Internet, cientos de sesiones web compiten por conexiones del motor relacional.
+- **Respuesta Arquitectónica:** Enrutamiento a través de PgBouncer con dos pools segregados (`pool_pos` prioritario con cuota garantizada de conexiones reservadas; `pool_web` sujeto a límites de concurrencia). El catálogo público de e-commerce lee de una vista optimizada con caché perimetral Nginx/Next.js (desfase máx. 30 s), dejando libre el motor OLTP para las transacciones de mostrador.
 
-## 5. Driver 4: Desacoplamiento Operativo de Mostrador frente a Backoffice
+### 3.3. Fuerza 3: Desacoplamiento de Fronteras Externas (DA-04)
+- **Problema de Negocio:** Dependencias externas como la indisponibilidad de servidores de SUNAT, demoras en pasarelas bancarias o falta de conectividad móvil de camiones de reparto no pueden detener la emisión de notas de venta internas ni las operaciones del almacén.
+- **Tensión Técnica:** Si la transacción de venta intenta conectarse sincrónicamente a SUNAT o a una API bancaria externa, la disponibilidad del POS cae al nivel del eslabón más débil de la cadena.
+- **Respuesta Arquitectónica:** Se definen fronteras operativas claras con el patrón Puertos y Adaptadores (*Hexagonal / Clean Architecture*). SIGIC genera payloads estandarizados tributarios y delega la firma/envío a un PSE/OSE externo. En el ámbito bancario, se captura el código de operación y comprobante para conciliación en consola asíncrona de tesorería, manteniendo el POS 100 % operativo y desacoplado.
 
-### Justificación de Negocio y Técnica
-En el comercio electrónico ferretero local, la gran mayoría de pagos no se procesa mediante pasarelas automatizadas, sino mediante billeteras digitales (Yape, Plin) y transferencias bancarias directas donde el cliente sube una fotografía o documento PDF de la constancia de abono (archivos de hasta 5 MB).
-- **Tensión Operativa:** Si el cajero o despachador en el mostrador tuviera que abrir, inspeccionar y cotejar imágenes de comprobantes bancarios mientras atiende al público en fila, el flujo físico de despacho colapsaría y aumentaría el riesgo de fraudes por constancias falsificadas.
-- **Mecanismo Arquitectónico de Solución:**
-  1. **Consola Especializada de Backoffice (`RF-WEB-003`):**
-     La revisión visual y el cotejo del código de operación bancario contra las cuentas corporativas recae exclusivamente en el Administrador o Asistente de Tesorería en un entorno desacoplado.
-  2. **Entrega Ultraligera en Mostrador (`RF-POS-011`):**
-     La terminal del despachador en mostrador solo muestra pedidos que ya alcanzaron el estado formal de `Listo para Retiro` (pago verificado previamente por Tesorería).
-  3. **Operación de Despacho en Menos de 1 Minuto:**
-     El despachador en mostrador no visualiza vouchers pesados ni valida transacciones bancarias; únicamente escanea el código del pedido (QR/barras), verifica el número de DNI del cliente y presiona `Confirmar Entrega`.
+### 3.4. Fuerza 4: Segregación de Identidades y Superficie de Seguridad (DA-03)
+- **Problema de Negocio:** Clientes externos consultan desde dispositivos personales sin confianza corporativa, mientras que colaboradores manipulan arqueos de caja, ajustes de stock y listas de precios mayoristas.
+- **Tensión Técnica:** Un solo controlador de autenticación o el uso de tokens compartidos facilita ataques de inyección, escalada de privilegios y fuga de márgenes comerciales.
+- **Respuesta Arquitectónica:** Dos emisores de tokens JWT basados en criptografía asimétrica RS256: tokens internos con *claims* RBAC (`Cajero`, `Almacenero`, `Despachador`, `Administrador`) y tokens externos con *audience* pública (`SIGIC_WebClient`) que son rechazados a nivel de middleware en el API Gateway ante cualquier intento de acceso a endpoints operativos internos.
 
 ---
 
-## 6. Driver 5: Dualidad de Identidad y Principio de Mínimo Privilegio
+## 4. Trazabilidad hacia Decisiones Arquitectónicas (ADRs)
 
-### Justificación de Negocio y Técnica
-El sistema gestiona dos perfiles radicalmente distintos de usuarios: los colaboradores de la empresa que operan el negocio internamente y los clientes externos que navegan desde dispositivos móviles o computadoras personales a través de Internet.
-- **Tensión de Seguridad:** Exponer la misma superficie de autenticación o los mismos tokens JWT a colaboradores y clientes públicos elevaría sustancialmente la superficie de ataque, exponiendo endpoints administrativos ante vectores de inyección o escalada de privilegios.
-- **Mecanismo Arquitectónico de Solución:**
-  1. **Dos Ámbitos de Emisión Criptográfica:**
-     - **Colaboradores Internos:** Gestionados en el Directorio Central corporativo con RBAC estricto (`Cajero`, `Almacenero`, `Despachador`, `Administrador`). JWT firmados con clave privada RS256 y claims de roles internos.
-     - **Clientes Web (Externos):** Gestionados en una tabla segregada con perfiles específicos (`Público General`, `Maestro de Obra`, `Contratista`). Tokens emitidos con audiencia pública restringida (`Audience: SIGIC_WebClient`).
-  2. **Barrera en API Gateway / Middleware:**
-     Cualquier intento de invocar endpoints de apertura de caja, movimientos de inventario o reportes administrativos con un token emitido para un cliente web es bloqueado de inmediato en el pipeline de ASP.NET Core con código `HTTP 403 Forbidden`, sin llegar siquiera a ejecutar lógica de aplicación.
+La siguiente tabla resume la relación directa entre los Drivers Arquitectónicos y los Registros de Decisiones de Arquitectura (ADRs) documentados en `analisis-de-sistema/07-decision-arquitectonica.md`:
 
----
-
-## 7. Matriz de Síntesis: Drivers vs. Atributos de Calidad y Requerimientos
-
-| Driver Arquitectónico | Requerimientos Funcionales Impactados | Atributos de Calidad Asociados (RNF) | Patrón Arquitectónico Implementado |
-| :--- | :--- | :--- | :--- |
-| **1. Consistencia ACID de Inventario** | `RF-INV-001`, `RF-INV-003`, `RF-WEB-002`, `RF-WEB-005` | `RNF-CON-001`, `RNF-CON-002`, `RNF-CON-003` | *Row-Level Locking*, Orden Determinista de Bloqueos, Actualizaciones Condicionadas. |
-| **2. Prioridad Rendimiento Mostrador** | `RF-POS-001`, `RF-POS-003`, `RF-POS-004`, `RF-WEB-005` | `RNF-PERF-001`, `RNF-PERF-004`, `RNF-PERF-005` | *Connection Pooling* Segregado (PgBouncer), Modelo de Lectura Asíncrono en Catálogo. |
-| **3. Aislamiento OLTP vs. OLAP** | `RF-REP-001`, `RF-REP-002`, `RF-REP-003`, `RF-REP-007` | `RNF-PERF-002`, `RNF-PERF-003` | *Database Segregation*, Esquema Estrella Dimensional, Pipeline ETL Nocturno. |
-| **4. Desacoplamiento Backoffice vs. POS** | `RF-WEB-003`, `RF-POS-011`, `RF-WEB-004` | `RNF-PERF-001`, `RNF-SEG-004` | Consola Asíncrona de Validación, Flujo Ligero de Entrega por Código y DNI. |
-| **5. Dualidad de Identidad y Mínimo Privilegio** | `RF-PRE-002`, `RF-WEB-001`, `RF-CAJ-001` | `RNF-SEG-001`, `RNF-SEG-003`, `RNF-SEG-005` | *Segregated Identity Domains*, JWT Asimétrico RS256, Middlewares de Claims RBAC. |
+```mermaid
+flowchart LR
+    DA01["DA-01: Concurrencia e Integridad de Inventario"] --> ADR01["ADR-001: Monolito Modular Unificado"]
+    DA01 --> ADR03["ADR-003: Concurrencia Pesimista y TTL Dinámico"]
+    
+    DA02["DA-02: Prioridad Rendimiento POS"] --> ADR04["ADR-004: PgBouncer Segregado y CQRS Ligero"]
+    DA02 --> ADR07["ADR-007: Segregación SPA React y Next.js"]
+    
+    DA03["DA-03: Segregación Identidad y RBAC"] --> ADR05["ADR-005: Dualidad JWT RS256 y RBAC"]
+    
+    DA04["DA-04: Desacoplamiento Fronteras Externas"] --> ADR02["ADR-002: Clean Architecture (Puertos y Adaptadores)"]
+    DA04 --> ADR06["ADR-006: Desacoplamiento de Pagos y Backoffice"]
+    
+    DA05["DA-05: Desacoplamiento Omnicanal"] --> ADR01
+    DA05 --> ADR07
+    
+    DA06["DA-06: Mantenibilidad y Evolución Dominio"] --> ADR02
+    
+    DA07["DA-07: Aislamiento OLTP vs OLAP"] --> ADR08["ADR-08: Esquema Estrella y ETL Nocturno"]
+```
