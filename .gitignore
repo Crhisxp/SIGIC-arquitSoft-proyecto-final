@@ -10,6 +10,9 @@
 ~$*.doc
 ~$*.xlsx
 
+# Excepción para propuesta técnica oficial base
+!Propuesta_Tecnica_SIGIC_Ferreteria_v2.2_Oficial.docx
+
 # Archivos de entorno y logs
 .env
 *.log
@@ -19,3 +22,10 @@
 Thumbs.db
 .vscode/
 .idea/
+
+# Herramientas y archivos de configuración MCP / Agentes
+mcp-server/
+DESIGN.md
+GEMINI.md
+.agents/
+.gemini/
