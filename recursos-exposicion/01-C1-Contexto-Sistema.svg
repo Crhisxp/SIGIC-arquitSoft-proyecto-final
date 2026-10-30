@@ -1,0 +1,290 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+    
+    <defs>
+        <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#080D1A"/>
+            <stop offset="100%" stop-color="#0F172A"/>
+        </linearGradient>
+        <linearGradient id="cardGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#1E293B"/>
+            <stop offset="100%" stop-color="#111827"/>
+        </linearGradient>
+        <linearGradient id="emeraldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#10B981"/>
+            <stop offset="100%" stop-color="#059669"/>
+        </linearGradient>
+        <linearGradient id="skyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#38BDF8"/>
+            <stop offset="100%" stop-color="#0284C7"/>
+        </linearGradient>
+        <linearGradient id="amberGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#F59E0B"/>
+            <stop offset="100%" stop-color="#D97706"/>
+        </linearGradient>
+        <linearGradient id="purpleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#A855F7"/>
+            <stop offset="100%" stop-color="#7E22CE"/>
+        </linearGradient>
+        <marker id="arrow-emerald" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#10B981" />
+        </marker>
+        <marker id="arrow-sky" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#38BDF8" />
+        </marker>
+        <marker id="arrow-amber" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#F59E0B" />
+        </marker>
+        <marker id="arrow-slate" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#64748B" />
+        </marker>
+        <filter id="subtleGlow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+        </filter>
+    </defs>
+
+    <rect width="1920" height="1080" fill="url(#bgGrad)" />
+    
+    <!-- HEADER -->
+    <rect x="0" y="0" width="1920" height="100" fill="#0D1527" />
+    <line x1="0" y1="100" x2="1920" y2="100" stroke="#1E293B" stroke-width="2" />
+    <rect x="60" y="24" width="16" height="52" rx="4" fill="#10B981" />
+    <text x="96" y="52" fill="#F8FAFC" font-size="28" font-weight="700" font-family="system-ui, -apple-system, sans-serif">MODELO C4 — NIVEL 1: DIAGRAMA DE CONTEXTO DEL SISTEMA</text>
+    <text x="96" y="80" fill="#94A3B8" font-size="16" font-family="system-ui, -apple-system, sans-serif">Frontera Operativa, Actores Omnicanal y Sistemas Externos Integrados — SIGIC Ferretería v2.2</text>
+    
+    <!-- BADGE -->
+    <rect x="1560" y="32" width="300" height="36" rx="18" fill="#1E293B" stroke="#334155" stroke-width="1.5" />
+    <circle cx="1584" cy="50" r="6" fill="#10B981" />
+    <text x="1602" y="55" fill="#F8FAFC" font-size="14" font-weight="600" font-family="system-ui, -apple-system, sans-serif">C4 NIVEL 1 | CONTEXTO</text>
+    
+
+    <!-- LEFT COLUMN: ACTORES -->
+    <text x="60" y="140" fill="#10B981" font-size="18" font-weight="700" letter-spacing="1.5" font-family="system-ui, sans-serif">ACTORES HUMANOS (CANALES Y ROLES)</text>
+
+    <!-- Actor 1: Superadmin -->
+    <g transform="translate(60, 160)">
+        <rect width="360" height="120" rx="12" fill="#131D31" stroke="#334155" stroke-width="1.5"/>
+        <rect x="0" y="0" width="360" height="32" rx="12" fill="#1E293B"/>
+        <rect x="0" y="20" width="360" height="12" fill="#1E293B"/>
+        <circle cx="24" cy="16" r="6" fill="#A855F7"/>
+        <text x="40" y="21" fill="#F8FAFC" font-size="14" font-weight="700" font-family="system-ui, sans-serif">Superadministrador (Backoffice)</text>
+        <text x="16" y="54" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">• Gestión global RBAC, usuarios y almacenes.</text>
+        <text x="16" y="74" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">• Catálogo maestro, listas de precios B2B/B2C.</text>
+        <text x="16" y="94" fill="#38BDF8" font-size="12" font-weight="600" font-family="system-ui, sans-serif">Canal: LAN Segura / HTTPS • Auditoría Completa (AC03)</text>
+    </g>
+
+    <!-- Actor 2: Cajero Mostrador POS -->
+    <g transform="translate(60, 300)">
+        <rect width="360" height="125" rx="12" fill="#131D31" stroke="#10B981" stroke-width="2"/>
+        <rect x="0" y="0" width="360" height="32" rx="12" fill="#1E293B"/>
+        <rect x="0" y="20" width="360" height="12" fill="#1E293B"/>
+        <circle cx="24" cy="16" r="6" fill="#10B981"/>
+        <text x="40" y="21" fill="#F8FAFC" font-size="14" font-weight="700" font-family="system-ui, sans-serif">Cajero Mostrador POS (Tienda Física)</text>
+        <text x="16" y="54" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">• Facturación rápida 100% teclado (F1-F12) y escáner.</text>
+        <text x="16" y="74" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">• Cobro mixto (Efectivo/Yape) y Arqueo Ciego (RF-CAJ-002).</text>
+        <text x="16" y="96" fill="#34D399" font-size="12" font-weight="600" font-family="system-ui, sans-serif">Canal: SPA React 18 en LAN • Latencia P95 &lt; 1.0s (AC01)</text>
+    </g>
+
+    <!-- Actor 3: Cliente Web E-commerce -->
+    <g transform="translate(60, 445)">
+        <rect width="360" height="125" rx="12" fill="#131D31" stroke="#38BDF8" stroke-width="1.5"/>
+        <rect x="0" y="0" width="360" height="32" rx="12" fill="#1E293B"/>
+        <rect x="0" y="20" width="360" height="12" fill="#1E293B"/>
+        <circle cx="24" cy="16" r="6" fill="#38BDF8"/>
+        <text x="40" y="21" fill="#F8FAFC" font-size="14" font-weight="700" font-family="system-ui, sans-serif">Cliente Web (Público / Contratista B2B)</text>
+        <text x="16" y="54" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">• Navegación de catálogo (SEO) y tarifas según perfil.</text>
+        <text x="16" y="74" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">• Checkout atómico con reserva dinámica (TTL 20m/4h).</text>
+        <text x="16" y="96" fill="#38BDF8" font-size="12" font-weight="600" font-family="system-ui, sans-serif">Canal: Next.js 14 SSR • Móvil / Desktop (Internet)</text>
+    </g>
+
+    <!-- Actor 4: Almacenero -->
+    <g transform="translate(60, 590)">
+        <rect width="360" height="120" rx="12" fill="#131D31" stroke="#334155" stroke-width="1.5"/>
+        <rect x="0" y="0" width="360" height="32" rx="12" fill="#1E293B"/>
+        <rect x="0" y="20" width="360" height="12" fill="#1E293B"/>
+        <circle cx="24" cy="16" r="6" fill="#F59E0B"/>
+        <text x="40" y="21" fill="#F8FAFC" font-size="14" font-weight="700" font-family="system-ui, sans-serif">Almacenero (Depósito Central / Sucursales)</text>
+        <text x="16" y="54" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">• Recepción de compras y Costo Promedio Ponderado.</text>
+        <text x="16" y="74" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">• Despacho y recepción de guías internas de traslado.</text>
+        <text x="16" y="94" fill="#FBBF24" font-size="12" font-weight="600" font-family="system-ui, sans-serif">Canal: LAN / SPA Backoffice • Invariante AC02</text>
+    </g>
+
+    <!-- Actor 5: Despachador Mostrador -->
+    <g transform="translate(60, 730)">
+        <rect width="360" height="110" rx="12" fill="#131D31" stroke="#334155" stroke-width="1.5"/>
+        <rect x="0" y="0" width="360" height="32" rx="12" fill="#1E293B"/>
+        <rect x="0" y="20" width="360" height="12" fill="#1E293B"/>
+        <circle cx="24" cy="16" r="6" fill="#10B981"/>
+        <text x="40" y="21" fill="#F8FAFC" font-size="14" font-weight="700" font-family="system-ui, sans-serif">Despachador (Módulo Ligero RF-POS-011)</text>
+        <text x="16" y="54" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">• Entrega física de pedidos web "Listos para Retiro".</text>
+        <text x="16" y="74" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">• Validación estricta por Código y DNI (Sin acceso a dinero).</text>
+        <text x="16" y="92" fill="#34D399" font-size="12" font-weight="600" font-family="system-ui, sans-serif">Canal: Terminal mostrador LAN rápida</text>
+    </g>
+
+    <!-- Actor 6: Personal de Tesorería -->
+    <g transform="translate(60, 860)">
+        <rect width="360" height="110" rx="12" fill="#131D31" stroke="#334155" stroke-width="1.5"/>
+        <rect x="0" y="0" width="360" height="32" rx="12" fill="#1E293B"/>
+        <rect x="0" y="20" width="360" height="12" fill="#1E293B"/>
+        <circle cx="24" cy="16" r="6" fill="#A855F7"/>
+        <text x="40" y="21" fill="#F8FAFC" font-size="14" font-weight="700" font-family="system-ui, sans-serif">Personal de Tesorería (Backoffice)</text>
+        <text x="16" y="54" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">• Auditoría de vouchers bancarios Yape/Plin (&lt;= 5 MB).</text>
+        <text x="16" y="74" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">• Conciliación de abonos antes de pasar pedido a preparación.</text>
+        <text x="16" y="92" fill="#C084FC" font-size="12" font-weight="600" font-family="system-ui, sans-serif">Canal: Consola Desacoplada de Mostrador (AC01)</text>
+    </g>
+
+    <!-- CENTER BOX: ENTERPRISE BOUNDARY -->
+    <g transform="translate(500, 140)">
+        <rect width="880" height="850" rx="20" fill="#0D1527" stroke="#10B981" stroke-width="2" stroke-dasharray="8 6"/>
+        <text x="30" y="36" fill="#10B981" font-size="18" font-weight="800" letter-spacing="2" font-family="system-ui, sans-serif">FRONTERA EMPRESARIAL — FERRETERÍA SIGIC</text>
+
+        <!-- Main Core System Container -->
+        <g transform="translate(40, 60)">
+            <rect width="800" height="740" rx="16" fill="#131D31" stroke="#334155" stroke-width="2"/>
+            
+            <!-- System Title Bar -->
+            <rect x="0" y="0" width="800" height="70" rx="16" fill="#1E293B"/>
+            <rect x="0" y="50" width="800" height="20" fill="#1E293B"/>
+            <circle cx="40" cy="35" r="14" fill="#10B981"/>
+            <text x="34" y="42" fill="#064E3B" font-size="18" font-weight="900" font-family="system-ui, sans-serif">S</text>
+            <text x="70" y="32" fill="#F8FAFC" font-size="22" font-weight="800" font-family="system-ui, sans-serif">SIGIC Ferretería v2.2</text>
+            <text x="70" y="54" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">[Software System] Monolito Modular en ASP.NET Core 8 Web API + PostgreSQL 16</text>
+            <rect x="620" y="20" width="160" height="28" rx="14" fill="#059669"/>
+            <text x="645" y="39" fill="#F8FAFC" font-size="12" font-weight="700" font-family="system-ui, sans-serif">CORE SYSTEM</text>
+
+            <!-- Description Box -->
+            <rect x="30" y="90" width="740" height="70" rx="10" fill="#1E293B" stroke="#334155" stroke-width="1"/>
+            <text x="45" y="118" fill="#F8FAFC" font-size="14" font-weight="600" font-family="system-ui, sans-serif">Plataforma central omnicanal para ferretería de materiales pesados y acabados.</text>
+            <text x="45" y="140" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">Resuelve concurrencia extrema entre el mostrador físico y la tienda virtual eliminando sobreventas.</text>
+
+            <!-- 5 Subsystem Badges inside Core -->
+            <g transform="translate(30, 180)">
+                <!-- Subsystem 1 -->
+                <rect x="0" y="0" width="355" height="120" rx="10" fill="#0F172A" stroke="#334155" stroke-width="1.5"/>
+                <text x="20" y="30" fill="#38BDF8" font-size="15" font-weight="700" font-family="system-ui, sans-serif">1. Ventas Mostrador POS (Clean Arch)</text>
+                <text x="20" y="55" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">• Facturación rápida sin mouse en &lt; 1s.</text>
+                <text x="20" y="75" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">• Descuento directo de stock físico local.</text>
+                <text x="20" y="95" fill="#34D399" font-size="12" font-weight="600" font-family="system-ui, sans-serif">Pool prioritario PgBouncer (pool_pos: 50)</text>
+
+                <!-- Subsystem 2 -->
+                <rect x="385" y="0" width="355" height="120" rx="10" fill="#0F172A" stroke="#334155" stroke-width="1.5"/>
+                <text x="405" y="30" fill="#10B981" font-size="15" font-weight="700" font-family="system-ui, sans-serif">2. E-commerce &amp; Pedidos Web</text>
+                <text x="405" y="55" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">• Checkout atómico con SELECT FOR UPDATE.</text>
+                <text x="405" y="75" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">• TTL dinámico (20m pasarela / 4h manuales).</text>
+                <text x="405" y="95" fill="#38BDF8" font-size="12" font-weight="600" font-family="system-ui, sans-serif">Pool limitado PgBouncer (pool_web: 30)</text>
+            </g>
+
+            <g transform="translate(30, 320)">
+                <!-- Subsystem 3 -->
+                <rect x="0" y="0" width="355" height="120" rx="10" fill="#0F172A" stroke="#334155" stroke-width="1.5"/>
+                <text x="20" y="30" fill="#F59E0B" font-size="15" font-weight="700" font-family="system-ui, sans-serif">3. Inventario Central y Kardex CPP</text>
+                <text x="20" y="55" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">• Disponible = Físico - Comprometido.</text>
+                <text x="20" y="75" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">• Segregación: disponible_en_web=false (404).</text>
+                <text x="20" y="95" fill="#FBBF24" font-size="12" font-weight="600" font-family="system-ui, sans-serif">Guías automáticas hacia tiendas físicas</text>
+
+                <!-- Subsystem 4 -->
+                <rect x="385" y="0" width="355" height="120" rx="10" fill="#0F172A" stroke="#334155" stroke-width="1.5"/>
+                <text x="405" y="30" fill="#A855F7" font-size="15" font-weight="700" font-family="system-ui, sans-serif">4. Caja, Arqueo Ciego &amp; Tesorería</text>
+                <text x="405" y="55" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">• Arqueo ciego append-only (cero UPDATE).</text>
+                <text x="405" y="75" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">• Bitácora inmutable en Audit_Log (AC03).</text>
+                <text x="405" y="95" fill="#C084FC" font-size="12" font-weight="600" font-family="system-ui, sans-serif">Consola de validación de vouchers &lt;= 5 MB</text>
+            </g>
+
+            <!-- Quality Gate Callout Banner inside Core -->
+            <g transform="translate(30, 460)">
+                <rect width="740" height="240" rx="12" fill="#1E293B" stroke="#10B981" stroke-width="1.5"/>
+                <text x="25" y="32" fill="#10B981" font-size="16" font-weight="800" font-family="system-ui, sans-serif">INVARIANTES DE CALIDAD RIGUROSOS (EVALUACIÓN IS-488 UNSCH)</text>
+
+                <rect x="25" y="50" width="220" height="170" rx="8" fill="#0F172A"/>
+                <text x="40" y="75" fill="#38BDF8" font-size="15" font-weight="700" font-family="system-ui, sans-serif">AC01: RENDIMIENTO</text>
+                <text x="40" y="100" fill="#F8FAFC" font-size="22" font-weight="800" font-family="system-ui, sans-serif">P95 &lt; 250 ms</text>
+                <text x="40" y="125" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• Core API ASP.NET Core 8</text>
+                <text x="40" y="145" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• POS Mostrador &lt; 1.0s</text>
+                <text x="40" y="165" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• Consultas Dapper &lt; 15ms</text>
+                <text x="40" y="185" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• Catálogo Web LCP &lt; 1.5s</text>
+
+                <rect x="260" y="50" width="220" height="170" rx="8" fill="#0F172A"/>
+                <text x="275" y="75" fill="#10B981" font-size="15" font-weight="700" font-family="system-ui, sans-serif">AC02: CONSISTENCIA</text>
+                <text x="275" y="100" fill="#F8FAFC" font-size="22" font-weight="800" font-family="system-ui, sans-serif">CERO SOBREVENTA</text>
+                <text x="275" y="125" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• Transacciones ACID puras</text>
+                <text x="275" y="145" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• SELECT FOR UPDATE</text>
+                <text x="275" y="165" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• ORDER BY producto_id ASC</text>
+                <text x="275" y="185" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• TTL reservas automático</text>
+
+                <rect x="495" y="50" width="220" height="170" rx="8" fill="#0F172A"/>
+                <text x="510" y="75" fill="#A855F7" font-size="15" font-weight="700" font-family="system-ui, sans-serif">AC03: TRAZABILIDAD</text>
+                <text x="510" y="100" fill="#F8FAFC" font-size="22" font-weight="800" font-family="system-ui, sans-serif">APPEND-ONLY</text>
+                <text x="510" y="125" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• Arqueo ciego inmutable</text>
+                <text x="510" y="145" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• Bitácora Audit_Log</text>
+                <text x="510" y="165" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• REVOKE UPDATE/DELETE</text>
+                <text x="510" y="185" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• Storage privado protegido</text>
+            </g>
+        </g>
+    </g>
+
+    <!-- RIGHT COLUMN: SISTEMAS EXTERNOS -->
+    <text x="1440" y="140" fill="#F59E0B" font-size="18" font-weight="700" letter-spacing="1.5" font-family="system-ui, sans-serif">SISTEMAS EXTERNOS (INTEGRACIONES)</text>
+
+    <!-- External 1: PSE / OSE SUNAT -->
+    <g transform="translate(1440, 180)">
+        <rect width="420" height="220" rx="14" fill="#131D31" stroke="#F59E0B" stroke-width="2"/>
+        <rect x="0" y="0" width="420" height="40" rx="14" fill="#1E293B"/>
+        <rect x="0" y="25" width="420" height="15" fill="#1E293B"/>
+        <circle cx="28" cy="20" r="7" fill="#F59E0B"/>
+        <text x="48" y="26" fill="#F8FAFC" font-size="16" font-weight="800" font-family="system-ui, sans-serif">Proveedor PSE / OSE SUNAT</text>
+        <text x="24" y="65" fill="#F8FAFC" font-size="14" font-weight="600" font-family="system-ui, sans-serif">Facturación Electrónica Oficial Homologada</text>
+        <text x="24" y="90" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">• Recepción de payloads normalizados JSON / XML (18% IGV).</text>
+        <text x="24" y="112" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">• Firma digital con certificado (.pfx) corporativo.</text>
+        <text x="24" y="134" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">• Emisión y recepción de Constancias de Recepción (CDR).</text>
+        <rect x="24" y="155" width="370" height="45" rx="6" fill="#0F172A"/>
+        <text x="36" y="182" fill="#FBBF24" font-size="12" font-family="monospace">REST API HTTPS • Timeout resiliente Polly</text>
+    </g>
+
+    <!-- External 2: Pasarela Pagos Tarjetas -->
+    <g transform="translate(1440, 440)">
+        <rect width="420" height="220" rx="14" fill="#131D31" stroke="#38BDF8" stroke-width="2"/>
+        <rect x="0" y="0" width="420" height="40" rx="14" fill="#1E293B"/>
+        <rect x="0" y="25" width="420" height="15" fill="#1E293B"/>
+        <circle cx="28" cy="20" r="7" fill="#38BDF8"/>
+        <text x="48" y="26" fill="#F8FAFC" font-size="16" font-weight="800" font-family="system-ui, sans-serif">Pasarela de Pagos (Niubiz / Culqi)</text>
+        <text x="24" y="65" fill="#F8FAFC" font-size="14" font-weight="600" font-family="system-ui, sans-serif">Procesamiento de Tarjetas de Crédito / Débito</text>
+        <text x="24" y="90" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">• Tokenización segura y cumplimiento PCI-DSS fuera de SIGIC.</text>
+        <text x="24" y="112" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">• Asignación de TTL dinámico exacto de 20 minutos.</text>
+        <text x="24" y="134" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">• Notificación asíncrona mediante Webhooks firmados (HMAC).</text>
+        <rect x="24" y="155" width="370" height="45" rx="6" fill="#0F172A"/>
+        <text x="36" y="182" fill="#38BDF8" font-size="12" font-family="monospace">Webhooks HTTPS • Idempotencia estricta</text>
+    </g>
+
+    <!-- External 3: Bancos Locales y Billeteras -->
+    <g transform="translate(1440, 700)">
+        <rect width="420" height="230" rx="14" fill="#131D31" stroke="#A855F7" stroke-width="2"/>
+        <rect x="0" y="0" width="420" height="40" rx="14" fill="#1E293B"/>
+        <rect x="0" y="25" width="420" height="15" fill="#1E293B"/>
+        <circle cx="28" cy="20" r="7" fill="#A855F7"/>
+        <text x="48" y="26" fill="#F8FAFC" font-size="16" font-weight="800" font-family="system-ui, sans-serif">Entidades Bancarias / Billeteras Digitales</text>
+        <text x="24" y="65" fill="#F8FAFC" font-size="14" font-weight="600" font-family="system-ui, sans-serif">Yape • Plin • BCP • BBVA • Interbank</text>
+        <text x="24" y="90" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">• Transferencias directas realizadas por el cliente.</text>
+        <text x="24" y="112" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">• Carga de comprobante manual (JPG/PNG/PDF &lt;= 5 MB).</text>
+        <text x="24" y="134" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">• Ventana máxima de 1 hora para subir voucher.</text>
+        <text x="24" y="156" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">• TTL de reserva de 4 horas para auditoría de Tesorería.</text>
+        <rect x="24" y="172" width="370" height="40" rx="6" fill="#0F172A"/>
+        <text x="36" y="197" fill="#C084FC" font-size="12" font-family="monospace">Conciliación Asíncrona • Storage Privado</text>
+    </g>
+
+    <!-- CONNECTING FLOW ARROWS -->
+    <!-- Actors to SIGIC -->
+    <path d="M 420 360 L 540 360" stroke="#10B981" stroke-width="2.5" marker-end="url(#arrow-emerald)"/>
+    <path d="M 420 505 L 540 505" stroke="#38BDF8" stroke-width="2.5" marker-end="url(#arrow-sky)"/>
+    <path d="M 420 910 L 470 910 L 470 780 L 540 780" stroke="#A855F7" stroke-width="2" fill="none" marker-end="url(#arrow-slate)"/>
+    <path d="M 420 220 L 470 220 L 470 300 L 540 300" stroke="#64748B" stroke-width="2" fill="none" marker-end="url(#arrow-slate)"/>
+
+    <!-- SIGIC to Externals -->
+    <path d="M 1340 300 L 1440 300" stroke="#F59E0B" stroke-width="2.5" marker-end="url(#arrow-amber)"/>
+    <path d="M 1340 550 L 1440 550" stroke="#38BDF8" stroke-width="2.5" marker-end="url(#arrow-sky)"/>
+    <path d="M 1340 810 L 1440 810" stroke="#A855F7" stroke-width="2.5" marker-end="url(#arrow-slate)"/>
+
+    <!-- FOOTER SUMMARY BADGE -->
+    <rect x="60" y="1000" width="1800" height="50" rx="10" fill="#0D1527" stroke="#1E293B" stroke-width="1.5"/>
+    <text x="90" y="1031" fill="#10B981" font-size="14" font-weight="700" font-family="system-ui, sans-serif">ARQUITECTURA DE SOFTWARE IS-488:</text>
+    <text x="370" y="1031" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">Monolito Modular con Clean Architecture • Transacciones ACID sin sobreventas • PgBouncer con segregación estricta LAN mostrador vs. Web.</text>
+</svg>

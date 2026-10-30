@@ -1,0 +1,149 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+    
+    <defs>
+        <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#080D1A"/>
+            <stop offset="100%" stop-color="#0F172A"/>
+        </linearGradient>
+        <linearGradient id="cardGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#1E293B"/>
+            <stop offset="100%" stop-color="#111827"/>
+        </linearGradient>
+        <linearGradient id="emeraldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#10B981"/>
+            <stop offset="100%" stop-color="#059669"/>
+        </linearGradient>
+        <linearGradient id="skyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#38BDF8"/>
+            <stop offset="100%" stop-color="#0284C7"/>
+        </linearGradient>
+        <linearGradient id="amberGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#F59E0B"/>
+            <stop offset="100%" stop-color="#D97706"/>
+        </linearGradient>
+        <linearGradient id="purpleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#A855F7"/>
+            <stop offset="100%" stop-color="#7E22CE"/>
+        </linearGradient>
+        <marker id="arrow-emerald" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#10B981" />
+        </marker>
+        <marker id="arrow-sky" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#38BDF8" />
+        </marker>
+        <marker id="arrow-amber" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#F59E0B" />
+        </marker>
+        <marker id="arrow-slate" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#64748B" />
+        </marker>
+    </defs>
+
+    <rect width="1920" height="1080" fill="url(#bgGrad)" />
+    
+    <!-- HEADER -->
+    <rect x="0" y="0" width="1920" height="100" fill="#0D1527" />
+    <line x1="0" y1="100" x2="1920" y2="100" stroke="#1E293B" stroke-width="2" />
+    <rect x="60" y="24" width="16" height="52" rx="4" fill="#10B981" />
+    <text x="96" y="52" fill="#F8FAFC" font-size="28" font-weight="700" font-family="system-ui, -apple-system, sans-serif">SEGURIDAD TRANSACCIONAL: ARQUEO CIEGO Y CUSTODIA DE VOUCHERS</text>
+    <text x="96" y="80" fill="#94A3B8" font-size="16" font-family="system-ui, -apple-system, sans-serif">Garantía de Inmutabilidad Contable (AC03), No Repudio y Protección Criptográfica de Fondos</text>
+    
+    <!-- BADGE -->
+    <rect x="1530" y="32" width="330" height="36" rx="18" fill="#1E293B" stroke="#334155" stroke-width="1.5" />
+    <circle cx="1554" cy="50" r="6" fill="#10B981" />
+    <text x="1572" y="55" fill="#F8FAFC" font-size="14" font-weight="600" font-family="system-ui, -apple-system, sans-serif">IS-488 UNSCH | SEGURIDAD</text>
+
+
+    <!-- 4 MAIN CARDS IN 2x2 GRID -->
+    <!-- Card 1: Procedimiento Arqueo Ciego -->
+    <g transform="translate(60, 135)">
+        <rect width="880" height="420" rx="14" fill="#0F172A" stroke="#10B981" stroke-width="2"/>
+        <rect x="0" y="0" width="880" height="50" rx="14" fill="#131D31"/>
+        <rect x="20" y="14" width="8" height="22" rx="2" fill="#10B981"/>
+        <text x="38" y="33" fill="#10B981" font-size="18" font-weight="700" font-family="system-ui, sans-serif">1. Procedimiento de Arqueo Ciego de Caja (RF-CAJ-002 / AC03)</text>
+        
+        <text x="24" y="90" fill="#F8FAFC" font-size="16" font-weight="700" font-family="system-ui, sans-serif">• Cierre de Turno a Ciegas (Blind Count):</text>
+        <text x="44" y="115" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">El cajero desconoce formalmente el saldo teórico del sistema antes de declarar el efectivo físico.</text>
+        
+        <text x="24" y="155" fill="#F8FAFC" font-size="16" font-weight="700" font-family="system-ui, sans-serif">• Desglose Físico por Denominaciones Monetarias:</text>
+        <text x="44" y="180" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">Conteo obligatorio de Billetes (S/ 200, 100, 50, 20, 10) y Monedas (S/ 5, 2, 1, 0.50, 0.20, 0.10).</text>
+        
+        <text x="24" y="220" fill="#F8FAFC" font-size="16" font-weight="700" font-family="system-ui, sans-serif">• Triple Conciliación Automática en Servidor:</text>
+        <text x="44" y="245" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">1. Efectivo físico contado vs. 2. Saldo calculado de ventas vs. 3. Transacciones electrónicas (POS/Yape).</text>
+
+        <rect x="24" y="290" width="832" height="100" rx="10" fill="#131D31" stroke="#10B981" stroke-width="1"/>
+        <text x="40" y="325" fill="#34D399" font-size="14" font-weight="700" font-family="monospace">PROTECCIÓN CONTRA EL FRAUDE INTERNO</text>
+        <text x="40" y="350" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">Impide la manipulación de cifras para disimular pérdidas o justificar faltantes a posteriori.</text>
+        <text x="40" y="372" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">Cualquier discrepancia queda registrada automáticamente como Faltante o Sobrante.</text>
+    </g>
+
+    <!-- Card 2: Inmutabilidad Append-Only -->
+    <g transform="translate(980, 135)">
+        <rect width="880" height="420" rx="14" fill="#0F172A" stroke="#38BDF8" stroke-width="2"/>
+        <rect x="0" y="0" width="880" height="50" rx="14" fill="#131D31"/>
+        <rect x="20" y="14" width="8" height="22" rx="2" fill="#38BDF8"/>
+        <text x="38" y="33" fill="#38BDF8" font-size="18" font-weight="700" font-family="system-ui, sans-serif">2. Persistencia Inmutable Append-Only en PostgreSQL 16</text>
+        
+        <text x="24" y="90" fill="#F8FAFC" font-size="16" font-weight="700" font-family="system-ui, sans-serif">• Tablas Inmutables de Arqueo y Auditoría:</text>
+        <text x="44" y="115" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">Estructuras exclusivas de inserción: caja_arqueo, caja_arqueo_detalle y Audit_Log.</text>
+        
+        <text x="24" y="155" fill="#F8FAFC" font-size="16" font-weight="700" font-family="system-ui, sans-serif">• Denegación Formal DDL en PostgreSQL:</text>
+        <rect x="44" y="175" width="800" height="40" rx="6" fill="#1E293B"/>
+        <text x="60" y="200" fill="#38BDF8" font-size="13" font-weight="700" font-family="monospace">REVOKE UPDATE, DELETE ON caja_arqueo, caja_arqueo_detalle FROM rol_cajero;</text>
+        
+        <text x="24" y="245" fill="#F8FAFC" font-size="16" font-weight="700" font-family="system-ui, sans-serif">• Pistas de Auditoría Automáticas (RNF-SEG-004):</text>
+        <text x="44" y="270" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">Cada mutación sensible captura: UsuarioID, Timestamp_UTC, IP_Cliente, Valores_JSON.</text>
+
+        <rect x="24" y="290" width="832" height="100" rx="10" fill="#131D31" stroke="#38BDF8" stroke-width="1"/>
+        <text x="40" y="325" fill="#38BDF8" font-size="14" font-weight="700" font-family="monospace">NO REPUDIO Y VALOR PROBATORIO LEGAL</text>
+        <text x="40" y="350" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">Ni el cajero ni el administrador pueden editar ni eliminar el registro contable.</text>
+        <text x="40" y="372" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">Garantía total de integridad requerida en auditorías fiscales y peritajes contables.</text>
+    </g>
+
+    <!-- Card 3: Custodia de Vouchers -->
+    <g transform="translate(60, 580)">
+        <rect width="880" height="450" rx="14" fill="#0F172A" stroke="#F59E0B" stroke-width="2"/>
+        <rect x="0" y="0" width="880" height="50" rx="14" fill="#131D31"/>
+        <rect x="20" y="14" width="8" height="22" rx="2" fill="#F59E0B"/>
+        <text x="38" y="33" fill="#F59E0B" font-size="18" font-weight="700" font-family="system-ui, sans-serif">3. Custodia Segura de Comprobantes Bancarios (RF-WEB-003)</text>
+        
+        <text x="24" y="90" fill="#F8FAFC" font-size="16" font-weight="700" font-family="system-ui, sans-serif">• Storage Privado Cifrado (MinIO / Sistema de Archivos Local):</text>
+        <text x="44" y="115" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">Almacenamiento blindado para capturas de Yape/Plin y constancias bancarias (hasta 5 MB).</text>
+        
+        <text x="24" y="155" fill="#F8FAFC" font-size="16" font-weight="700" font-family="system-ui, sans-serif">• Cero Exposición Pública en la Web:</text>
+        <text x="44" y="180" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">Los comprobantes no tienen URLs estáticas públicas ni son accesibles por clientes externos.</text>
+        
+        <text x="24" y="220" fill="#F8FAFC" font-size="16" font-weight="700" font-family="system-ui, sans-serif">• Acceso Restringido a Tesorería mediante URLs Pre-Firmadas:</text>
+        <text x="44" y="245" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">Tokens temporales de acceso válidos por 15 minutos generados exclusivamente para Tesorería.</text>
+
+        <rect x="24" y="290" width="832" height="130" rx="10" fill="#131D31" stroke="#F59E0B" stroke-width="1"/>
+        <text x="40" y="325" fill="#FBBF24" font-size="14" font-weight="700" font-family="monospace">PROTECCIÓN DE DATOS FINANCIEROS (LEY N.° 29733)</text>
+        <text x="40" y="350" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">Previene la filtración de números de cuenta, nombres y saldos bancarios de clientes.</text>
+        <text x="40" y="375" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">Sanitización de nombres de archivo y validación de tipos MIME estrictos (JPG, PNG, PDF).</text>
+        <text x="40" y="400" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">Rechazo de ejecutables o scripts maliciosos disfrazados de comprobantes.</text>
+    </g>
+
+    <!-- Card 4: Autenticación Criptográfica -->
+    <g transform="translate(980, 580)">
+        <rect width="880" height="450" rx="14" fill="#0F172A" stroke="#A855F7" stroke-width="2"/>
+        <rect x="0" y="0" width="880" height="50" rx="14" fill="#131D31"/>
+        <rect x="20" y="14" width="8" height="22" rx="2" fill="#A855F7"/>
+        <text x="38" y="33" fill="#A855F7" font-size="18" font-weight="700" font-family="system-ui, sans-serif">4. Autenticación Robusta y Matriz RBAC (RNF-SEG-001/003)</text>
+        
+        <text x="24" y="90" fill="#F8FAFC" font-size="16" font-weight="700" font-family="system-ui, sans-serif">• Tokens JWT con Firma Asimétrica RS256:</text>
+        <text x="44" y="115" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">Claves RSA de 2048 bits; access tokens de 15 min de vida útil con rotación estricta.</text>
+        
+        <text x="24" y="155" fill="#F8FAFC" font-size="16" font-weight="700" font-family="system-ui, sans-serif">• Derivación Criptográfica de Contraseñas con Argon2id:</text>
+        <text x="44" y="180" fill="#C084FC" font-size="14" font-weight="700" font-family="monospace">Argon2id (m=65536, t=3, p=4) con sal criptográfica de 16 bytes por usuario.</text>
+        <text x="44" y="202" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">Inmune a ataques de fuerza bruta basados en GPU y tablas arcoíris.</text>
+        
+        <text x="24" y="235" fill="#F8FAFC" font-size="16" font-weight="700" font-family="system-ui, sans-serif">• Segregación Estricta de Audiencias (Claims):</text>
+        <text x="44" y="260" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">Tokens de clientes web (SIGIC_WebClient) no pueden invocar rutas internas (HTTP 403).</text>
+
+        <rect x="24" y="290" width="832" height="130" rx="10" fill="#131D31" stroke="#A855F7" stroke-width="1"/>
+        <text x="40" y="325" fill="#C084FC" font-size="14" font-weight="700" font-family="monospace">DEFENSA EN PROFUNDIDAD (DEFENSE IN DEPTH)</text>
+        <text x="40" y="350" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">Validación obligatoria de claims en servidor mediante AuthorizeAttribute.</text>
+        <text x="40" y="375" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">Rate limiting en login: bloqueo temporal de 15 minutos tras 5 intentos fallidos.</text>
+        <text x="40" y="400" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">Tráfico cifrado mediante TLS 1.3 con redirección forzada de HTTP a HTTPS.</text>
+    </g>
+</svg>

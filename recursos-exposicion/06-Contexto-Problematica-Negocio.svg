@@ -1,0 +1,163 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+    
+    <defs>
+        <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#080D1A"/>
+            <stop offset="100%" stop-color="#0F172A"/>
+        </linearGradient>
+        <linearGradient id="cardGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#1E293B"/>
+            <stop offset="100%" stop-color="#111827"/>
+        </linearGradient>
+        <linearGradient id="emeraldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#10B981"/>
+            <stop offset="100%" stop-color="#059669"/>
+        </linearGradient>
+        <linearGradient id="skyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#38BDF8"/>
+            <stop offset="100%" stop-color="#0284C7"/>
+        </linearGradient>
+        <linearGradient id="amberGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#F59E0B"/>
+            <stop offset="100%" stop-color="#D97706"/>
+        </linearGradient>
+        <linearGradient id="purpleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#A855F7"/>
+            <stop offset="100%" stop-color="#7E22CE"/>
+        </linearGradient>
+        <marker id="arrow-emerald" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#10B981" />
+        </marker>
+        <marker id="arrow-sky" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#38BDF8" />
+        </marker>
+        <marker id="arrow-amber" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#F59E0B" />
+        </marker>
+        <marker id="arrow-slate" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#64748B" />
+        </marker>
+    </defs>
+
+    <rect width="1920" height="1080" fill="url(#bgGrad)" />
+    
+    <!-- HEADER -->
+    <rect x="0" y="0" width="1920" height="100" fill="#0D1527" />
+    <line x1="0" y1="100" x2="1920" y2="100" stroke="#1E293B" stroke-width="2" />
+    <rect x="60" y="24" width="16" height="52" rx="4" fill="#10B981" />
+    <text x="96" y="52" fill="#F8FAFC" font-size="28" font-weight="700" font-family="system-ui, -apple-system, sans-serif">CONTEXTO DE NEGOCIO Y PROBLEMÁTICA OPERATIVA</text>
+    <text x="96" y="80" fill="#94A3B8" font-size="16" font-family="system-ui, -apple-system, sans-serif">Retail Ferretero en Ayacucho (>12,000 SKUs) | Fricciones de Concurrencia Omnicanal y Ruptura de Stock</text>
+    
+    <!-- BADGE -->
+    <rect x="1530" y="32" width="330" height="36" rx="18" fill="#1E293B" stroke="#334155" stroke-width="1.5" />
+    <circle cx="1554" cy="50" r="6" fill="#10B981" />
+    <text x="1572" y="55" fill="#F8FAFC" font-size="14" font-weight="600" font-family="system-ui, -apple-system, sans-serif">IS-488 UNSCH | CONTEXTO</text>
+
+
+    <!-- ROW 1 -->
+    <g transform="translate(60, 135)">
+        <rect width="560" height="410" rx="14" fill="#131D31" stroke="#38BDF8" stroke-width="2"/>
+        <rect x="0" y="0" width="560" height="48" rx="14" fill="#1E293B"/>
+        <rect x="20" y="13" width="8" height="22" rx="2" fill="#38BDF8"/>
+        <text x="38" y="31" fill="#38BDF8" font-size="17" font-weight="700" font-family="system-ui, sans-serif">1. Catálogo Técnico Multidimensional</text>
+        <text x="24" y="85" fill="#F8FAFC" font-size="15" font-weight="700" font-family="system-ui, sans-serif">• Más de 12,000 SKUs Activos en Catálogo</text>
+        <text x="44" y="110" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">Fierro de construcción, cemento tipo I/V, tuberías PVC, pernería milimétrica.</text>
+        <text x="24" y="150" fill="#F8FAFC" font-size="15" font-weight="700" font-family="system-ui, sans-serif">• Atributos Técnicos Complejos y Medidas</text>
+        <text x="44" y="175" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">Variantes fraccionadas en pulgadas, milímetros, calibres y tipos de rosca.</text>
+        <text x="24" y="215" fill="#F8FAFC" font-size="15" font-weight="700" font-family="system-ui, sans-serif">• Jerarquía Estricta: Familia → Subfamilia → Marca</text>
+        <text x="44" y="240" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">Unidades fraccionadas de venta: unidad, metro, ciento, millar, bolsa, caja.</text>
+        <rect x="24" y="295" width="512" height="90" rx="8" fill="#0F172A" stroke="#334155" stroke-width="1"/>
+        <text x="40" y="325" fill="#38BDF8" font-size="13" font-weight="700" font-family="monospace">ESPECIFICACIÓN RF-INV-001 / RF-INV-005</text>
+        <text x="40" y="350" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">Normalización relacional + especificaciones JSONB con índice GIN</text>
+        <text x="40" y="372" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">para búsquedas sub-15ms en Dapper.</text>
+    </g>
+
+    <g transform="translate(680, 135)">
+        <rect width="560" height="410" rx="14" fill="#131D31" stroke="#F59E0B" stroke-width="2"/>
+        <rect x="0" y="0" width="560" height="48" rx="14" fill="#1E293B"/>
+        <rect x="20" y="13" width="8" height="22" rx="2" fill="#F59E0B"/>
+        <text x="38" y="31" fill="#F59E0B" font-size="17" font-weight="700" font-family="system-ui, sans-serif">2. Fricción Concurrente Mostrador vs Web</text>
+        <text x="24" y="85" fill="#F8FAFC" font-size="15" font-weight="700" font-family="system-ui, sans-serif">• Competencia Simultánea por Stock Físico</text>
+        <text x="44" y="110" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">Clientes en caja física y usuarios e-commerce compiten a la vez por los mismos ítems.</text>
+        <text x="24" y="150" fill="#F8FAFC" font-size="15" font-weight="700" font-family="system-ui, sans-serif">• Riesgo Severo de Sobreventa (Overselling)</text>
+        <text x="44" y="175" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">Venta presencial de materiales ya comprometidos en carritos web sin aislamiento.</text>
+        <text x="24" y="215" fill="#F8FAFC" font-size="15" font-weight="700" font-family="system-ui, sans-serif">• Desfase Máximo Tolerado en Web ≤ 30 s</text>
+        <text x="44" y="240" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">El catálogo web no puede mostrar saldos obsoletos que generen reclamos.</text>
+        <rect x="24" y="295" width="512" height="90" rx="8" fill="#0F172A" stroke="#334155" stroke-width="1"/>
+        <text x="40" y="325" fill="#F59E0B" font-size="13" font-weight="700" font-family="monospace">IMPACTO EN OPERACIONES: RNF-CON-003</text>
+        <text x="40" y="350" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">Pérdida de clientes en obra por fletes fallidos y camiones varados</text>
+        <text x="40" y="372" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">al no tener disponible el cemento o fierro vendido.</text>
+    </g>
+
+    <g transform="translate(1300, 135)">
+        <rect width="560" height="410" rx="14" fill="#131D31" stroke="#A855F7" stroke-width="2"/>
+        <rect x="0" y="0" width="560" height="48" rx="14" fill="#1E293B"/>
+        <rect x="20" y="13" width="8" height="22" rx="2" fill="#A855F7"/>
+        <text x="38" y="31" fill="#A855F7" font-size="17" font-weight="700" font-family="system-ui, sans-serif">3. Saturación y Fugas de Efectivo</text>
+        <text x="24" y="85" fill="#F8FAFC" font-size="15" font-weight="700" font-family="system-ui, sans-serif">• Inanición de Conexiones (Connection Starvation)</text>
+        <text x="44" y="110" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">Picos de tráfico web saturan el connection pool de PostgreSQL, congelando el POS.</text>
+        <text x="24" y="150" fill="#F8FAFC" font-size="15" font-weight="700" font-family="system-ui, sans-serif">• Cuello de Botella en Caja Presencial</text>
+        <text x="44" y="175" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">Colas de transportistas y maestros; se exige cobro P95 menor a 250 ms en LAN.</text>
+        <text x="24" y="215" fill="#F8FAFC" font-size="15" font-weight="700" font-family="system-ui, sans-serif">• Manipulación en Cierre de Caja Tradicional</text>
+        <text x="44" y="240" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">Cajeros que conocen el saldo teórico ocultan faltantes o descuadres.</text>
+        <rect x="24" y="295" width="512" height="90" rx="8" fill="#0F172A" stroke="#334155" stroke-width="1"/>
+        <text x="40" y="325" fill="#A855F7" font-size="13" font-weight="700" font-family="monospace">RIESGO FINANCIERO Y SEGURIDAD: RF-CAJ-002</text>
+        <text x="40" y="350" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">Exigencia de Arqueo Ciego inmutable y triple conciliación bancaria</text>
+        <text x="40" y="372" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">sin feedback del sistema al usuario.</text>
+    </g>
+
+    <!-- ROW 2: SOLUCIONES / REGLAS DE ORO -->
+    <g transform="translate(60, 575)">
+        <rect width="560" height="455" rx="14" fill="#0F172A" stroke="#10B981" stroke-width="2.5"/>
+        <rect x="0" y="0" width="560" height="48" rx="14" fill="#131D31"/>
+        <rect x="20" y="13" width="8" height="22" rx="2" fill="#10B981"/>
+        <text x="38" y="31" fill="#10B981" font-size="17" font-weight="700" font-family="system-ui, sans-serif">INVARIANTE 1: Gobernanza de Stock (AC02)</text>
+        <rect x="24" y="65" width="512" height="65" rx="8" fill="#1E293B" stroke="#10B981" stroke-width="1.5"/>
+        <text x="280" y="104" fill="#34D399" font-size="20" font-weight="800" text-anchor="middle" font-family="monospace">Stock Disponible = Físico - Comprometido</text>
+        <text x="24" y="165" fill="#F8FAFC" font-size="15" font-weight="700" font-family="system-ui, sans-serif">• Prohibición Absoluta de Consulta Directa</text>
+        <text x="44" y="190" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">Ningún proceso lee únicamente stock_fisico para autorizar salidas o reservas.</text>
+        <text x="24" y="230" fill="#F8FAFC" font-size="15" font-weight="700" font-family="system-ui, sans-serif">• Stock Comprometido Transaccional</text>
+        <text x="44" y="255" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">Suma reservas web vigentes con TTL dinámico + guías En Tránsito.</text>
+        <text x="24" y="295" fill="#F8FAFC" font-size="15" font-weight="700" font-family="system-ui, sans-serif">• Tolerancia Cero a Sobrevendidos</text>
+        <text x="44" y="320" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">0 sobreventas y 0 saldos negativos verificados en pruebas de 100 hilos.</text>
+        <rect x="24" y="365" width="512" height="68" rx="8" fill="#131D31" stroke="#334155" stroke-width="1"/>
+        <text x="40" y="392" fill="#10B981" font-size="12" font-weight="700" font-family="monospace">CERTIFICACIÓN SDD</text>
+        <text x="40" y="415" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">Auditoría MCP obligatoria: auditar_especificacion_stock_sdd.</text>
+    </g>
+
+    <g transform="translate(680, 575)">
+        <rect width="560" height="455" rx="14" fill="#0F172A" stroke="#38BDF8" stroke-width="2"/>
+        <rect x="0" y="0" width="560" height="48" rx="14" fill="#131D31"/>
+        <rect x="20" y="13" width="8" height="22" rx="2" fill="#38BDF8"/>
+        <text x="38" y="31" fill="#38BDF8" font-size="17" font-weight="700" font-family="system-ui, sans-serif">INVARIANTE 2: Segregación y Despacho Web</text>
+        <rect x="24" y="65" width="512" height="65" rx="8" fill="#1E293B" stroke="#38BDF8" stroke-width="1.5"/>
+        <text x="280" y="104" fill="#38BDF8" font-size="18" font-weight="800" text-anchor="middle" font-family="monospace">disponible_en_web = false → HTTP 404</text>
+        <text x="24" y="165" fill="#F8FAFC" font-size="15" font-weight="700" font-family="system-ui, sans-serif">• Blindaje de Artículos de Mostrador</text>
+        <text x="44" y="190" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">Cortes y pernería a granel retornan 404 absoluto en la API pública.</text>
+        <text x="24" y="230" fill="#F8FAFC" font-size="15" font-weight="700" font-family="system-ui, sans-serif">• Despacho Centralizado en Almacén Central</text>
+        <text x="44" y="255" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">Protege el stock físico de exhibición de las tiendas físicas.</text>
+        <text x="24" y="295" fill="#F8FAFC" font-size="15" font-weight="700" font-family="system-ui, sans-serif">• Guía Interna de Traslado Automática (#GI-...)</text>
+        <text x="44" y="320" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">Generación automática en Retiro en Tienda; recepciona Despachador (RF-POS-011).</text>
+        <rect x="24" y="365" width="512" height="68" rx="8" fill="#131D31" stroke="#334155" stroke-width="1"/>
+        <text x="40" y="392" fill="#38BDF8" font-size="12" font-weight="700" font-family="monospace">REQUISITO RF-INV-003 / RF-WEB-002</text>
+        <text x="40" y="415" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">Trazabilidad completa desde el Almacén Central hasta el cliente final.</text>
+    </g>
+
+    <g transform="translate(1300, 575)">
+        <rect width="560" height="455" rx="14" fill="#0F172A" stroke="#A855F7" stroke-width="2"/>
+        <rect x="0" y="0" width="560" height="48" rx="14" fill="#131D31"/>
+        <rect x="20" y="13" width="8" height="22" rx="2" fill="#A855F7"/>
+        <text x="38" y="31" fill="#A855F7" font-size="17" font-weight="700" font-family="system-ui, sans-serif">INVARIANTE 3: Aislamiento y Resiliencia</text>
+        <rect x="24" y="65" width="512" height="65" rx="8" fill="#1E293B" stroke="#A855F7" stroke-width="1.5"/>
+        <text x="280" y="104" fill="#A855F7" font-size="18" font-weight="800" text-anchor="middle" font-family="monospace">PgBouncer: pool_pos (50) vs pool_web (30)</text>
+        <text x="24" y="165" fill="#F8FAFC" font-size="15" font-weight="700" font-family="system-ui, sans-serif">• pool_pos (Prioridad Alta LAN - 50 conns)</text>
+        <text x="44" y="190" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">Garantiza conexiones inmediatas para POS mostrador; latencia menor a 1 ms.</text>
+        <text x="24" y="230" fill="#F8FAFC" font-size="15" font-weight="700" font-family="system-ui, sans-serif">• pool_web (Control de Backpressure - 30 conns)</text>
+        <text x="44" y="255" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">Cuota fija y timeout de 5s; el tráfico web jamás satura a las cajas.</text>
+        <text x="24" y="295" fill="#F8FAFC" font-size="15" font-weight="700" font-family="system-ui, sans-serif">• Arqueo Ciego Append-Only</text>
+        <text x="44" y="320" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">REVOKE UPDATE, DELETE ON caja_arqueo; trazabilidad forense 100%.</text>
+        <rect x="24" y="365" width="512" height="68" rx="8" fill="#131D31" stroke="#334155" stroke-width="1"/>
+        <text x="40" y="392" fill="#A855F7" font-size="12" font-weight="700" font-family="monospace">BLINDAJE OPERATIVO TOTAL</text>
+        <text x="40" y="415" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">Disponibilidad transaccional 99.5% e integridad de fondos demostrada.</text>
+    </g>
+</svg>

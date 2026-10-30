@@ -1,15 +1,32 @@
+---
+id: "03-principios-de-diseno"
+doc: "03-diseno-de-software/diseno-interno-modulos/principios-de-diseno.md"
+version: "2.2.0"
+estado: "VALIDADO_PARA_EXPOSICION"
+tipo: "Principios de Diseño de Software"
+proyecto: "SIGIC-Ferreteria-v2.2"
+autor: "Crhistian Emanuel Flores Marquina"
+evaluacion: "IS-488 UNSCH"
+fecha: "2026-10-30"
+---
+
 # Principios de Diseño de Software — SIGIC Ferretería
 
 > **Documento:** `03-diseno-de-software/diseno-interno-modulos/principios-de-diseno.md`  
 > **Versión de Especificación:** 2.2 (Oficial – SIGIC Ferretería)  
 > **Disciplina:** Principios de Ingeniería de Software (SOLID, DRY, KISS, YAGNI, Clean Code)  
-> **Sistema:** SIGIC Ferretería (Monolito Modular ASP.NET Core 8 Web API)
+> **Sistema:** SIGIC Ferretería (Monolito Modular ASP.NET Core 8 Web API)  
+> **Evaluación Académica:** IS-488 Arquitectura de Software (UNSCH)
 
 ---
 
 ## 1. Visión General de Principios Rectores
 
-El desarrollo de **SIGIC Ferretería v2.2** no solo obedece a requerimientos funcionales, sino que se construye sobre principios rigurosos de ingeniería de software para prevenir la degradación de la base de código (*Software Rot*), maximizar la testabilidad unitaria y garantizar que las reglas del negocio ferretero permanezcan puras e inmutables frente a cambios tecnológicos.
+El desarrollo de **SIGIC Ferretería v2.2** no solo obedece a requerimientos funcionales, sino que se construye sobre principios rigurosos de ingeniería de software para prevenir la degradación de la base de código (*Software Rot*), maximizar la testabilidad unitaria y garantizar que las reglas del negocio ferretero permanezcan puras e inmutables frente a cambios tecnológicos:
+
+1. **Rendimiento y Baja Latencia (AC01):** Interfaces segregadas y consultas directas sin sobrecarga.
+2. **Consistencia Transaccional ACID (AC02):** Encapsulamiento puro y políticas *Fail-Fast* sobre el inventario.
+3. **Trazabilidad Inmutable (AC03):** Registro de auditoría estricto y diseño de dominio basado en comportamiento (*Tell, Don't Ask*).
 
 ---
 
@@ -19,7 +36,7 @@ El desarrollo de **SIGIC Ferretería v2.2** no solo obedece a requerimientos fun
 - **Definición:** *Una clase o módulo debe tener una, y solo una, razón para cambiar.*
 - **Aplicación en SIGIC:**
   - Se evita la creación de servicios o controladores "Dios" (*God Objects*). Por ejemplo, el proceso de reserva web se segrega estrictamente:
-    1. `ReservaDinamicaService`: Su única responsabilidad es aplicar las reglas de caducidad temporal (TTL 20 min o 4 h) y validar si el stock comprometido puede incrementarse.
+    1. `ReservaDinamicaService`: Su única responsabilidad es aplicar las reglas de caducidad temporal (TTL 20 min o 4 h) y validar si el stock comprometido puede incrementarse (`AC02`).
     2. `ReservaExpirationWorker`: Su única responsabilidad es ejecutar periódicamente la comprobación de tiempo y liberar reservas vencidas.
     3. `CheckoutWebController`: Su única responsabilidad es recibir la solicitud HTTP pública, invocar el comando MediatR y responder con el DTO correspondiente.
 - **Beneficio:** Un cambio en la política de vencimiento de reservas no altera en lo absoluto el cálculo de IGV, la persistencia en base de datos ni los controladores de mostrador.
@@ -44,7 +61,7 @@ El desarrollo de **SIGIC Ferretería v2.2** no solo obedece a requerimientos fun
 - **Definición:** *Los clientes no deben verse obligados a depender de interfaces que no utilizan.*
 - **Aplicación en SIGIC:**
   - En lugar de una interfaz gigantesca `IInventarioRepository`, el sistema define interfaces cohesivas y de propósito específico:
-    - `IInventarioReadRepository`: Métodos de solo lectura para el catálogo público y consultas de stock rápido.
+    - `IInventarioReadRepository`: Métodos de solo lectura para el catálogo público y consultas de stock rápido ($P95 < 250\text{ ms}$, `AC01`).
     - `IInventarioStockCommandRepository`: Métodos transaccionales con bloqueo de fila (`BloquearParaCheckoutAsync`, `DecrementarStockAsync`).
     - `IGuiaTrasladoRepository`: Métodos exclusivos para la gestión logística de guías de remisión interna.
 - **Beneficio:** Los consumidores de catálogo no tienen acceso accidental a métodos de mutación transaccional.
@@ -87,7 +104,7 @@ El desarrollo de **SIGIC Ferretería v2.2** no solo obedece a requerimientos fun
 
 ## 4. Principios de Robustez en Dominio: Fail-Fast y Tell, Don't Ask
 
-### 4.1. Principio Fail-Fast (Falla Rápido)
+### 4.1. Principio Fail-Fast (Falla Rápido - AC02)
 - Todas las operaciones críticas validan sus invariantes en las primeras líneas de ejecución mediante cláusulas de guarda (*Guard Clauses*), antes de abrir transacciones costosas de base de datos o modificar memoria:
 ```csharp
 public void ReservarStock(decimal cantidadSolicitada, TimeSpan ttl)
@@ -103,7 +120,7 @@ public void ReservarStock(decimal cantidadSolicitada, TimeSpan ttl)
 }
 ```
 
-### 4.2. Principio Tell, Don't Ask (Ordena, no preguntes)
+### 4.2. Principio Tell, Don't Ask (Ordena, no preguntes - AC03)
 - Los objetos del dominio ferretero no son simples estructuras de datos anémicas con *getters* y *setters* públicos. En lugar de consultar el estado de una entidad desde un servicio externo y modificar sus propiedades, el servicio le ordena al objeto que ejecute la transición de negocio:
 - **Incorrecto (Modelo Anémico / Ask):**
   ```csharp

@@ -1,0 +1,222 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+    
+    <defs>
+        <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#080D1A"/>
+            <stop offset="100%" stop-color="#0F172A"/>
+        </linearGradient>
+        <linearGradient id="cardGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#1E293B"/>
+            <stop offset="100%" stop-color="#111827"/>
+        </linearGradient>
+        <linearGradient id="emeraldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#10B981"/>
+            <stop offset="100%" stop-color="#059669"/>
+        </linearGradient>
+        <linearGradient id="skyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#38BDF8"/>
+            <stop offset="100%" stop-color="#0284C7"/>
+        </linearGradient>
+        <linearGradient id="amberGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#F59E0B"/>
+            <stop offset="100%" stop-color="#D97706"/>
+        </linearGradient>
+        <linearGradient id="purpleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#A855F7"/>
+            <stop offset="100%" stop-color="#7E22CE"/>
+        </linearGradient>
+        <marker id="arrow-emerald" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#10B981" />
+        </marker>
+        <marker id="arrow-sky" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#38BDF8" />
+        </marker>
+        <marker id="arrow-amber" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#F59E0B" />
+        </marker>
+        <marker id="arrow-slate" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#64748B" />
+        </marker>
+        <marker id="arrow-purple" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#A855F7" />
+        </marker>
+    </defs>
+
+    <rect width="1920" height="1080" fill="url(#bgGrad)" />
+    
+    <!-- HEADER -->
+    <rect x="0" y="0" width="1920" height="100" fill="#0D1527" />
+    <line x1="0" y1="100" x2="1920" y2="100" stroke="#1E293B" stroke-width="2" />
+    <rect x="60" y="24" width="16" height="52" rx="4" fill="#10B981" />
+    <text x="96" y="52" fill="#F8FAFC" font-size="28" font-weight="700" font-family="system-ui, -apple-system, sans-serif">MODELO C4 — NIVEL 2: DIAGRAMA DE CONTENEDORES Y TOPOLOGÍA DE PERSISTENCIA</text>
+    <text x="96" y="80" fill="#94A3B8" font-size="16" font-family="system-ui, -apple-system, sans-serif">Segregación de Frontends, Backend Monolítico y Aislamiento de Conexiones en PgBouncer — SIGIC Ferretería v2.2</text>
+    
+    <!-- BADGE -->
+    <rect x="1560" y="32" width="300" height="36" rx="18" fill="#1E293B" stroke="#334155" stroke-width="1.5" />
+    <circle cx="1584" cy="50" r="6" fill="#10B981" />
+    <text x="1602" y="55" fill="#F8FAFC" font-size="14" font-weight="600" font-family="system-ui, -apple-system, sans-serif">C4 NIVEL 2 | CONTENEDORES</text>
+    
+
+    <!-- TIER 1: FRONTENDS & PERÍMETRO (y = 130..310) -->
+    <text x="60" y="135" fill="#38BDF8" font-size="16" font-weight="800" letter-spacing="1.5" font-family="system-ui, sans-serif">CAPA DE CLIENTES FRONTEND DESACOPLADOS Y CONTROL PERIMETRAL</text>
+
+    <!-- SPA POS Mostrador (React 18) -->
+    <g transform="translate(60, 150)">
+        <rect width="480" height="160" rx="14" fill="#131D31" stroke="#10B981" stroke-width="2"/>
+        <rect x="0" y="0" width="480" height="36" rx="14" fill="#1E293B"/>
+        <rect x="0" y="22" width="480" height="14" fill="#1E293B"/>
+        <circle cx="24" cy="18" r="6" fill="#10B981"/>
+        <text x="42" y="23" fill="#F8FAFC" font-size="15" font-weight="800" font-family="system-ui, sans-serif">SPA Mostrador POS [Container: React 18 / Vite / Tailwind]</text>
+        <text x="20" y="58" fill="#F8FAFC" font-size="13" font-weight="600" font-family="system-ui, sans-serif">• Red Local (LAN) Mostrador • Resolución fija 1024x768 sin scroll (RNF-USA-002)</text>
+        <text x="20" y="78" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">• Operación 100% por atajos de teclado (F1-F12) y escáner láser sin tocar el ratón.</text>
+        <text x="20" y="98" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">• Módulo ligero de entrega web (RF-POS-011) + Impresión térmica ESC/POS.</text>
+        <rect x="20" y="112" width="440" height="34" rx="6" fill="#0F172A"/>
+        <text x="32" y="134" fill="#34D399" font-size="12" font-weight="700" font-family="monospace">Token JWT RS256 (Audience: SIGIC_InternalStaff) • Latencia &lt; 1s</text>
+    </g>
+
+    <!-- Nginx Proxy Inverso -->
+    <g transform="translate(600, 150)">
+        <rect width="720" height="160" rx="14" fill="#131D31" stroke="#334155" stroke-width="2"/>
+        <rect x="0" y="0" width="720" height="36" rx="14" fill="#1E293B"/>
+        <rect x="0" y="22" width="720" height="14" fill="#1E293B"/>
+        <circle cx="24" cy="18" r="6" fill="#38BDF8"/>
+        <text x="42" y="23" fill="#F8FAFC" font-size="15" font-weight="800" font-family="system-ui, sans-serif">Proxy Inverso Perimetral &amp; Gateway [Container: Nginx 1.25 Alpine]</text>
+        <text x="20" y="58" fill="#F8FAFC" font-size="13" font-weight="600" font-family="system-ui, sans-serif">• Terminación TLS 1.3 (HTTPS 443) y Redirección segura desde Port 80.</text>
+        <text x="20" y="78" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">• Rate Limiting por IP (5 req/min) en rutas de login y checkout sensible.</text>
+        <text x="20" y="98" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">• Caché de catálogo estático (Cache-Control: public, max-age=30, stale-while-revalidate=60).</text>
+        <rect x="20" y="112" width="680" height="34" rx="6" fill="#0F172A"/>
+        <text x="32" y="134" fill="#38BDF8" font-size="12" font-weight="700" font-family="monospace">Ruteo: / -> Next.js:3000 | /api/* -> Kestrel Web API:5000 (LAN/Internet)</text>
+    </g>
+
+    <!-- Portal E-commerce Web (Next.js 14) -->
+    <g transform="translate(1380, 150)">
+        <rect width="480" height="160" rx="14" fill="#131D31" stroke="#38BDF8" stroke-width="2"/>
+        <rect x="0" y="0" width="480" height="36" rx="14" fill="#1E293B"/>
+        <rect x="0" y="22" width="480" height="14" fill="#1E293B"/>
+        <circle cx="24" cy="18" r="6" fill="#38BDF8"/>
+        <text x="42" y="23" fill="#F8FAFC" font-size="15" font-weight="800" font-family="system-ui, sans-serif">Portal E-commerce [Container: Next.js 14 SSR / React]</text>
+        <text x="20" y="58" fill="#F8FAFC" font-size="13" font-weight="600" font-family="system-ui, sans-serif">• Renderizado del lado del servidor (SSR / React Server Components).</text>
+        <text x="20" y="78" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">• Catálogo interactivo con SEO para materiales de construcción y acabados.</text>
+        <text x="20" y="98" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">• Checkout responsivo móvil/desktop con revalidación atómica de existencias.</text>
+        <rect x="20" y="112" width="440" height="34" rx="6" fill="#0F172A"/>
+        <text x="32" y="134" fill="#38BDF8" font-size="12" font-weight="700" font-family="monospace">Token JWT RS256 (Audience: SIGIC_WebClient) • LCP &lt;= 1.5s</text>
+    </g>
+
+    <!-- TIER 2: COMPUTO BACKEND MONOLÍTICO MODULAR (y = 350..580) -->
+    <g transform="translate(60, 350)">
+        <rect width="1800" height="230" rx="16" fill="#0D1527" stroke="#10B981" stroke-width="2"/>
+        <text x="30" y="32" fill="#10B981" font-size="16" font-weight="800" letter-spacing="1.5" font-family="system-ui, sans-serif">BACKEND MONOLÍTICO MODULAR [Container: ASP.NET Core 8 Web API — Clean Architecture sobre Kestrel]</text>
+
+        <!-- Sub-panel Left: API REST & Dominio Core -->
+        <g transform="translate(25, 45)">
+            <rect width="1180" height="165" rx="10" fill="#131D31" stroke="#334155" stroke-width="1.5"/>
+            <text x="20" y="28" fill="#F8FAFC" font-size="15" font-weight="700" font-family="system-ui, sans-serif">Núcleo Transaccional y Superficies de API Segregadas (MediatR CQRS)</text>
+            <text x="20" y="52" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">• <tspan fill="#38BDF8" font-weight="600">Superficie REST Interna (/api/v1/internal/*):</tspan> Ventas POS, movimientos Kardex CPP, guías internas y arqueo ciego.</text>
+            <text x="20" y="74" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">• <tspan fill="#10B981" font-weight="600">Superficie REST Pública (/api/v1/public/*):</tspan> Catálogo web (Filtro HTTP 404 si disponible_en_web=false) y Checkout atómico.</text>
+            <text x="20" y="96" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">• <tspan fill="#F59E0B" font-weight="600">Inversión de Dependencias (DIP):</tspan> EF Core 8 (escrituras ACID y Unit of Work) y Dapper Micro-ORM (lecturas de catálogo &lt; 15ms).</text>
+            <rect x="20" y="112" width="1140" height="38" rx="6" fill="#0F172A"/>
+            <text x="35" y="136" fill="#34D399" font-size="13" font-weight="700" font-family="monospace">P95 Core API &lt; 250 ms (AC01) • Bloqueo determinista anti-deadlock: items.OrderBy(x => x.ProductoId)</text>
+        </g>
+
+        <!-- Sub-panel Right: Background Workers -->
+        <g transform="translate(1230, 45)">
+            <rect width="545" height="165" rx="10" fill="#131D31" stroke="#334155" stroke-width="1.5"/>
+            <text x="20" y="28" fill="#F8FAFC" font-size="15" font-weight="700" font-family="system-ui, sans-serif">Servicios en Segundo Plano [.NET 8 BackgroundService]</text>
+            <text x="20" y="52" fill="#F59E0B" font-size="13" font-weight="600" font-family="system-ui, sans-serif">1. ReservaExpirationWorker (IHostedService):</text>
+            <text x="35" y="72" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">Despierta cada 60s. Libera stock comprometido con:</text>
+            <text x="35" y="90" fill="#FBBF24" font-size="11" font-family="monospace">SELECT ... FOR UPDATE SKIP LOCKED</text>
+            <text x="20" y="112" fill="#A855F7" font-size="13" font-weight="600" font-family="system-ui, sans-serif">2. DailyEtlJob (Consolidación Nocturna 01:00 UTC-5):</text>
+            <text x="35" y="132" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">Extrae hechos de sigic_oltp y puebla Datamart sigic_olap.</text>
+        </g>
+    </g>
+
+    <!-- TIER 3: POOLER DE CONEXIONES PGBOUNCER (y = 615..775) -->
+    <g transform="translate(60, 615)">
+        <rect width="1800" height="160" rx="16" fill="#131D31" stroke="#F59E0B" stroke-width="2"/>
+        <text x="30" y="32" fill="#F59E0B" font-size="16" font-weight="800" letter-spacing="1.5" font-family="system-ui, sans-serif">INTERMEDIACIÓN Y CONTROL DE CONCURRENCIA [Container: PgBouncer 1.21 — Modo Transacción / Port 6432]</text>
+
+        <!-- Pool POS (Left) -->
+        <g transform="translate(25, 45)">
+            <rect width="860" height="100" rx="10" fill="#0F172A" stroke="#10B981" stroke-width="2"/>
+            <circle cx="28" cy="24" r="8" fill="#10B981"/>
+            <text x="45" y="29" fill="#10B981" font-size="16" font-weight="800" font-family="system-ui, sans-serif">Pool Prioritario Mostrador: "pool_pos" (dbname=sigic_pos)</text>
+            <text x="25" y="56" fill="#F8FAFC" font-size="13" font-weight="600" font-family="system-ui, sans-serif">• 50 Conexiones físicas dedicadas y garantizadas exclusivamente para cajas y almacén LAN.</text>
+            <text x="25" y="78" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• pool_mode = transaction | max_client_conn = 200 | Cero tiempo de espera en mostrador físico.</text>
+        </g>
+
+        <!-- Pool Web (Right) -->
+        <g transform="translate(915, 45)">
+            <rect width="860" height="100" rx="10" fill="#0F172A" stroke="#38BDF8" stroke-width="2"/>
+            <circle cx="28" cy="24" r="8" fill="#38BDF8"/>
+            <text x="45" y="29" fill="#38BDF8" font-size="16" font-weight="800" font-family="system-ui, sans-serif">Pool Contenido E-commerce: "pool_web" (dbname=sigic_web)</text>
+            <text x="25" y="56" fill="#F8FAFC" font-size="13" font-weight="600" font-family="system-ui, sans-serif">• 30 Conexiones físicas limitadas con control de backpressure para tráfico web externo.</text>
+            <text x="25" y="78" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• Protege al POS de ataques DoS o ráfagas masivas de compras online. Timeout estricto: 5s.</text>
+        </g>
+    </g>
+
+    <!-- TIER 4: PERSISTENCIA RELACIONAL, ANALÍTICA Y STORAGE (y = 805..995) -->
+    <g transform="translate(60, 805)">
+        <!-- DB OLTP -->
+        <g transform="translate(0, 0)">
+            <rect width="580" height="185" rx="14" fill="#131D31" stroke="#10B981" stroke-width="2"/>
+            <rect x="0" y="0" width="580" height="36" rx="14" fill="#1E293B"/>
+            <rect x="0" y="22" width="580" height="14" fill="#1E293B"/>
+            <circle cx="24" cy="18" r="6" fill="#10B981"/>
+            <text x="42" y="23" fill="#F8FAFC" font-size="15" font-weight="800" font-family="system-ui, sans-serif">BD Transaccional OLTP [PostgreSQL 16 — sigic_oltp]</text>
+            <text x="20" y="58" fill="#F8FAFC" font-size="13" font-weight="600" font-family="system-ui, sans-serif">• Esquema Relacional Transaccional ACID en Port 5432.</text>
+            <text x="20" y="78" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• Bloqueos finos de fila pesimista (SELECT ... FOR UPDATE).</text>
+            <text x="20" y="98" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• Inventario centralizado: stock_fisico y stock_comprometido.</text>
+            <text x="20" y="118" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• Kardex CPP, ventas, pedidos web y caja_arqueo (Append-Only).</text>
+            <rect x="20" y="132" width="540" height="36" rx="6" fill="#0F172A"/>
+            <text x="32" y="155" fill="#34D399" font-size="12" font-weight="700" font-family="monospace">Isolation: Read Committed • Shared Buffers ~25% RAM NVMe</text>
+        </g>
+
+        <!-- DB OLAP -->
+        <g transform="translate(610, 0)">
+            <rect width="580" height="185" rx="14" fill="#131D31" stroke="#A855F7" stroke-width="2"/>
+            <rect x="0" y="0" width="580" height="36" rx="14" fill="#1E293B"/>
+            <rect x="0" y="22" width="580" height="14" fill="#1E293B"/>
+            <circle cx="24" cy="18" r="6" fill="#A855F7"/>
+            <text x="42" y="23" fill="#F8FAFC" font-size="15" font-weight="800" font-family="system-ui, sans-serif">Datamart Analítico OLAP [PostgreSQL 16 — sigic_olap]</text>
+            <text x="20" y="58" fill="#F8FAFC" font-size="13" font-weight="600" font-family="system-ui, sans-serif">• Almacén Dimensional en Esquema Estrella en Port 5433.</text>
+            <text x="20" y="78" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• Tablas de Hechos: Fact_Ventas, Fact_KardexDiario.</text>
+            <text x="20" y="98" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• Tablas de Dimensión: Dim_Tiempo, Dim_Articulo, Dim_Cliente.</text>
+            <text x="20" y="118" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• Optimizado para consultas analíticas pesadas sin degradar OLTP.</text>
+            <rect x="20" y="132" width="540" height="36" rx="6" fill="#0F172A"/>
+            <text x="32" y="155" fill="#C084FC" font-size="12" font-weight="700" font-family="monospace">Poblado vía ETL Nocturno Asíncrono (Cero Contención)</text>
+        </g>
+
+        <!-- Storage Privado -->
+        <g transform="translate(1220, 0)">
+            <rect width="580" height="185" rx="14" fill="#131D31" stroke="#38BDF8" stroke-width="2"/>
+            <rect x="0" y="0" width="580" height="36" rx="14" fill="#1E293B"/>
+            <rect x="0" y="22" width="580" height="14" fill="#1E293B"/>
+            <circle cx="24" cy="18" r="6" fill="#38BDF8"/>
+            <text x="42" y="23" fill="#F8FAFC" font-size="15" font-weight="800" font-family="system-ui, sans-serif">Storage Privado de Archivos [MinIO / FS Cifrado]</text>
+            <text x="20" y="58" fill="#F8FAFC" font-size="13" font-weight="600" font-family="system-ui, sans-serif">• Almacenamiento seguro desacoplado de la web pública.</text>
+            <text x="20" y="78" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• Custodia de vouchers bancarios Yape/Plin (JPG/PNG/PDF &lt;= 5 MB).</text>
+            <text x="20" y="98" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• Archivos XML de comprobantes y constancias CDR de SUNAT.</text>
+            <text x="20" y="118" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• Cero acceso por URL estática; descarga mediada por API Core.</text>
+            <rect x="20" y="132" width="540" height="36" rx="6" fill="#0F172A"/>
+            <text x="32" y="155" fill="#38BDF8" font-size="12" font-weight="700" font-family="monospace">Volumen Cifrado RAID 1 • Autorización RBAC Estricta</text>
+        </g>
+    </g>
+
+    <!-- CONNECTORS & FLOWS -->
+    <path d="M 300 310 L 300 350" stroke="#10B981" stroke-width="2.5" marker-end="url(#arrow-emerald)"/>
+    <path d="M 960 310 L 960 350" stroke="#38BDF8" stroke-width="2.5" marker-end="url(#arrow-sky)"/>
+    <path d="M 1620 310 L 1320 230" stroke="#38BDF8" stroke-width="2" stroke-dasharray="4" marker-end="url(#arrow-sky)"/>
+
+    <path d="M 600 580 L 600 660" stroke="#10B981" stroke-width="2.5" marker-end="url(#arrow-emerald)"/>
+    <path d="M 1400 580 L 1400 660" stroke="#38BDF8" stroke-width="2.5" marker-end="url(#arrow-sky)"/>
+
+    <path d="M 450 775 L 350 805" stroke="#10B981" stroke-width="2.5" marker-end="url(#arrow-emerald)"/>
+    <path d="M 1350 775 L 450 805" stroke="#38BDF8" stroke-width="2.5" marker-end="url(#arrow-sky)"/>
+    <path d="M 1500 580 L 1500 805" stroke="#38BDF8" stroke-width="2.5" marker-end="url(#arrow-sky)"/>
+    <path d="M 900 895 L 610 895" stroke="#A855F7" stroke-width="2" stroke-dasharray="6" marker-end="url(#arrow-purple)"/>
+
+    <!-- FOOTER -->
+    <rect x="60" y="1010" width="1800" height="45" rx="8" fill="#0D1527" stroke="#1E293B" stroke-width="1.5"/>
+    <text x="80" y="1038" fill="#10B981" font-size="13" font-weight="700" font-family="system-ui, sans-serif">ARQUITECTURA DE PERSISTENCIA SEGREGADA:</text>
+    <text x="390" y="1038" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">pool_pos (50) blinda al mostrador en LAN • pool_web (30) aplica backpressure • Storage privado aísla vouchers bancarios • OLAP desacoplado.</text>
+</svg>

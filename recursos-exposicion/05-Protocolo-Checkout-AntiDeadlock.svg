@@ -1,0 +1,200 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+    
+    <defs>
+        <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#080D1A"/>
+            <stop offset="100%" stop-color="#0F172A"/>
+        </linearGradient>
+        <linearGradient id="cardGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#1E293B"/>
+            <stop offset="100%" stop-color="#111827"/>
+        </linearGradient>
+        <linearGradient id="emeraldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#10B981"/>
+            <stop offset="100%" stop-color="#059669"/>
+        </linearGradient>
+        <linearGradient id="skyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#38BDF8"/>
+            <stop offset="100%" stop-color="#0284C7"/>
+        </linearGradient>
+        <linearGradient id="amberGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#F59E0B"/>
+            <stop offset="100%" stop-color="#D97706"/>
+        </linearGradient>
+        <linearGradient id="purpleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#A855F7"/>
+            <stop offset="100%" stop-color="#7E22CE"/>
+        </linearGradient>
+        <marker id="arrow-emerald" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#10B981" />
+        </marker>
+        <marker id="arrow-sky" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#38BDF8" />
+        </marker>
+        <marker id="arrow-amber" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#F59E0B" />
+        </marker>
+        <marker id="arrow-slate" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#64748B" />
+        </marker>
+        <marker id="arrow-purple" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#A855F7" />
+        </marker>
+    </defs>
+
+    <rect width="1920" height="1080" fill="url(#bgGrad)" />
+    
+    <!-- HEADER -->
+    <rect x="0" y="0" width="1920" height="100" fill="#0D1527" />
+    <line x1="0" y1="100" x2="1920" y2="100" stroke="#1E293B" stroke-width="2" />
+    <rect x="60" y="24" width="16" height="52" rx="4" fill="#10B981" />
+    <text x="96" y="52" fill="#F8FAFC" font-size="28" font-weight="700" font-family="system-ui, -apple-system, sans-serif">PROTOCOLO TRANSACCIONAL DE CHECKOUT Y CONTROL ANTI-DEADLOCK</text>
+    <text x="96" y="80" fill="#94A3B8" font-size="16" font-family="system-ui, -apple-system, sans-serif">Flujo Secuencial Paso a Paso con Bloqueo Pesimista Ordenado, Revalidación Atómica y Liberación Asíncrona</text>
+    
+    <!-- BADGE -->
+    <rect x="1560" y="32" width="300" height="36" rx="18" fill="#1E293B" stroke="#334155" stroke-width="1.5" />
+    <circle cx="1584" cy="50" r="6" fill="#10B981" />
+    <text x="1602" y="55" fill="#F8FAFC" font-size="14" font-weight="600" font-family="system-ui, -apple-system, sans-serif">INVARIANTE AC02 | CONCURRENCIA</text>
+    
+
+    <!-- SWIMLANE PARTICIPANT HEADERS (y = 125..190) -->
+    <!-- Participant 1 -->
+    <g transform="translate(60, 125)">
+        <rect width="260" height="65" rx="10" fill="#131D31" stroke="#38BDF8" stroke-width="2"/>
+        <text x="130" y="28" fill="#38BDF8" font-size="12" font-weight="700" text-anchor="middle" font-family="monospace">&lt;&lt;Client / SSR&gt;&gt;</text>
+        <text x="130" y="48" fill="#F8FAFC" font-size="15" font-weight="800" text-anchor="middle" font-family="system-ui, sans-serif">Cliente Web (Next.js 14)</text>
+    </g>
+
+    <!-- Participant 2 -->
+    <g transform="translate(370, 125)">
+        <rect width="280" height="65" rx="10" fill="#131D31" stroke="#10B981" stroke-width="2"/>
+        <text x="140" y="28" fill="#10B981" font-size="12" font-weight="700" text-anchor="middle" font-family="monospace">&lt;&lt;Application CQRS&gt;&gt;</text>
+        <text x="140" y="48" fill="#F8FAFC" font-size="15" font-weight="800" text-anchor="middle" font-family="system-ui, sans-serif">CheckoutCommandHandler</text>
+    </g>
+
+    <!-- Participant 3 -->
+    <g transform="translate(700, 125)">
+        <rect width="250" height="65" rx="10" fill="#131D31" stroke="#38BDF8" stroke-width="1.5"/>
+        <text x="125" y="28" fill="#38BDF8" font-size="12" font-weight="700" text-anchor="middle" font-family="monospace">&lt;&lt;Domain Service&gt;&gt;</text>
+        <text x="125" y="48" fill="#F8FAFC" font-size="15" font-weight="800" text-anchor="middle" font-family="system-ui, sans-serif">MotorTarifasService</text>
+    </g>
+
+    <!-- Participant 4 -->
+    <g transform="translate(1000, 125)">
+        <rect width="260" height="65" rx="10" fill="#131D31" stroke="#10B981" stroke-width="2"/>
+        <text x="130" y="28" fill="#10B981" font-size="12" font-weight="700" text-anchor="middle" font-family="monospace">&lt;&lt;Domain Service&gt;&gt;</text>
+        <text x="130" y="48" fill="#F8FAFC" font-size="15" font-weight="800" text-anchor="middle" font-family="system-ui, sans-serif">InventarioDomainService</text>
+    </g>
+
+    <!-- Participant 5 -->
+    <g transform="translate(1310, 125)">
+        <rect width="270" height="65" rx="10" fill="#131D31" stroke="#F59E0B" stroke-width="2"/>
+        <text x="135" y="28" fill="#F59E0B" font-size="12" font-weight="700" text-anchor="middle" font-family="monospace">&lt;&lt;PostgreSQL 16&gt;&gt;</text>
+        <text x="135" y="48" fill="#F8FAFC" font-size="15" font-weight="800" text-anchor="middle" font-family="system-ui, sans-serif">sigic_oltp (pool_web)</text>
+    </g>
+
+    <!-- Participant 6 -->
+    <g transform="translate(1630, 125)">
+        <rect width="230" height="65" rx="10" fill="#131D31" stroke="#A855F7" stroke-width="1.5"/>
+        <text x="115" y="28" fill="#A855F7" font-size="12" font-weight="700" text-anchor="middle" font-family="monospace">&lt;&lt;Storage / Worker&gt;&gt;</text>
+        <text x="115" y="48" fill="#F8FAFC" font-size="15" font-weight="800" text-anchor="middle" font-family="system-ui, sans-serif">Storage / Background</text>
+    </g>
+
+    <!-- VERTICAL LIFELINES -->
+    <line x1="190" y1="190" x2="190" y2="990" stroke="#334155" stroke-width="1.5" stroke-dasharray="4"/>
+    <line x1="510" y1="190" x2="510" y2="990" stroke="#334155" stroke-width="1.5" stroke-dasharray="4"/>
+    <line x1="825" y1="190" x2="825" y2="990" stroke="#334155" stroke-width="1.5" stroke-dasharray="4"/>
+    <line x1="1130" y1="190" x2="1130" y2="990" stroke="#334155" stroke-width="1.5" stroke-dasharray="4"/>
+    <line x1="1445" y1="190" x2="1445" y2="990" stroke="#334155" stroke-width="1.5" stroke-dasharray="4"/>
+    <line x1="1745" y1="190" x2="1745" y2="990" stroke="#334155" stroke-width="1.5" stroke-dasharray="4"/>
+
+    <!-- STEP 1: SOLICITUD DE CHECKOUT (y = 220) -->
+    <path d="M 190 220 L 510 220" stroke="#38BDF8" stroke-width="2.5" marker-end="url(#arrow-sky)"/>
+    <rect x="220" y="202" width="260" height="26" rx="6" fill="#0F172A" stroke="#38BDF8" stroke-width="1"/>
+    <text x="230" y="220" fill="#38BDF8" font-size="12" font-weight="700" font-family="monospace">1. POST /api/v1/public/checkout</text>
+
+    <!-- STEP 2: ORDENAMIENTO DETERMINISTA EN MEMORIA (y = 265..325) -->
+    <g transform="translate(370, 255)">
+        <rect width="360" height="65" rx="8" fill="#1E293B" stroke="#10B981" stroke-width="2"/>
+        <circle cx="20" cy="20" r="10" fill="#10B981"/>
+        <text x="16" y="25" fill="#064E3B" font-size="13" font-weight="900" font-family="system-ui, sans-serif">2</text>
+        <text x="38" y="22" fill="#F8FAFC" font-size="13" font-weight="800" font-family="system-ui, sans-serif">ORDENAMIENTO DETERMINISTA ANTI-DEADLOCK</text>
+        <text x="16" y="44" fill="#34D399" font-size="12" font-weight="700" font-family="monospace">items = items.OrderBy(x => x.ProductoId).ToList()</text>
+        <text x="16" y="58" fill="#94A3B8" font-size="11" font-family="system-ui, sans-serif">Elimina inversión de locks en PostgreSQL (RNF-CON-002)</text>
+    </g>
+
+    <!-- STEP 3: BEGIN TRANSACTION (y = 350) -->
+    <path d="M 510 350 L 1445 350" stroke="#10B981" stroke-width="2.5" marker-end="url(#arrow-emerald)"/>
+    <rect x="680" y="335" width="440" height="25" rx="6" fill="#0F172A" stroke="#10B981" stroke-width="1"/>
+    <text x="695" y="352" fill="#34D399" font-size="12" font-weight="700" font-family="monospace">3. BEGIN TRANSACTION (Isolation Level: Read Committed)</text>
+
+    <!-- STEP 4: SELECT FOR UPDATE ORDENADO (y = 405) -->
+    <path d="M 510 405 L 1445 405" stroke="#F59E0B" stroke-width="2.5" marker-end="url(#arrow-amber)"/>
+    <rect x="640" y="380" width="620" height="42" rx="6" fill="#0F172A" stroke="#F59E0B" stroke-width="1"/>
+    <text x="655" y="398" fill="#FBBF24" font-size="12" font-weight="700" font-family="monospace">4. SELECT id, stock_fisico, stock_comprometido FROM inventario_stock</text>
+    <text x="655" y="414" fill="#FBBF24" font-size="12" font-weight="700" font-family="monospace">   WHERE producto_id IN (...) ORDER BY producto_id ASC FOR UPDATE;</text>
+
+    <!-- DB Row Lock Confirmation (y = 455) -->
+    <path d="M 1445 455 L 510 455" stroke="#94A3B8" stroke-width="2" stroke-dasharray="4" marker-end="url(#arrow-slate)"/>
+    <text x="960" y="450" fill="#94A3B8" font-size="12" text-anchor="middle" font-family="system-ui, sans-serif">Filas de stock bloqueadas con éxito en memoria del motor PostgreSQL</text>
+
+    <!-- STEP 5: REVALIDACIÓN DE PRECIOS VIGENTES (y = 490) -->
+    <path d="M 510 490 L 825 490" stroke="#38BDF8" stroke-width="2.5" marker-end="url(#arrow-sky)"/>
+    <rect x="540" y="475" width="250" height="24" rx="4" fill="#0F172A" stroke="#38BDF8" stroke-width="1"/>
+    <text x="550" y="492" fill="#38BDF8" font-size="11" font-weight="700" font-family="monospace">5. ValidarPrecios(items, perfil)</text>
+    <path d="M 825 515 L 510 515" stroke="#38BDF8" stroke-width="2" stroke-dasharray="4" marker-end="url(#arrow-sky)"/>
+    <text x="660" y="532" fill="#94A3B8" font-size="11" text-anchor="middle" font-family="system-ui, sans-serif">Precios confirmados sin variación</text>
+
+    <!-- STEP 6: REVALIDACIÓN ATÓMICA DE STOCK DISPONIBLE (y = 560..635) -->
+    <g transform="translate(750, 555)">
+        <rect width="660" height="75" rx="10" fill="#1E293B" stroke="#10B981" stroke-width="2"/>
+        <circle cx="24" cy="20" r="10" fill="#10B981"/>
+        <text x="20" y="25" fill="#064E3B" font-size="13" font-weight="900" font-family="system-ui, sans-serif">6</text>
+        <text x="44" y="24" fill="#F8FAFC" font-size="14" font-weight="800" font-family="system-ui, sans-serif">REVALIDACIÓN ATÓMICA DE DISPONIBILIDAD (INVARIANTE AC02)</text>
+        <text x="20" y="48" fill="#34D399" font-size="13" font-weight="800" font-family="monospace">evalua: (stock_fisico - stock_comprometido) >= cantidad_solicitada</text>
+        <text x="20" y="66" fill="#94A3B8" font-size="11" font-family="system-ui, sans-serif">Si insuficiente -> ROLLBACK inmediato y HTTP 409 Conflict ("Stock no disponible")</text>
+    </g>
+
+    <!-- STEP 7: ASIGNACIÓN DE TTL DINÁMICO (y = 660..720) -->
+    <g transform="translate(370, 650)">
+        <rect width="580" height="65" rx="8" fill="#131D31" stroke="#F59E0B" stroke-width="1.5"/>
+        <text x="16" y="22" fill="#F59E0B" font-size="13" font-weight="800" font-family="system-ui, sans-serif">7. ASIGNACIÓN DE TIEMPO DE VIDA DINÁMICO (TTL - RF-WEB-002)</text>
+        <text x="16" y="42" fill="#F8FAFC" font-size="12" font-family="system-ui, sans-serif">• Pasarela Tarjeta: <tspan fill="#34D399" font-weight="700">TTL = 20 minutos</tspan> exactos improrrogables.</text>
+        <text x="16" y="58" fill="#F8FAFC" font-size="12" font-family="system-ui, sans-serif">• Yape/Plin/Transferencia: <tspan fill="#FBBF24" font-weight="700">TTL = 240 minutos (4h)</tspan> con plazo de 60m para voucher.</text>
+    </g>
+
+    <!-- STEP 8: MUTACIÓN ATÓMICA DE STOCK Y PEDIDO (y = 745) -->
+    <path d="M 510 745 L 1445 745" stroke="#10B981" stroke-width="2.5" marker-end="url(#arrow-emerald)"/>
+    <rect x="680" y="728" width="560" height="38" rx="6" fill="#0F172A" stroke="#10B981" stroke-width="1"/>
+    <text x="695" y="744" fill="#34D399" font-size="11" font-weight="700" font-family="monospace">8. UPDATE inventario_stock SET stock_comprometido = stock_comprometido + @cant</text>
+    <text x="695" y="758" fill="#94A3B8" font-size="11" font-family="monospace">   INSERT INTO pedido_web (...) &amp; INSERT INTO reserva_stock_pedido (...);</text>
+
+    <!-- STEP 9: SUBIDA DE VOUCHER Y COMMIT (y = 800..855) -->
+    <path d="M 510 805 L 1745 805" stroke="#A855F7" stroke-width="2" marker-end="url(#arrow-purple)"/>
+    <rect x="760" y="790" width="480" height="25" rx="6" fill="#0F172A" stroke="#A855F7" stroke-width="1"/>
+    <text x="775" y="807" fill="#C084FC" font-size="11" font-weight="700" font-family="monospace">9a. Custodia de Voucher en Storage Privado (&lt;= 5 MB)</text>
+
+    <path d="M 510 840 L 1445 840" stroke="#10B981" stroke-width="2.5" marker-end="url(#arrow-emerald)"/>
+    <rect x="760" y="825" width="480" height="25" rx="6" fill="#0F172A" stroke="#10B981" stroke-width="1"/>
+    <text x="775" y="842" fill="#34D399" font-size="12" font-weight="800" font-family="monospace">9b. COMMIT TRANSACCIÓN (Libera Locks de Fila)</text>
+
+    <!-- Respuesta Exitosa a Cliente (y = 880) -->
+    <path d="M 510 880 L 190 880" stroke="#34D399" stroke-width="2.5" marker-end="url(#arrow-emerald)"/>
+    <rect x="220" y="865" width="260" height="26" rx="6" fill="#0F172A" stroke="#10B981" stroke-width="1"/>
+    <text x="230" y="883" fill="#34D399" font-size="12" font-weight="700" font-family="monospace">HTTP 201 Created (PedidoId, TTL)</text>
+
+    <!-- STEP 10: WORKER DE LIBERACIÓN ASÍNCRONA (y = 920..980) -->
+    <g transform="translate(1100, 915)">
+        <rect width="760" height="65" rx="10" fill="#1E293B" stroke="#F59E0B" stroke-width="2"/>
+        <circle cx="24" cy="20" r="10" fill="#F59E0B"/>
+        <text x="18" y="25" fill="#78350F" font-size="13" font-weight="900" font-family="system-ui, sans-serif">10</text>
+        <text x="44" y="24" fill="#F8FAFC" font-size="13" font-weight="800" font-family="system-ui, sans-serif">BACKGROUND WORKER: LIBERACIÓN IDEMPOTENTE CADA 60 SEGUNDOS</text>
+        <text x="44" y="44" fill="#FBBF24" font-size="12" font-family="monospace">SELECT ... FROM reserva_stock_pedido WHERE expira_en &lt; NOW() FOR UPDATE SKIP LOCKED;</text>
+        <text x="44" y="58" fill="#94A3B8" font-size="11" font-family="system-ui, sans-serif">Restaura: stock_comprometido = stock_comprometido - cant | Marca Cancelado_Por_Expiracion</text>
+    </g>
+
+    <!-- FOOTER -->
+    <rect x="60" y="1005" width="1800" height="45" rx="8" fill="#0D1527" stroke="#1E293B" stroke-width="1.5"/>
+    <text x="80" y="1033" fill="#10B981" font-size="13" font-weight="700" font-family="system-ui, sans-serif">INVARIANTE DE CONCURRENCIA AC02:</text>
+    <text x="360" y="1033" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">Ordenamiento determinista en memoria elimina deadlocks • Bloqueo pesimista FOR UPDATE garantiza exclusión mutua • TTL dinámico evita stock cautivo.</text>
+</svg>

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagrama de Contenedores y Topología de Persistencia (C4 - Nivel 2) — SIGIC Ferretería v2.2</title>
+    <style>
+        :root {
+            --bg: #080D1A;
+            --surface: #0F172A;
+            --card: #131D31;
+            --border: #334155;
+            --emerald: #10B981;
+            --emerald-light: #34D399;
+            --sky: #38BDF8;
+            --text: #F8FAFC;
+            --text-muted: #94A3B8;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--surface);
+            padding: 16px 24px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+        .top-left h1 {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--text);
+        }
+        .top-left p {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+        .badge {
+            background: #1E293B;
+            border: 1px solid var(--emerald);
+            color: var(--emerald-light);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        .diagram-container {
+            background: #000;
+            border-radius: 16px;
+            border: 2px solid var(--border);
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+            position: relative;
+            aspect-ratio: 16 / 9;
+            max-width: 1920px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        .diagram-container img, .diagram-container object {
+            width: 100%;
+            height: 100%;
+            display: block;
+            object-fit: contain;
+        }
+        .notes-card {
+            background: var(--card);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            padding: 20px 24px;
+            max-width: 1920px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        .notes-card h2 {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--emerald);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .notes-card ul {
+            list-style: none;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+            gap: 12px;
+        }
+        .notes-card li {
+            background: var(--surface);
+            padding: 12px 16px;
+            border-radius: 8px;
+            border-left: 3px solid var(--emerald);
+            font-size: 13px;
+            color: var(--text);
+            line-height: 1.5;
+        }
+        .actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 10px;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-emerald {
+            background: var(--emerald);
+            color: #064E3B;
+        }
+        .btn-emerald:hover {
+            background: var(--emerald-light);
+        }
+        .btn-outline {
+            background: transparent;
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+        .btn-outline:hover {
+            background: var(--surface);
+            border-color: var(--emerald);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="top-bar">
+        <div class="top-left">
+            <h1>Diagrama de Contenedores y Topología de Persistencia (C4 - Nivel 2)</h1>
+            <p>Segregación de Frontends, Backend Monolítico y Aislamiento de Conexiones en PgBouncer</p>
+        </div>
+        <div class="badge">CANVA SLIDE 05 | CONTENEDORES</div>
+    </div>
+
+    <div class="diagram-container">
+        <object data="02-C2-Contenedores-Segregacion.svg" type="image/svg+xml">
+            <img src="02-C2-Contenedores-Segregacion.png" alt="Diagrama de Contenedores y Topología de Persistencia (C4 - Nivel 2)">
+        </object>
+    </div>
+
+    <div class="notes-card">
+        <h2>Puntos Clave para la Exposición en Canva (Talking Points)</h2>
+        <ul>
+            <li>Doble Frontend Desacoplado: SPA Mostrador POS en React 18 (1024x768, 100% teclado F1-F12 sin ratón) vs. Portal Web Next.js 14 SSR (SEO, móvil).</li><li>Backend Monolítico Modular: ASP.NET Core 8 Web API sobre Kestrel con Clean Architecture y CQRS MediatR.</li><li>Segregación en PgBouncer: 'pool_pos' con 50 conexiones dedicadas LAN (cero espera) vs. 'pool_web' con 30 conexiones limitadas (backpressure).</li><li>Almacenamiento Segregado: PostgreSQL 16 OLTP transaccional, Datamart OLAP en esquema estrella (ETL diario), y Storage Privado cifrado (vouchers <= 5 MB).</li>
+        </ul>
+        <div class="actions">
+            <a href="02-C2-Contenedores-Segregacion.png" download class="btn btn-emerald">Descargar PNG 1080p (Canva)</a>
+            <a href="02-C2-Contenedores-Segregacion.svg" target="_blank" class="btn btn-outline">Abrir SVG Vectorial</a>
+            <a href="INDICE-CANVA.md" class="btn btn-outline">Ver Índice Canva</a>
+        </div>
+    </div>
+
+</body>
+</html>

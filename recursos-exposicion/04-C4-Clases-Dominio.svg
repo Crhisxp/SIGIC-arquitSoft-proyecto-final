@@ -1,0 +1,313 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+    
+    <defs>
+        <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#080D1A"/>
+            <stop offset="100%" stop-color="#0F172A"/>
+        </linearGradient>
+        <linearGradient id="cardGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#1E293B"/>
+            <stop offset="100%" stop-color="#111827"/>
+        </linearGradient>
+        <linearGradient id="emeraldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#10B981"/>
+            <stop offset="100%" stop-color="#059669"/>
+        </linearGradient>
+        <linearGradient id="skyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#38BDF8"/>
+            <stop offset="100%" stop-color="#0284C7"/>
+        </linearGradient>
+        <linearGradient id="amberGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#F59E0B"/>
+            <stop offset="100%" stop-color="#D97706"/>
+        </linearGradient>
+        <linearGradient id="purpleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#A855F7"/>
+            <stop offset="100%" stop-color="#7E22CE"/>
+        </linearGradient>
+        <marker id="arrow-emerald" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#10B981" />
+        </marker>
+        <marker id="arrow-sky" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#38BDF8" />
+        </marker>
+        <marker id="arrow-amber" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#F59E0B" />
+        </marker>
+        <marker id="arrow-slate" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#64748B" />
+        </marker>
+        <marker id="arrow-purple" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#A855F7" />
+        </marker>
+    </defs>
+
+    <rect width="1920" height="1080" fill="url(#bgGrad)" />
+    
+    <!-- HEADER -->
+    <rect x="0" y="0" width="1920" height="100" fill="#0D1527" />
+    <line x1="0" y1="100" x2="1920" y2="100" stroke="#1E293B" stroke-width="2" />
+    <rect x="60" y="24" width="16" height="52" rx="4" fill="#10B981" />
+    <text x="96" y="52" fill="#F8FAFC" font-size="28" font-weight="700" font-family="system-ui, -apple-system, sans-serif">MODELO C4 — NIVEL 4: DIAGRAMA DE CÓDIGO (CLASES DEL MODELO DE DOMINIO)</text>
+    <text x="96" y="80" fill="#94A3B8" font-size="16" font-family="system-ui, -apple-system, sans-serif">Estructura Estricta de Agregados DDD, Métodos Puros, Invariantes y Relaciones — SIGIC Ferretería v2.2</text>
+    
+    <!-- BADGE -->
+    <rect x="1560" y="32" width="300" height="36" rx="18" fill="#1E293B" stroke="#334155" stroke-width="1.5" />
+    <circle cx="1584" cy="50" r="6" fill="#10B981" />
+    <text x="1602" y="55" fill="#F8FAFC" font-size="14" font-weight="600" font-family="system-ui, -apple-system, sans-serif">C4 NIVEL 4 | MODELO DE DOMINIO</text>
+    
+
+    <!-- ROW 1: LAS 4 CLASES PRINCIPALES SOLICITADAS (y = 135..575) -->
+
+    <!-- CLASS 1: Producto (Root Entity) -->
+    <g transform="translate(60, 135)">
+        <rect width="420" height="425" rx="12" fill="#131D31" stroke="#10B981" stroke-width="2"/>
+        <rect x="0" y="0" width="420" height="45" rx="12" fill="#1E293B"/>
+        <rect x="0" y="25" width="420" height="20" fill="#1E293B"/>
+        <text x="210" y="22" fill="#10B981" font-size="12" font-weight="700" letter-spacing="1" text-anchor="middle" font-family="monospace">&lt;&lt;Aggregate Root&gt;&gt;</text>
+        <text x="210" y="40" fill="#F8FAFC" font-size="17" font-weight="800" text-anchor="middle" font-family="system-ui, sans-serif">Producto / Articulo</text>
+
+        <!-- Attributes Section -->
+        <line x1="0" y1="45" x2="420" y2="45" stroke="#334155" stroke-width="1.5"/>
+        <g transform="translate(18, 65)">
+            <text x="0" y="0" fill="#38BDF8" font-size="13" font-family="monospace">+ Id: Guid</text>
+            <text x="0" y="20" fill="#94A3B8" font-size="13" font-family="monospace">+ CodigoSku: string</text>
+            <text x="0" y="40" fill="#94A3B8" font-size="13" font-family="monospace">+ Ean13: string</text>
+            <text x="0" y="60" fill="#94A3B8" font-size="13" font-family="monospace">+ NombreComercial: string</text>
+            <text x="0" y="80" fill="#94A3B8" font-size="13" font-family="monospace">+ UnidadBase: UnidadMedida</text>
+            <text x="0" y="100" fill="#FBBF24" font-size="13" font-weight="700" font-family="monospace">+ DisponibleEnWeb: bool</text>
+            <text x="0" y="120" fill="#34D399" font-size="13" font-weight="700" font-family="monospace">+ CostoPromedioPonderado: decimal</text>
+            <text x="0" y="140" fill="#94A3B8" font-size="13" font-family="monospace">+ MargenMinimoSeguridad: decimal</text>
+            <text x="0" y="160" fill="#94A3B8" font-size="13" font-family="monospace">+ FechaCreacionUtc: DateTime</text>
+        </g>
+
+        <!-- Methods Section -->
+        <line x1="0" y1="235" x2="420" y2="235" stroke="#334155" stroke-width="1.5"/>
+        <g transform="translate(18, 255)">
+            <text x="0" y="0" fill="#F8FAFC" font-size="12" font-weight="700" font-family="monospace">+ ActualizarCostoPonderado(cant, costo): void</text>
+            <text x="0" y="22" fill="#34D399" font-size="12" font-family="monospace">+ EsVisibleParaWeb(): bool</text>
+            <text x="0" y="44" fill="#38BDF8" font-size="12" font-family="monospace">+ ValidarMargenSeguridad(precio): bool</text>
+            <text x="0" y="66" fill="#F8FAFC" font-size="12" font-family="monospace">+ ConvertirAUnidadBase(cant, factor): decimal</text>
+            <text x="0" y="88" fill="#94A3B8" font-size="12" font-family="monospace">+ ModificarDescripcion(desc, usrId): void</text>
+        </g>
+
+        <!-- Rule pill -->
+        <rect x="18" y="375" width="384" height="35" rx="6" fill="#0F172A" stroke="#10B981" stroke-width="1"/>
+        <text x="210" y="398" fill="#34D399" font-size="11" font-weight="700" text-anchor="middle" font-family="system-ui, sans-serif">INVARIANTE: Si DisponibleEnWeb=false -> API Web 404</text>
+    </g>
+
+    <!-- CLASS 2: Venta (Root Entity) -->
+    <g transform="translate(510, 135)">
+        <rect width="440" height="425" rx="12" fill="#131D31" stroke="#38BDF8" stroke-width="2"/>
+        <rect x="0" y="0" width="440" height="45" rx="12" fill="#1E293B"/>
+        <rect x="0" y="25" width="440" height="20" fill="#1E293B"/>
+        <text x="220" y="22" fill="#38BDF8" font-size="12" font-weight="700" letter-spacing="1" text-anchor="middle" font-family="monospace">&lt;&lt;Aggregate Root&gt;&gt;</text>
+        <text x="220" y="40" fill="#F8FAFC" font-size="17" font-weight="800" text-anchor="middle" font-family="system-ui, sans-serif">Venta (POS / Mostrador)</text>
+
+        <!-- Attributes Section -->
+        <line x1="0" y1="45" x2="440" y2="45" stroke="#334155" stroke-width="1.5"/>
+        <g transform="translate(18, 65)">
+            <text x="0" y="0" fill="#38BDF8" font-size="13" font-family="monospace">+ Id: Guid</text>
+            <text x="0" y="20" fill="#94A3B8" font-size="13" font-family="monospace">+ CorrelativoComprobante: string</text>
+            <text x="0" y="40" fill="#94A3B8" font-size="13" font-family="monospace">+ Tipo: TipoComprobante (Boleta/Factura)</text>
+            <text x="0" y="60" fill="#94A3B8" font-size="13" font-family="monospace">+ FechaEmisionUtc: DateTime</text>
+            <text x="0" y="80" fill="#94A3B8" font-size="13" font-family="monospace">+ CajeroId: Guid</text>
+            <text x="0" y="100" fill="#94A3B8" font-size="13" font-family="monospace">+ TurnoCajaId: Guid</text>
+            <text x="0" y="120" fill="#FBBF24" font-size="13" font-weight="700" font-family="monospace">+ TotalBruto / TotalIgv (18%) / TotalNeto</text>
+            <text x="0" y="140" fill="#38BDF8" font-size="13" font-family="monospace">+ Estado: EstadoVenta (Cobrada/Anulada)</text>
+            <text x="0" y="160" fill="#34D399" font-size="13" font-family="monospace">+ Detalles: List&lt;DetalleVenta&gt;</text>
+        </g>
+
+        <!-- Methods Section -->
+        <line x1="0" y1="235" x2="440" y2="235" stroke="#334155" stroke-width="1.5"/>
+        <g transform="translate(18, 255)">
+            <text x="0" y="0" fill="#F8FAFC" font-size="12" font-weight="700" font-family="monospace">+ AgregarDetalle(producto, cant, precio): void</text>
+            <text x="0" y="22" fill="#38BDF8" font-size="12" font-family="monospace">+ RegistrarPago(medio, monto, codOp): void</text>
+            <text x="0" y="44" fill="#34D399" font-size="12" font-family="monospace">+ ConfirmarVenta(): void</text>
+            <text x="0" y="66" fill="#F8FAFC" font-size="12" font-family="monospace">+ AnularVenta(motivo, usuarioId): void</text>
+            <text x="0" y="88" fill="#94A3B8" font-size="12" font-family="monospace">+ CalcularTotalesConIgv(): void</text>
+        </g>
+
+        <!-- Rule pill -->
+        <rect x="18" y="375" width="404" height="35" rx="6" fill="#0F172A" stroke="#38BDF8" stroke-width="1"/>
+        <text x="220" y="398" fill="#38BDF8" font-size="11" font-weight="700" text-anchor="middle" font-family="system-ui, sans-serif">OPERACIÓN 100% TECLADO • P95 &lt; 1.0s (AC01)</text>
+    </g>
+
+    <!-- CLASS 3: DetalleVenta (Child Entity) -->
+    <g transform="translate(980, 135)">
+        <rect width="420" height="425" rx="12" fill="#131D31" stroke="#38BDF8" stroke-width="2"/>
+        <rect x="0" y="0" width="420" height="45" rx="12" fill="#1E293B"/>
+        <rect x="0" y="25" width="420" height="20" fill="#1E293B"/>
+        <text x="210" y="22" fill="#38BDF8" font-size="12" font-weight="700" letter-spacing="1" text-anchor="middle" font-family="monospace">&lt;&lt;Domain Entity&gt;&gt;</text>
+        <text x="210" y="40" fill="#F8FAFC" font-size="17" font-weight="800" text-anchor="middle" font-family="system-ui, sans-serif">DetalleVenta (Línea de Ítem)</text>
+
+        <!-- Attributes Section -->
+        <line x1="0" y1="45" x2="420" y2="45" stroke="#334155" stroke-width="1.5"/>
+        <g transform="translate(18, 65)">
+            <text x="0" y="0" fill="#38BDF8" font-size="13" font-family="monospace">+ Id: Guid</text>
+            <text x="0" y="20" fill="#94A3B8" font-size="13" font-family="monospace">+ VentaId: Guid</text>
+            <text x="0" y="40" fill="#94A3B8" font-size="13" font-family="monospace">+ ProductoId: Guid</text>
+            <text x="0" y="60" fill="#34D399" font-size="13" font-weight="700" font-family="monospace">+ Cantidad: decimal</text>
+            <text x="0" y="80" fill="#38BDF8" font-size="13" font-weight="700" font-family="monospace">+ PrecioUnitario: decimal</text>
+            <text x="0" y="100" fill="#FBBF24" font-size="13" font-family="monospace">+ Subtotal: decimal</text>
+            <text x="0" y="120" fill="#94A3B8" font-size="13" font-family="monospace">+ MontoIgv: decimal (18%)</text>
+            <text x="0" y="140" fill="#94A3B8" font-size="13" font-family="monospace">+ DescuentoAplicado: decimal</text>
+            <text x="0" y="160" fill="#94A3B8" font-size="13" font-family="monospace">+ UnidadMedida: UnidadMedida</text>
+        </g>
+
+        <!-- Methods Section -->
+        <line x1="0" y1="235" x2="420" y2="235" stroke="#334155" stroke-width="1.5"/>
+        <g transform="translate(18, 255)">
+            <text x="0" y="0" fill="#F8FAFC" font-size="12" font-weight="700" font-family="monospace">+ CalcularSubtotal(): decimal</text>
+            <text x="0" y="22" fill="#38BDF8" font-size="12" font-family="monospace">+ CalcularMontoIgv(tasa = 0.18): decimal</text>
+            <text x="0" y="44" fill="#34D399" font-size="12" font-family="monospace">+ AplicarDescuento(porcentaje): void</text>
+            <text x="0" y="66" fill="#F8FAFC" font-size="12" font-family="monospace">+ ValidarCantidadMayorCero(): void</text>
+            <text x="0" y="88" fill="#94A3B8" font-size="12" font-family="monospace">+ ObtenerValorVentaNeto(): decimal</text>
+        </g>
+
+        <!-- Rule pill -->
+        <rect x="18" y="375" width="384" height="35" rx="6" fill="#0F172A" stroke="#38BDF8" stroke-width="1"/>
+        <text x="210" y="398" fill="#38BDF8" font-size="11" font-weight="700" text-anchor="middle" font-family="system-ui, sans-serif">COMPOSICIÓN ESTRICTA CON VENTA (Cascade Delete)</text>
+    </g>
+
+    <!-- CLASS 4: ArqueoCaja (Append-Only Entity) -->
+    <g transform="translate(1430, 135)">
+        <rect width="430" height="425" rx="12" fill="#131D31" stroke="#A855F7" stroke-width="2.5"/>
+        <rect x="0" y="0" width="430" height="45" rx="12" fill="#1E293B"/>
+        <rect x="0" y="25" width="430" height="20" fill="#1E293B"/>
+        <text x="215" y="22" fill="#C084FC" font-size="12" font-weight="700" letter-spacing="1" text-anchor="middle" font-family="monospace">&lt;&lt;Append-Only Aggregate&gt;&gt;</text>
+        <text x="215" y="40" fill="#F8FAFC" font-size="17" font-weight="800" text-anchor="middle" font-family="system-ui, sans-serif">ArqueoCaja (Cierre Ciego)</text>
+
+        <!-- Attributes Section -->
+        <line x1="0" y1="45" x2="430" y2="45" stroke="#334155" stroke-width="1.5"/>
+        <g transform="translate(18, 65)">
+            <text x="0" y="0" fill="#38BDF8" font-size="13" font-family="monospace">+ Id: Guid</text>
+            <text x="0" y="20" fill="#94A3B8" font-size="13" font-family="monospace">+ TurnoCajaId: Guid</text>
+            <text x="0" y="40" fill="#94A3B8" font-size="13" font-family="monospace">+ CajeroId: Guid</text>
+            <text x="0" y="60" fill="#94A3B8" font-size="13" font-family="monospace">+ FechaApertura / FechaCierreUtc</text>
+            <text x="0" y="80" fill="#34D399" font-size="13" font-weight="700" font-family="monospace">+ TotalEfectivoDeclarado: decimal</text>
+            <text x="0" y="100" fill="#38BDF8" font-size="13" font-weight="700" font-family="monospace">+ TotalDigitalDeclarado: decimal</text>
+            <text x="0" y="120" fill="#94A3B8" font-size="13" font-family="monospace">+ SaldoSistemaTeorico: decimal</text>
+            <text x="0" y="140" fill="#FBBF24" font-size="13" font-weight="700" font-family="monospace">+ Diferencia: decimal (Faltante/Sobrante)</text>
+            <text x="0" y="160" fill="#C084FC" font-size="13" font-weight="700" font-family="monospace">+ EsAppendOnly: bool = true (Inmutable)</text>
+        </g>
+
+        <!-- Methods Section -->
+        <line x1="0" y1="235" x2="430" y2="235" stroke="#334155" stroke-width="1.5"/>
+        <g transform="translate(18, 255)">
+            <text x="0" y="0" fill="#F8FAFC" font-size="12" font-weight="700" font-family="monospace">+ RegistrarDeclaracionCiega(desglose, digital): void</text>
+            <text x="0" y="22" fill="#C084FC" font-size="12" font-family="monospace">+ CalcularDiferencia(saldoTeorico): decimal</text>
+            <text x="0" y="44" fill="#34D399" font-size="12" font-family="monospace">+ EsCuadreExacto(): bool</text>
+            <text x="0" y="66" fill="#F8FAFC" font-size="12" font-family="monospace">+ SerializarParaAuditoria(): string</text>
+            <text x="0" y="88" fill="#F59E0B" font-size="12" font-family="monospace">+ ReabrirTurno(): EXCEPTION (Prohibido)</text>
+        </g>
+
+        <!-- Rule pill -->
+        <rect x="18" y="375" width="394" height="35" rx="6" fill="#0F172A" stroke="#A855F7" stroke-width="1"/>
+        <text x="215" y="398" fill="#C084FC" font-size="11" font-weight="700" text-anchor="middle" font-family="system-ui, sans-serif">REVOKE UPDATE, DELETE ON caja_arqueo (AC03)</text>
+    </g>
+
+    <!-- ROW 2: AGREGADOS CONECTADOS Y RELACIONES DE PERSISTENCIA (y = 590..980) -->
+    <text x="60" y="590" fill="#FBBF24" font-size="16" font-weight="800" letter-spacing="1.5" font-family="system-ui, sans-serif">AGREGADOS CONECTADOS: INVENTARIO MULTIALMACÉN Y PEDIDOS WEB OMNICANAL</text>
+
+    <!-- CLASS 5: InventarioStock -->
+    <g transform="translate(60, 610)">
+        <rect width="520" height="375" rx="12" fill="#131D31" stroke="#10B981" stroke-width="2"/>
+        <rect x="0" y="0" width="520" height="40" rx="12" fill="#1E293B"/>
+        <rect x="0" y="22" width="520" height="18" fill="#1E293B"/>
+        <text x="260" y="18" fill="#10B981" font-size="12" font-weight="700" letter-spacing="1" text-anchor="middle" font-family="monospace">&lt;&lt;Transactional Aggregate&gt;&gt;</text>
+        <text x="260" y="36" fill="#F8FAFC" font-size="16" font-weight="800" text-anchor="middle" font-family="system-ui, sans-serif">InventarioStock (Gobierno de Disponibilidad)</text>
+
+        <line x1="0" y1="40" x2="520" y2="40" stroke="#334155" stroke-width="1.5"/>
+        <g transform="translate(18, 60)">
+            <text x="0" y="0" fill="#38BDF8" font-size="13" font-family="monospace">+ Id: Guid</text>
+            <text x="0" y="20" fill="#94A3B8" font-size="13" font-family="monospace">+ AlmacenId: Guid (Central vs Tiendas Físicas)</text>
+            <text x="0" y="40" fill="#94A3B8" font-size="13" font-family="monospace">+ ProductoId: Guid</text>
+            <text x="0" y="60" fill="#34D399" font-size="14" font-weight="800" font-family="monospace">+ StockFisico: decimal</text>
+            <text x="0" y="80" fill="#FBBF24" font-size="14" font-weight="800" font-family="monospace">+ StockComprometido: decimal</text>
+            <text x="0" y="100" fill="#94A3B8" font-size="13" font-family="monospace">+ FechaModificacionUtc: DateTime</text>
+        </g>
+
+        <line x1="0" y1="180" x2="520" y2="180" stroke="#334155" stroke-width="1.5"/>
+        <g transform="translate(18, 205)">
+            <text x="0" y="0" fill="#34D399" font-size="14" font-weight="800" font-family="monospace">+ StockDisponible(): decimal</text>
+            <text x="0" y="20" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">  => return StockFisico - StockComprometido; (AC02)</text>
+            <text x="0" y="44" fill="#38BDF8" font-size="12" font-family="monospace">+ BloquearParaReserva(cantidad: decimal): void</text>
+            <text x="0" y="66" fill="#FBBF24" font-size="12" font-family="monospace">+ LiberarReserva(cantidad: decimal): void</text>
+            <text x="0" y="88" fill="#F8FAFC" font-size="12" font-family="monospace">+ RegistrarSalidaFisica(cantidad: decimal): void</text>
+            <text x="0" y="110" fill="#94A3B8" font-size="12" font-family="monospace">+ RegistrarEntradaFisica(cantidad: decimal): void</text>
+        </g>
+
+        <rect x="18" y="325" width="484" height="35" rx="6" fill="#0F172A" stroke="#10B981" stroke-width="1"/>
+        <text x="260" y="348" fill="#34D399" font-size="12" font-weight="700" text-anchor="middle" font-family="monospace">Invariante: StockFisico &gt;= 0 &amp;&amp; StockDisponible &gt;= 0</text>
+    </g>
+
+    <!-- CLASS 6: PedidoWeb & ReservaStockPedido -->
+    <g transform="translate(610, 610)">
+        <rect width="610" height="375" rx="12" fill="#131D31" stroke="#38BDF8" stroke-width="2"/>
+        <rect x="0" y="0" width="610" height="40" rx="12" fill="#1E293B"/>
+        <rect x="0" y="22" width="610" height="18" fill="#1E293B"/>
+        <text x="305" y="18" fill="#38BDF8" font-size="12" font-weight="700" letter-spacing="1" text-anchor="middle" font-family="monospace">&lt;&lt;Aggregate Root&gt;&gt;</text>
+        <text x="305" y="36" fill="#F8FAFC" font-size="16" font-weight="800" text-anchor="middle" font-family="system-ui, sans-serif">PedidoWeb (Orden E-commerce con TTL)</text>
+
+        <line x1="0" y1="40" x2="610" y2="40" stroke="#334155" stroke-width="1.5"/>
+        <g transform="translate(18, 60)">
+            <text x="0" y="0" fill="#38BDF8" font-size="13" font-family="monospace">+ Id: Guid | CodigoPedido: string (Ej. PED-2026-0084)</text>
+            <text x="0" y="20" fill="#94A3B8" font-size="13" font-family="monospace">+ ClienteWebId: Guid | MontoTotal: decimal</text>
+            <text x="0" y="40" fill="#94A3B8" font-size="13" font-family="monospace">+ ModalidadDespacho: RetiroTienda | RetiroCentral | EnvioObra</text>
+            <text x="0" y="60" fill="#FBBF24" font-size="13" font-weight="700" font-family="monospace">+ Estado: PendientePago | EnPreparacion | ListoRetiro | Entregado</text>
+            <text x="0" y="80" fill="#38BDF8" font-size="13" font-family="monospace">+ ComprobantePrivadoUrl: string (Storage Privado &lt;= 5 MB)</text>
+            <text x="0" y="100" fill="#34D399" font-size="13" font-weight="700" font-family="monospace">+ ReservaAsociada: ReservaStockPedido (TTL 20m / 4h)</text>
+        </g>
+
+        <line x1="0" y1="180" x2="610" y2="180" stroke="#334155" stroke-width="1.5"/>
+        <g transform="translate(18, 205)">
+            <text x="0" y="0" fill="#F8FAFC" font-size="12" font-weight="700" font-family="monospace">+ AsignarReserva(reserva: ReservaStockPedido): void</text>
+            <text x="0" y="22" fill="#34D399" font-size="12" font-family="monospace">+ AprobarPagoPorTesoreria(tesoreroId: Guid): void</text>
+            <text x="0" y="44" fill="#F59E0B" font-size="12" font-family="monospace">+ CancelarPorExpiracion(): void (Desencadena liberación)</text>
+            <text x="0" y="66" fill="#38BDF8" font-size="12" font-family="monospace">+ MarcarListoParaRetiro(): void (Genera Guía Interna RF-WEB-002)</text>
+            <text x="0" y="88" fill="#F8FAFC" font-size="12" font-family="monospace">+ EntregarEnMostrador(dniReceptor: string): void (RF-POS-011)</text>
+        </g>
+
+        <rect x="18" y="325" width="574" height="35" rx="6" fill="#0F172A" stroke="#38BDF8" stroke-width="1"/>
+        <text x="305" y="348" fill="#38BDF8" font-size="12" font-weight="700" text-anchor="middle" font-family="monospace">Retiro en Tienda genera Guía de Traslado desde Almacén Central</text>
+    </g>
+
+    <!-- SUMMARY CARD: INVARIANTES DOMINIO -->
+    <g transform="translate(1250, 610)">
+        <rect width="610" height="375" rx="12" fill="#1E293B" stroke="#10B981" stroke-width="2"/>
+        <text x="30" y="35" fill="#10B981" font-size="17" font-weight="800" font-family="system-ui, sans-serif">RESUMEN DE INVARIANTES FORMALES (AC01 - AC02 - AC03)</text>
+        
+        <rect x="25" y="55" width="560" height="90" rx="8" fill="#0F172A" stroke="#334155" stroke-width="1"/>
+        <text x="40" y="80" fill="#34D399" font-size="14" font-weight="800" font-family="system-ui, sans-serif">1. GOBERNANZA DE STOCK COMPROMETIDO (AC02)</text>
+        <text x="40" y="102" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">Toda consulta de saldo debe restar stock_comprometido del stock_fisico.</text>
+        <text x="40" y="122" fill="#F8FAFC" font-size="12" font-weight="600" font-family="monospace">PROHIBIDO autorizar ventas o reservas evaluando solo stock_fisico.</text>
+
+        <rect x="25" y="155" width="560" height="90" rx="8" fill="#0F172A" stroke="#334155" stroke-width="1"/>
+        <text x="40" y="180" fill="#38BDF8" font-size="14" font-weight="800" font-family="system-ui, sans-serif">2. ORDENAMIENTO DETERMINISTA ANTI-DEADLOCK</text>
+        <text x="40" y="202" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">Todo checkout ordena en memoria antes de bloquear: OrderBy(x => x.ProductoId).</text>
+        <text x="40" y="222" fill="#FBBF24" font-size="12" font-weight="600" font-family="monospace">Elimina Deadlocks cruzados entre cajeros POS y clientes web.</text>
+
+        <rect x="25" y="255" width="560" height="100" rx="8" fill="#0F172A" stroke="#334155" stroke-width="1"/>
+        <text x="40" y="280" fill="#C084FC" font-size="14" font-weight="800" font-family="system-ui, sans-serif">3. ARQUEO CIEGO Y STORAGE PRIVADO (AC03)</text>
+        <text x="40" y="302" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">Arqueo ciego append-only inmutable en base de datos sin UPDATE/DELETE.</text>
+        <text x="40" y="322" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">Vouchers (&lt;= 5 MB) custodiados en storage cifrado sin URLs públicas.</text>
+    </g>
+
+    <!-- RELATIONSHIP LINES -->
+    <path d="M 480 340 L 510 340" stroke="#10B981" stroke-width="2.5" marker-end="url(#arrow-emerald)"/>
+    <text x="495" y="330" fill="#10B981" font-size="11" font-weight="700" text-anchor="middle">1..*</text>
+
+    <path d="M 950 340 L 980 340" stroke="#38BDF8" stroke-width="2.5" marker-end="url(#arrow-sky)"/>
+    <text x="965" y="330" fill="#38BDF8" font-size="11" font-weight="700" text-anchor="middle">1..*</text>
+
+    <path d="M 270 560 L 270 610" stroke="#10B981" stroke-width="2.5" marker-end="url(#arrow-emerald)"/>
+    <text x="285" y="585" fill="#10B981" font-size="11" font-weight="700">1..*</text>
+
+    <path d="M 580 790 L 610 790" stroke="#38BDF8" stroke-width="2" marker-end="url(#arrow-sky)"/>
+
+    <!-- FOOTER -->
+    <rect x="60" y="1010" width="1800" height="45" rx="8" fill="#0D1527" stroke="#1E293B" stroke-width="1.5"/>
+    <text x="80" y="1038" fill="#10B981" font-size="13" font-weight="700" font-family="system-ui, sans-serif">MODELO DE DOMINIO RICO (DDD):</text>
+    <text x="320" y="1038" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">Comportamiento encapsulado (Tell Don't Ask) • Invariantes blindados en el constructor y métodos de mutación • Cero entidades anémicas.</text>
+</svg>

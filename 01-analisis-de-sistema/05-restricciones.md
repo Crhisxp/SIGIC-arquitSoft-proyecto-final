@@ -1,14 +1,28 @@
-# Restricciones Formales y Delimitación de Alcance (SIGIC Ferretería)
+---
+id: "05-restricciones"
+doc: "05-restricciones"
+version: "2.2.0"
+estado: "VALIDADO_PARA_EXPOSICION"
+tipo: "restricciones-delimitacion-alcance"
+proyecto: "SIGIC-Ferreteria-v2.2"
+autor: "Crhistian Emanuel Flores Marquina"
+evaluacion: "IS-488 UNSCH"
+fecha: "2026-10-30"
+---
 
-> **Documento:** `analisis-de-sistema/05-restricciones.md`  
+# Restricciones Formales y Delimitación de Alcance (SIGIC Ferretería v2.2)
+
+> **Documento:** `01-analisis-de-sistema/05-restricciones.md`  
 > **Versión de Especificación:** 2.2 (Oficial – SIGIC Ferretería)  
 > **Propósito:** Definición de Fronteras Operativas, Supuestos de Integración y Restricciones Tecnológicas del Sistema  
+> **Estándar:** IS-488 UNSCH  
+> **Estado:** VALIDADO_PARA_EXPOSICION  
 
 ---
 
 ## 1. Introducción y Marco de Delimitación
 
-La delimitación formal del alcance y las restricciones del sistema constituyen la base sobre la cual se definen las responsabilidades arquitectónicas de **SIGIC Ferretería**. Establecer qué funcionalidades pertenecen estrictamente al núcleo del sistema (*In-Scope*) y cuáles son derivadas a componentes de terceros (*Out-of-Scope*) mitiga riesgos operativos, sobrecostos de integración y desbordamientos en el cronograma de ingeniería.
+La delimitación formal del alcance y las restricciones del sistema constituyen la base sobre la cual se definen las responsabilidades arquitectónicas de **SIGIC Ferretería v2.2**. Establecer qué funcionalidades pertenecen estrictamente al núcleo del sistema (*In-Scope*) y cuáles son derivadas a componentes de terceros (*Out-of-Scope*) mitiga riesgos operativos, sobrecostos de integración y desbordamientos en el cronograma de ingeniería.
 
 ---
 
@@ -69,8 +83,8 @@ Para asegurar la gobernanza, escalabilidad y mantenibilidad a largo plazo de la 
 
 | Capa Arquitectónica | Tecnología Cerrada | Restricción y Justificación Técnica |
 | :--- | :--- | :--- |
-| **Backend Core** | **ASP.NET Core 8 Web API** | Implementación estricta del patrón **Clean Architecture** estructurado en cuatro capas: *Domain*, *Application*, *Infrastructure* y *Presentation (API)*. Prohibido el acoplamiento de lógica de negocio dentro de controladores o scripts de base de datos. Centraliza las reglas de validación y cálculo de precios para el POS y el portal web en una única librería de dominio compartida. |
-| **Frontend POS Mostrador** | **React 18 (SPA)** | Aplicación de Página Única (*Single Page Application*) optimizada para baja latencia en red local. Diseñada específicamente para interacción ultrarrápida mediante atajos de teclado y pistolas lectoras ópticas de código de barras, sin recargas de página que interrumpan la atención en mostrador. |
+| **Backend Core** | **ASP.NET Core 8 Web API** | Implementación estricta del patrón **Clean Architecture** estructurado en cuatro capas: *Domain*, *Application*, *Infrastructure* y *Presentation (API)*. Prohibido el acoplamiento de lógica de negocio dentro de controladores o scripts de base de datos. Centraliza las reglas de validación y cálculo de precios para el POS y el portal web en una única librería de dominio compartida. Cumple con la meta de latencia P95 < 250ms (AC01). |
+| **Frontend POS Mostrador** | **React 18 (SPA)** | Aplicación de Página Única (*Single Page Application*) optimizada para baja latencia en red local. Diseñada específicamente para interacción ultrarrápida mediante atajos de teclado y pistolas lectoras ópticas de código de barras, sin recargas de página que interrumpan la atención en mostrador. Viewport fijo $1024 \times 768$ sin scroll horizontal. |
 | **Frontend Portal Web** | **Next.js 14 (React 18 con SSR)** | Portal de comercio electrónico con Renderizado en Servidor (*Server-Side Rendering* - SSR). Permite tiempos de carga inferiores a 1.5 s en dispositivos móviles sobre redes 4G y posicionamiento SEO del catálogo público. Node.js actúa estrictamente como servidor de renderizado de vistas; ninguna regla transaccional reside en Next.js. |
 | **Persistencia OLTP** | **PostgreSQL 16 con PgBouncer** | Motor relacional transaccional gobernado por el modelo multiversión (MVCC). PgBouncer opera en modo transacción con dos pools segregados (`pool_pos` prioritario y `pool_web` controlado). El inventario se gobierna mediante transacciones ACID y bloqueos pesimistas de fila (`SELECT ... FOR UPDATE`). |
 | **Capa Analítica (OLAP)** | **Datamart en Esquema Estrella** | Alojado en el esquema segregado `sigic_olap` sobre una instancia y volumen de almacenamiento independiente. Se compone de una tabla de hechos (`Fact_Ventas`) y dimensiones conformadas, alimentado por un proceso ETL asíncrono programado fuera del horario comercial. Prohibido ejecutar reportes analíticos pesados contra el motor OLTP. |
@@ -81,5 +95,5 @@ Para asegurar la gobernanza, escalabilidad y mantenibilidad a largo plazo de la 
 ## 4. Supuestos y Condiciones de Borde del Despliegue
 
 1. **Infraestructura de Red en Sucursales:** Cada tienda física cuenta con conexión LAN cableada (Fast Ethernet o Gigabit) para las terminales de mostrador, asegurando latencias sub-milisegundo hacia el servidor de aplicaciones y base de datos local/corporativa.
-2. **Homologación de Clientes B2B:** La asignación de tarifas preferenciales a Maestros de Obra (Lista 2) y Contratistas (Lista 3) es un proceso administrativo humano; el sistema nunca auto-promueve el perfil tarifario de un cliente web sin la aprobación explícita del Administrador.
+2. **Homologación de Clientes B2B:** La asignación de tarifas preferenciales a Maestros de Obra (Lista 2) y Contratistas (Lista 3) es un proceso administrativo humano; el sistema nunca auto-promueve el perfil tarifario de un cliente web sin la aprobación explícita del Superadmin.
 3. **Migración Inicial de Datos:** La carga de datos maestros al inicio del proyecto asume que el cliente proveerá hojas de cálculo consolidadas con la estructura requerida para familias, marcas y artículos; el sistema no asume la corrección automática de inventarios físicos desfasados previos al arranque.

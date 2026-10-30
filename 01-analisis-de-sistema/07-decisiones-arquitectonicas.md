@@ -1,26 +1,40 @@
-# Decisiones Arquitectónicas Formales (ADRs) - SIGIC Ferretería
+---
+id: "07-decisiones-arquitectonicas"
+doc: "07-decisiones-arquitectonicas"
+version: "2.2.0"
+estado: "VALIDADO_PARA_EXPOSICION"
+tipo: "decisiones-arquitectonicas-adr"
+proyecto: "SIGIC-Ferreteria-v2.2"
+autor: "Crhistian Emanuel Flores Marquina"
+evaluacion: "IS-488 UNSCH"
+fecha: "2026-10-30"
+---
 
-> **Documento:** `analisis-de-sistema/07-decision-arquitectonica.md`  
+# Decisiones Arquitectónicas Formales (ADRs) - SIGIC Ferretería v2.2
+
+> **Documento:** `01-analisis-de-sistema/07-decisiones-arquitectonicas.md`  
 > **Versión de Especificación:** 2.2 (Oficial – SIGIC Ferretería)  
 > **Disciplina:** Registro de Decisiones de Arquitectura (ADR – *Architectural Decision Records*)  
-> **Metodología:** Alineado a la Guía 03 (Estructura de Trazabilidad, Drivers Rectores y Plantilla Estándar Nygard/MADR)
+> **Metodología:** Alineado a la Guía 03 (Plantilla Estándar Nygard/MADR y Trazabilidad de ASRs)  
+> **Alineación con Atributos Rectores:** AC01 (Rendimiento P95 < 250ms), AC02 (Consistencia ACID Cero Sobreventas), AC03 (Trazabilidad Append-Only)  
+> **Estado:** VALIDADO_PARA_EXPOSICION  
 
 ---
 
 ## 1. Tabla Consolidada de Decisiones Arquitectónicas
 
-La siguiente matriz presenta el compendio consolidado de decisiones tomadas para dar respuesta rigurosa a los **Drivers Arquitectónicos (DA-01 a DA-07)** identificados para **SIGIC Ferretería**, detallando su justificación técnica en el contexto del negocio ferretero y su impacto estructural.
+La siguiente matriz presenta el compendio consolidado de decisiones tomadas para dar respuesta rigurosa a los **Drivers Arquitectónicos (DA-01 a DA-07)** y a los **Atributos de Calidad Rectores (AC01, AC02, AC03)** en **SIGIC Ferretería v2.2**:
 
-| ID | Decisión Arquitectónica | Driver Relacionado | Justificación Técnica en SIGIC | Resultado en la Arquitectura |
+| ID | Decisión Arquitectónica | Driver / Atributo Rector | Justificación Técnica en SIGIC | Resultado en la Arquitectura |
 | :--- | :--- | :--- | :--- | :--- |
-| **ADR-001** | **Adopción de Arquitectura Monolítica Modular en Núcleo Transaccional Unificado** | `DA-01`, `DA-05`, `DA-06` | Una arquitectura de microservicios distribuidos añadiría complejidad excesiva (transacciones distribuidas 2PC/Sagas de inventario, latencia de red en LAN) incompatible con el tamaño de equipo y la necesidad de ACID estricto entre mostrador y web. | Un solo despliegue de backend en ASP.NET Core 8 Web API estructurado internamente en módulos cohesivos (`Inventario`, `VentasPOS`, `PedidosWeb`, `Precios`, `Caja`, `Seguridad`). Cero sobrecosto de red inter-servicio. |
+| **ADR-001** | **Adopción de Arquitectura Monolítica Modular en Núcleo Transaccional Unificado** | `DA-01`, `DA-05`, `DA-06`<br>(**AC01**, **AC02**) | Una arquitectura de microservicios distribuidos añadiría complejidad excesiva (transacciones distribuidas 2PC/Sagas de inventario, latencia de red en LAN) incompatible con el tamaño de equipo y la necesidad de ACID estricto entre mostrador y web. | Un solo despliegue de backend en ASP.NET Core 8 Web API estructurado internamente en módulos cohesivos (`Inventario`, `VentasPOS`, `PedidosWeb`, `Precios`, `Caja`, `Seguridad`). Comunicación intra-proceso en memoria ($< 1\text{ ms}$) que asegura latencia $P95 < 250\text{ ms}$ (AC01). Cero sobrecosto de red inter-servicio. |
 | **ADR-002** | **Implementación del Patrón Clean Architecture (Arquitectura Limpia con Puertos y Adaptadores)** | `DA-04`, `DA-06` | Las reglas complejas del negocio ferretero (kardex por costo promedio ponderado, factores de conversión multiescala, reservas dinámicas, listas de precios mayoristas) deben aislarse de la base de datos, frameworks web y servicios de terceros. | Descomposición en 4 capas concéntricas con regla de dependencia unidireccional: *Domain*, *Application*, *Infrastructure*, *Presentation*. Inversión de dependencias mediante interfaces (puertos) para repositorios y proveedores externos. |
-| **ADR-003** | **Estrategia de Concurrencia Pesimista Fina, Fórmulas Segregadas y TTL Dinámico de Reservas** | `DA-01`, `DA-02` | La sobreventa de materiales pesados (fierro, cemento) es inasumible. El modelo $Disponible = Físico - Comprometido$ junto a bloqueos pesimistas de fila (`SELECT ... FOR UPDATE`) con orden determinista (`ORDER BY producto_id ASC`) previene sobreventas y deadlocks sin bloquear tablas completas. | Cero saldos negativos en inventario. Bloqueos atómicos de fila de corta duración en PostgreSQL 16. Worker asíncrono idempotente para liberación de reservas web con TTL (20 min pasarela; 1 h comprobante / 4 h validación en pagos manuales). |
-| **ADR-004** | **Segregación de Conexiones en PgBouncer y Desacoplamiento de Lecturas Web (CQRS Ligero)** | `DA-02`, `DA-05` | El tráfico de navegación masivo del catálogo web no debe competir por conexiones ni degradar el cobro en mostrador físico ($p95 \le 1$ s). | PgBouncer configurado en modo transacción con dos pools segregados (`pool_pos` prioritario con conexiones garantizadas y `pool_web` con cuota limitada). Catálogo web consume vistas pre-renderizadas/cacheadas con desfase de hasta 30 s; checkout efectúa revalidación atómica. |
+| **ADR-003** | **Estrategia de Concurrencia Pesimista Fina, Fórmulas Segregadas y TTL Dinámico de Reservas** | `DA-01`, `DA-02`<br>(**AC02**) | La sobreventa de materiales pesados (fierro, cemento) es inasumible. El modelo $\text{Disponible} = \text{Físico} - \text{Comprometido}$ junto a bloqueos pesimistas de fila (`SELECT ... FOR UPDATE`) con orden determinista (`ORDER BY producto_id ASC`) previene sobreventas y deadlocks sin bloquear tablas completas. | Cero sobreventas y cero saldos negativos en inventario (AC02). Bloqueos atómicos de fila de corta duración en PostgreSQL 16. Worker asíncrono idempotente para liberación de reservas web con TTL (20 min pasarela; 1 h comprobante / 4 h validación en pagos manuales). |
+| **ADR-004** | **Segregación de Conexiones en PgBouncer y Desacoplamiento de Lecturas Web (CQRS Ligero)** | `DA-02`, `DA-05`<br>(**AC01**) | El tráfico de navegación masivo del catálogo web no debe competir por conexiones ni degradar el cobro en mostrador físico ($P95 < 250\text{ ms}$ en API Core, cobro POS $\le 2\text{ s}$). | PgBouncer configurado en modo transacción con dos pools segregados: `pool_pos` prioritario con 50 conexiones garantizadas y `pool_web` con 30 conexiones limitadas y backpressure. Catálogo web consume vistas pre-renderizadas/cacheadas con desfase de hasta 30 s; checkout efectúa revalidación atómica. |
 | **ADR-005** | **Dualidad de Dominios de Identidad, Autenticación Asimétrica RS256 y RBAC en Servidor** | `DA-03` | Evitar la superficie de ataque y el riesgo de escalada de privilegios entre clientes web externos no confiables y colaboradores internos de la ferretería. | Dos almacenes de identidad lógicos. Emisión de JWT firmados con clave RSA 2048 (RS256) con claims diferenciados. Middleware de autorización en ASP.NET Core que rechaza con `HTTP 403` a clientes web en endpoints internos de caja/inventario. Passwords en Argon2id. |
-| **ADR-006** | **Desacoplamiento Operativo de Pagos: Consola Backoffice Asíncrona y Adaptadores de Pasarela** | `DA-04`, `DA-02` | En Ayacucho, los pagos web se efectúan mayormente por Yape/Plin y transferencias con subida de comprobantes (archivos de 5 MB). La validación humana de vouchers colapsaría la atención presencial del cajero/despachador si se hiciera en la misma cola. | Consola desacoplada de Backoffice para Tesorería. La pantalla de mostrador POS solo visualiza pedidos en estado `Listo para Retiro`. Integración de pasarelas web desacoplada mediante patrón Adapter y webhooks idempotentes. |
-| **ADR-007** | **Segregación de Frontends: SPA React 18 (POS Mostrador) y Next.js 14 SSR (Portal Web)** | `DA-02`, `DA-05` | El cajero requiere una SPA ultra-ligera en LAN optimizada para atajos de teclado (`F1`-`F12`) y escáner óptico sin recarga de página. El cliente web requiere SSR para SEO, indexación de materiales y carga inicial inferior a 1.5 s en conexiones móviles 4G. | Dos clientes frontend especializados que consumen el mismo backend ASP.NET Core 8 vía API REST: SPA React 18 para mostrador y Next.js 14 para el portal e-commerce. |
-| **ADR-008** | **Aislamiento de Base de Datos Transaccional (OLTP) y Datamart Dimensional (OLAP) con ETL Asíncrono** | `DA-07` | El cálculo de Kardex valorizado mensual y balances financieros sobre más de 50 000 movimientos satura memoria *work_mem* y CPU, arriesgando bloqueos en el POS. | Separación física/lógica: base de datos operacional `sigic_oltp` y Datamart analítico `sigic_olap` en esquema estrella (`Fact_Ventas`, dimensiones conformadas). Proceso ETL nocturno asíncrono para poblar el Datamart sin impacto en horario de atención. |
+| **ADR-006** | **Desacoplamiento Operativo de Pagos: Consola Backoffice Asíncrona y Adaptadores de Pasarela** | `DA-04`, `DA-02`<br>(**AC01**) | En Ayacucho, los pagos web se efectúan mayormente por Yape/Plin y transferencias con subida de comprobantes (archivos de 5 MB). La validación humana de vouchers colapsaría la atención presencial del cajero/despachador si se hiciera en la misma cola. | Consola desacoplada de Backoffice para Superadmin/Tesorería. La pantalla de mostrador POS solo visualiza pedidos en estado `Listo para Retiro` (RF-POS-011). Integración de pasarelas web desacoplada mediante patrón Adapter y webhooks idempotentes. |
+| **ADR-007** | **Segregación de Frontends: SPA React 18 (POS Mostrador) y Next.js 14 SSR (Portal Web)** | `DA-02`, `DA-05`<br>(**AC01**) | El cajero requiere una SPA ultra-ligera en LAN optimizada para atajos de teclado (`F1`-`F12`) y escáner óptico sin recarga de página. El cliente web requiere SSR para SEO, indexación de materiales y carga inicial inferior a 1.5 s en conexiones móviles 4G. | Dos clientes frontend especializados que consumen el mismo backend ASP.NET Core 8 vía API REST: SPA React 18 para mostrador y Next.js 14 para el portal e-commerce. |
+| **ADR-008** | **Aislamiento de Base de Datos Transaccional (OLTP) y Datamart Dimensional (OLAP) con ETL Asíncrono** | `DA-07`<br>(**AC03**) | El cálculo de Kardex valorizado mensual y balances financieros sobre más de 50 000 movimientos satura memoria *work_mem* y CPU, arriesgando bloqueos en el POS. Asimismo, las auditorías y cierres de caja exigen inmutabilidad append-only. | Separación física/lógica: base de datos operacional `sigic_oltp` y Datamart analítico `sigic_olap` en esquema estrella (`Fact_Ventas`, dimensiones conformadas). Tablas contables append-only sin `UPDATE`/`DELETE`. Proceso ETL nocturno asíncrono para poblar el Datamart sin impacto en horario de atención. |
 
 ---
 
@@ -33,6 +47,7 @@ La siguiente matriz presenta el compendio consolidado de decisiones tomadas para
 * **Estado:** Aceptado
 * **Fecha:** 2026-10-08
 * **Drivers Asociados:** `DA-01` (Concurrencia e Integridad de Inventario), `DA-05` (Desacoplamiento Omnicanal), `DA-06` (Mantenibilidad del Dominio)
+* **Atributos Rectores Satisfechos:** **AC01** (Latencia P95 < 250ms), **AC02** (Consistencia ACID Inmediata)
 
 #### Contexto y Planteamiento del Problema
 SIGIC Ferretería debe coordinar operaciones de dos canales comerciales concurrentes: ventas físicas presenciales por escáner en mostrador y compras con reserva en portal web e-commerce. Ambos canales compiten directamente por el mismo stock físico de materiales pesados (cemento, fierro, agregados). Se requiere decidir el estilo arquitectónico general del backend para garantizar integridad transaccional inmediata (ACID), simplicidad operativa y bajo coste de mantenimiento para el equipo de desarrollo.
@@ -45,15 +60,15 @@ SIGIC Ferretería debe coordinar operaciones de dos canales comerciales concurre
    - *Ventajas:* Rápido desarrollo inicial.
    - *Desventajas:* Acoplamiento caótico entre módulos de inventario, facturación y caja; nula capacidad de probar reglas de negocio de forma aislada; alto riesgo de efectos secundarios al modificar tarifas.
 3. **Monolito Modular (Seleccionada):**
-   - *Ventajas:* Despliegue único y simplificado en un solo proceso ejecutable; comunicación en memoria con latencia cero entre módulos; transaccionalidad ACID local respaldada directamente por PostgreSQL 16; estricta segregación de límites de módulos (*bounded contexts*) con interfaces explícitas.
+   - *Ventajas:* Despliegue único y simplificado en un solo proceso ejecutable; comunicación en memoria con latencia cero entre módulos ($< 1\text{ ms}$); transaccionalidad ACID local respaldada directamente por PostgreSQL 16; estricta segregación de límites de módulos (*bounded contexts*) con interfaces explícitas.
 
 #### Decisión Tomada
 Se decide implementar un **Monolito Modular** sobre ASP.NET Core 8 Web API. El núcleo del sistema se divide internamente en módulos altamente cohesivos (`Inventario`, `VentasPOS`, `PedidosWeb`, `Precios`, `Caja`, `Auditoría`), compartiendo una única base de datos transaccional con esquemas estructurados y fronteras lógicas bien delimitadas.
 
 #### Consecuencias y Mitigaciones
 - **Consecuencias Positivas:**
-  - Garantía de transaccionalidad ACID inmediata sobre las tablas de inventario sin necesidad de coordinadores de transacciones distribuidas.
-  - Latencia intra-servicio prácticamente nula ($< 1$ ms), vital para el cobro rápido en mostrador.
+  - Garantía de transaccionalidad ACID inmediata sobre las tablas de inventario sin necesidad de coordinadores de transacciones distribuidas (AC02).
+  - Latencia intra-servicio prácticamente nula ($< 1$ ms), vital para el cobro rápido en mostrador y el cumplimiento de $P95 < 250\text{ ms}$ (AC01).
   - Costo de infraestructura y esfuerzo de despliegue/DevOps significativamente menor.
 - **Trade-offs / Mitigaciones:**
   - *Riesgo:* Todo el sistema se despliega como una sola unidad; una caída del proceso afecta a ambos canales.
@@ -98,6 +113,7 @@ Adoptar **Clean Architecture** estructurado en cuatro proyectos/capas concéntri
 * **Estado:** Aceptado
 * **Fecha:** 2026-10-08
 * **Drivers Asociados:** `DA-01` (Concurrencia e Integridad Transaccional de Inventario Multicanal), `DA-02` (Prioridad POS)
+* **Atributos Rectores Satisfechos:** **AC02** (Consistencia ACID Cero Sobreventas)
 
 #### Contexto y Planteamiento del Problema
 Materiales ferreteros de alta demanda (fierro corrugado, cemento Portland) presentan alta rotación. Si un cliente en el mostrador físico y otro en el portal web intentan adquirir las últimas existencias disponibles de forma simultánea, un control de concurrencia optimista provocaría cancelaciones de venta en mostrador frente al cliente en caja, lo cual es inaceptable comercialmente. Asimismo, las reservas web no pueden congelar inventario indefinidamente si el cliente no paga.
@@ -113,7 +129,7 @@ Materiales ferreteros de alta demanda (fierro corrugado, cemento Portland) prese
      El *Stock Comprometido* se incrementa en web mediante reservas dinámicas con tiempo de vida (TTL): 20 minutos para pasarela con tarjeta; 1 hora para subir constancia y hasta 4 horas para validación de tesorería en pagos manuales.
 
 #### Decisión Tomada
-Implementar la fórmula segregada $Disponible = Físico - Comprometido$. En checkout web y cierre de venta POS, se ejecuta un bloqueo pesimista ordenado (`ORDER BY producto_id ASC`) seguido de un `UPDATE` condicionado atómico:
+Implementar la fórmula segregada $\text{Disponible} = \text{Físico} - \text{Comprometido}$. En checkout web y cierre de venta POS, se ejecuta un bloqueo pesimista ordenado (`ORDER BY producto_id ASC`) seguido de un `UPDATE` condicionado atómico:
 ```sql
 UPDATE inventario_stock
 SET stock_comprometido = stock_comprometido + :cantidad
@@ -125,7 +141,7 @@ Un servicio en segundo plano (*BackgroundService* en ASP.NET Core) ejecuta una t
 
 #### Consecuencias y Mitigaciones
 - **Consecuencias Positivas:**
-  - 0 sobreventas y 0 inventarios negativos garantizados matemáticamente en la base de datos relacional.
+  - 0 sobreventas y 0 inventarios negativos garantizados matemáticamente en la base de datos relacional (AC02).
   - Eliminación absoluta de *deadlocks* (bloqueos mutuos) gracias a la adquisición ordenada y determinista de bloqueos por ID de producto.
 - **Trade-offs / Mitigaciones:**
   - *Riesgo:* Posible contención en filas de cemento y fierro durante campañas de alta demanda.
@@ -138,6 +154,7 @@ Un servicio en segundo plano (*BackgroundService* en ASP.NET Core) ejecuta una t
 * **Estado:** Aceptado
 * **Fecha:** 2026-10-08
 * **Drivers Asociados:** `DA-02` (Prioridad Transaccional POS), `DA-05` (Desacoplamiento Omnicanal)
+* **Atributos Rectores Satisfechos:** **AC01** (Rendimiento Transaccional P95 < 250ms)
 
 #### Contexto y Planteamiento del Problema
 Picos de concurrencia en el portal e-commerce (hasta 200 sesiones simultáneas y 50 solicitudes por segundo en catálogo) pueden saturar el número máximo de conexiones disponibles de PostgreSQL (`max_connections`), provocando el agotamiento de recursos (*connection pool starvation*) y degradando las terminales físicas de mostrador más allá de los 2 segundos tolerables (`RNF-PERF-001`).
@@ -153,13 +170,13 @@ Picos de concurrencia en el portal e-commerce (hasta 200 sesiones simultáneas y
 
 #### Decisión Tomada
 1. Desplegar **PgBouncer** frente a PostgreSQL 16 con dos pools segregados:
-   - `pool_pos`: Conexiones reservadas exclusivas para el canal presencial y operaciones internas (alta prioridad).
-   - `pool_web`: Conexiones limitadas con política de contención para tráfico web.
+   - `pool_pos`: Conexiones reservadas exclusivas (50 conexiones dedicadas) para el canal presencial y operaciones internas (alta prioridad, latencia API Core $P95 < 250\text{ ms}$).
+   - `pool_web`: Conexiones limitadas (30 conexiones compartidas) con política de contención (*backpressure*) para tráfico web.
 2. Desacoplamiento de lecturas (CQRS ligero): El catálogo web consulta vistas optimizadas precalculadas con caché temporal (hasta 30 s de tolerancia en disponibilidad). Al momento del checkout, se salta la caché y se revalida atómicamente contra el stock real en una transacción corta.
 
 #### Consecuencias y Mitigaciones
 - **Consecuencias Positivas:**
-  - La degradación del tiempo de cobro en mostrador se mantiene estrictamente $\le 10$ % incluso bajo el pico máximo de estrés web (`RNF-PERF-005`).
+  - La degradación del tiempo de cobro en mostrador se mantiene estrictamente $\le 10$ % incluso bajo el pico máximo de estrés web (`RNF-PERF-005`, AC01).
   - Cero incidentes de agotamiento de conexiones en las terminales de venta física.
 - **Trade-offs / Mitigaciones:**
   - *Riesgo:* El catálogo web puede mostrar existencias que cambian en los últimos 30 segundos.
@@ -174,7 +191,7 @@ Picos de concurrencia en el portal e-commerce (hasta 200 sesiones simultáneas y
 * **Drivers Asociados:** `DA-03` (Segregación de Identidad y Superficie de Seguridad)
 
 #### Contexto y Planteamiento del Problema
-El sistema convive con dos poblaciones de usuarios radicalmente distintas: personal interno de la ferretería (cajeros, almaceneros, despachadores, tesoreros) que ejecutan arqueos de caja y movimientos de kardex, y clientes externos (maestros de obra, contratistas, público general) que navegan el portal web desde Internet. Compartir el mismo modelo de sesión o tokens abre vulnerabilidades de escalada de privilegios y ataques de inyección.
+El sistema convive con dos poblaciones de usuarios radicalmente distintas: personal interno de la ferretería (Superadmin, cajeros, almaceneros, despachadores, tesoreros) que ejecutan arqueos de caja y movimientos de kardex, y clientes externos (maestros de obra, contratistas, público general) que navegan el portal web desde Internet. Compartir el mismo modelo de sesión o tokens abre vulnerabilidades de escalada de privilegios y ataques de inyección.
 
 #### Alternativas Consideradas y Análisis Comparativo
 1. **Tabla Única de Usuarios y Tokens Simétricos (HS256):**
@@ -186,7 +203,7 @@ El sistema convive con dos poblaciones de usuarios radicalmente distintas: perso
 
 #### Decisión Tomada
 1. Implementar dos dominios de identidad:
-   - **Dominio Interno:** Colaboradores con roles estrictos (`Cajero`, `Almacenero`, `Despachador`, `Administrador`). Tokens de vida corta (15 min) con claims de rol evaluados obligatoriamente en servidor (`[Authorize(Roles = "...")]`).
+   - **Dominio Interno:** Colaboradores con roles estrictos (`Superadmin`, `Cajero`, `Almacenero`, `Despachador`). Tokens de vida corta (15 min) con claims de rol evaluados obligatoriamente en servidor (`[Authorize(Roles = "...")]`).
    - **Dominio Externo:** Clientes web (`Público General`, `Maestro de Obra`, `Contratista`). Tokens con audiencia restringida `Audience: SIGIC_WebClient`.
 2. En el pipeline de ASP.NET Core, un middleware de validación perimetral bloquea con `HTTP 403 Forbidden` cualquier solicitud que presente un token de cliente web intentando invocar endpoints del espacio de nombres interno (`/api/internal/*`).
 
@@ -205,6 +222,7 @@ El sistema convive con dos poblaciones de usuarios radicalmente distintas: perso
 * **Estado:** Aceptado
 * **Fecha:** 2026-10-08
 * **Drivers Asociados:** `DA-04` (Desacoplamiento de Fronteras Externas), `DA-02` (Prioridad POS)
+* **Atributos Rectores Satisfechos:** **AC01** (Rendimiento POS)
 
 #### Contexto y Planteamiento del Problema
 En el mercado ferretero regional de Ayacucho, más del 70 % de las compras electrónicas se cancelan mediante billeteras digitales (Yape, Plin) o transferencias bancarias directas (BCP, BBVA), donde el cliente adjunta una imagen o PDF del comprobante de abono (hasta 5 MB). Las entidades financieras locales no ofrecen webhooks bancarios abiertos para micro y pequeñas empresas. Si los cajeros o despachadores en mostrador tuvieran que inspeccionar imágenes bancarias mientras atienden a la fila de clientes presenciales, la atención en caja colapsaría.
@@ -215,17 +233,17 @@ En el mercado ferretero regional de Ayacucho, más del 70 % de las compras elect
 2. **Exigencia Exclusiva de Tarjeta de Crédito/Débito vía Pasarela Automatizada:**
    - *Desventajas:* Tasa de abandono de compra superior al 70 % debido a la alta preferencia del sector construcción regional por transferencias directas y billeteras digitales.
 3. **Flujo Desacoplado Asíncrono con Consola de Tesorería en Backoffice (Seleccionada):**
-   - *Ventajas:* Especialización de roles. Tesorería valida en una pantalla administrativa independiente el voucher y el código de operación. La pantalla de mostrador físico solo ve pedidos en estado `Listo para Retiro`.
+   - *Ventajas:* Especialización de roles. Superadmin/Tesorería valida en una pantalla administrativa independiente el voucher y el código de operación. La pantalla de mostrador físico solo ve pedidos en estado `Listo para Retiro`.
 
 #### Decisión Tomada
 1. Diseñar el flujo de validación en dos fases asíncronas:
-   - **Fase de Validación Financiera:** El cliente web sube el código de operación y voucher. El pedido ingresa en estado `Pendiente de Validación`. El Asistente de Tesorería o Administrador valida el abono en su consola de Backoffice (`RF-WEB-003`). Al confirmar, el pedido pasa a `En Preparación en Depósito` y se emite la guía de traslado al mostrador (`RF-INV-003`).
+   - **Fase de Validación Financiera:** El cliente web sube el código de operación y voucher. El pedido ingresa en estado `Pendiente de Validación`. El Superadmin o Asistente de Tesorería valida el abono en su consola de Backoffice (`RF-WEB-003`). Al confirmar, el pedido pasa a `En Preparación en Depósito` y se emite la guía de traslado al mostrador (`RF-INV-003`).
    - **Fase de Despacho Ágil en Mostrador:** La pantalla del despachador (`RF-POS-011`) solo lista pedidos en estado `Listo para Retiro`. El despacho se ejecuta en menos de 1 minuto mediante lectura de código QR/barras y cotejo de DNI del cliente, sin manipular comprobantes bancarios.
 2. Para pagos con tarjeta en línea, se define el puerto `IPagoGatewayPort` con adaptadores concretos que reciben webhooks seguros e idempotentes.
 
 #### Consecuencias y Mitigaciones
 - **Consecuencias Positivas:**
-  - La atención en mostrador no sufre interferencia por archivos pesados ni validaciones bancarias complejas.
+  - La atención en mostrador no sufre interferencia por archivos pesados ni validaciones bancarias complejas (AC01).
   - Mitigación del fraude por duplicidad de vouchers gracias a la validación de unicidad diaria de códigos de operación bancaria.
 - **Trade-offs / Mitigaciones:**
   - *Riesgo:* Tiempo de espera del cliente web para la validación humana de su transferencia.
@@ -238,10 +256,11 @@ En el mercado ferretero regional de Ayacucho, más del 70 % de las compras elect
 * **Estado:** Aceptado
 * **Fecha:** 2026-10-08
 * **Drivers Asociados:** `DA-02` (Prioridad Transaccional POS), `DA-05` (Desacoplamiento Omnicanal)
+* **Atributos Rectores Satisfechos:** **AC01** (Rendimiento y Ergonomía POS)
 
 #### Contexto y Planteamiento del Problema
 Los requisitos de experiencia de usuario de los dos canales de venta de la ferretería son mutuamente excluyentes:
-- **Caja y Mostrador:** Demanda una interfaz de escritorio ligera en navegador sobre red local (LAN), 100 % operable por atajos de teclado (`F1` a `F12`) y pistolas lectoras de códigos de barra, con tiempo de renderizado de fracciones de milisegundo y cero recargas de página.
+- **Caja y Mostrador:** Demanda una interfaz de escritorio ligera en navegador sobre red local (LAN), 100 % operable por atajos de teclado (`F1` a `F12`) y pistolas lectoras de códigos de barra, con tiempo de renderizado de fracciones de milisegundo y cero recargas de página en viewport $1024 \times 768$.
 - **Portal E-commerce:** Demanda indexación orgánica en motores de búsqueda (SEO) para materiales de construcción, pre-renderizado en servidor (SSR), optimización para teléfonos inteligentes en redes móviles 4G y diseño responsivo sin desbordamiento horizontal.
 
 #### Alternativas Consideradas y Análisis Comparativo
@@ -272,9 +291,10 @@ Implementar dos aplicaciones frontend separadas:
 * **Estado:** Aceptado
 * **Fecha:** 2026-10-08
 * **Drivers Asociados:** `DA-07` (Aislamiento Operacional vs. Analítico)
+* **Atributos Rectores Satisfechos:** **AC03** (Trazabilidad y Arqueos Append-Only)
 
 #### Contexto y Planteamiento del Problema
-El cálculo de Kardex mensual valorizado bajo el método de Costo Promedio Ponderado sobre más de 50 000 movimientos de almacén, junto con reportes de márgenes brutos, rotación de familias de productos y comparativos de ventas entre canales (`RF-REP-001` a `RF-REP-007`), requiere agregaciones masivas con escaneos secuenciales de tablas históricas. Si estas consultas se ejecutan directamente sobre la base transaccional de producción, bloquean páginas de datos, saturan la memoria de trabajo (*work_mem*) y provocan retardos severos en las cajas de cobro.
+El cálculo de Kardex mensual valorizado bajo el método de Costo Promedio Ponderado sobre más de 50 000 movimientos de almacén, junto con reportes de márgenes brutos, rotación de familias de productos y comparativos de ventas entre canales (`RF-REP-001` a `RF-REP-007`), requiere agregaciones masivas con escaneos secuenciales de tablas históricas. Si estas consultas se ejecutan directamente sobre la base transaccional de producción, bloquean páginas de datos, saturan la memoria de trabajo (*work_mem*) y provocan retardos severos en las cajas de cobro. Asimismo, los arqueos de caja y auditorías deben ser inmutables (append-only) para garantizar trazabilidad contable.
 
 #### Alternativas Consideradas y Análisis Comparativo
 1. **Ejecución de Reportes Directamente sobre Tablas Transaccionales (`sigic_oltp`):**
@@ -286,7 +306,7 @@ El cálculo de Kardex mensual valorizado bajo el método de Costo Promedio Ponde
 
 #### Decisión Tomada
 1. Crear dos esquemas de datos separados:
-   - `sigic_oltp`: Esquema relacional transaccional normalizado en tercera forma normal (3NF) para operaciones en línea de Mostrador y Portal Web.
+   - `sigic_oltp`: Esquema relacional transaccional normalizado en tercera forma normal (3NF) para operaciones en línea de Mostrador y Portal Web. Tablas contables de arqueo (`caja_arqueo`, `caja_arqueo_detalle`) y auditoría (`Audit_Log`) diseñadas con modelo **append-only** inmutable (AC03).
    - `sigic_olap`: Datamart analítico modelado en Esquema Estrella compuesto por `Fact_Ventas` y dimensiones (`Dim_Tiempo`, `Dim_Producto`, `Dim_Cliente`, `Dim_Canal`, `Dim_Almacen`).
 2. Implementar un proceso ETL asíncrono (*BackgroundService* programado fuera del horario comercial, 23:00 h) que extrae los datos cerrados de la jornada, calcula los promedios ponderados y carga el Datamart.
 
@@ -294,6 +314,7 @@ El cálculo de Kardex mensual valorizado bajo el método de Costo Promedio Ponde
 - **Consecuencias Positivas:**
   - Garantía de degradación menor al 10 % en mostrador físico durante consultas analíticas.
   - Tiempos de generación de reportes históricos de 24 meses inferiores a 5 segundos (p95).
+  - Trazabilidad forense contable inmutable de arqueos y transacciones (AC03).
 - **Trade-offs / Mitigaciones:**
   - *Riesgo:* Los reportes gerenciales tienen un desfase temporal de hasta 24 horas (datos consolidados al cierre del día anterior).
   - *Mitigación:* Se provee en la capa transaccional un reporte ligero y limitado de balance de caja del turno actual en tiempo real (`RF-POS-009`, `RF-CAJ-001`), reservando el Datamart para la reportería histórica y estratégica.

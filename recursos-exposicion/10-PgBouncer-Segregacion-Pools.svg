@@ -1,0 +1,192 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+    
+    <defs>
+        <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#080D1A"/>
+            <stop offset="100%" stop-color="#0F172A"/>
+        </linearGradient>
+        <linearGradient id="cardGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#1E293B"/>
+            <stop offset="100%" stop-color="#111827"/>
+        </linearGradient>
+        <linearGradient id="emeraldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#10B981"/>
+            <stop offset="100%" stop-color="#059669"/>
+        </linearGradient>
+        <linearGradient id="skyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#38BDF8"/>
+            <stop offset="100%" stop-color="#0284C7"/>
+        </linearGradient>
+        <linearGradient id="amberGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#F59E0B"/>
+            <stop offset="100%" stop-color="#D97706"/>
+        </linearGradient>
+        <linearGradient id="purpleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#A855F7"/>
+            <stop offset="100%" stop-color="#7E22CE"/>
+        </linearGradient>
+        <marker id="arrow-emerald" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#10B981" />
+        </marker>
+        <marker id="arrow-sky" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#38BDF8" />
+        </marker>
+        <marker id="arrow-amber" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#F59E0B" />
+        </marker>
+        <marker id="arrow-slate" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#64748B" />
+        </marker>
+    </defs>
+
+    <rect width="1920" height="1080" fill="url(#bgGrad)" />
+    
+    <!-- HEADER -->
+    <rect x="0" y="0" width="1920" height="100" fill="#0D1527" />
+    <line x1="0" y1="100" x2="1920" y2="100" stroke="#1E293B" stroke-width="2" />
+    <rect x="60" y="24" width="16" height="52" rx="4" fill="#10B981" />
+    <text x="96" y="52" fill="#F8FAFC" font-size="28" font-weight="700" font-family="system-ui, -apple-system, sans-serif">SEGREGACIÓN DE CONEXIONES Y RESILIENCIA CON PGBOUNCER</text>
+    <text x="96" y="80" fill="#94A3B8" font-size="16" font-family="system-ui, -apple-system, sans-serif">Aislamiento de Tráfico Transaccional POS vs Portal Web en Modo Transaction Pooling</text>
+    
+    <!-- BADGE -->
+    <rect x="1530" y="32" width="330" height="36" rx="18" fill="#1E293B" stroke="#334155" stroke-width="1.5" />
+    <circle cx="1554" cy="50" r="6" fill="#10B981" />
+    <text x="1572" y="55" fill="#F8FAFC" font-size="14" font-weight="600" font-family="system-ui, -apple-system, sans-serif">IS-488 UNSCH | PGBOUNCER</text>
+
+
+    <!-- DIAGRAMA VISUAL DE TOPOLOGÍA DE POOLS -->
+    <!-- COLUMNA 1: CLIENTES FRONTEND -->
+    <g transform="translate(60, 140)">
+        <rect width="450" height="880" rx="14" fill="#0F172A" stroke="#334155" stroke-width="1.5"/>
+        <rect x="0" y="0" width="450" height="50" rx="14" fill="#131D31"/>
+        <text x="225" y="33" fill="#F8FAFC" font-size="17" font-weight="800" text-anchor="middle" font-family="system-ui, sans-serif">1. CANALES DE INTERACCIÓN</text>
+
+        <!-- POS Box -->
+        <g transform="translate(24, 80)">
+            <rect width="402" height="360" rx="10" fill="#131D31" stroke="#10B981" stroke-width="2"/>
+            <rect x="16" y="16" width="370" height="40" rx="6" fill="#064E3B"/>
+            <text x="201" y="42" fill="#34D399" font-size="16" font-weight="800" text-anchor="middle" font-family="system-ui, sans-serif">Mostrador POS Físico (SPA React 18)</text>
+            <text x="20" y="90" fill="#F8FAFC" font-size="15" font-weight="700" font-family="system-ui, sans-serif">• Red Local de Tienda (LAN Gigabit)</text>
+            <text x="20" y="115" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">Monitores 1024x768 sin scroll horizontal.</text>
+            <text x="20" y="145" fill="#F8FAFC" font-size="15" font-weight="700" font-family="system-ui, sans-serif">• Operación 100% por Teclado (F1-F12)</text>
+            <text x="20" y="170" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">Escáner láser continuo sin tocar el ratón.</text>
+            <text x="20" y="200" fill="#F8FAFC" font-size="15" font-weight="700" font-family="system-ui, sans-serif">• Misión Crítica: Cobro Presencial</text>
+            <text x="20" y="225" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">Tiempo de espera permitido en caja &lt; 2 s.</text>
+            
+            <rect x="20" y="260" width="362" height="75" rx="8" fill="#0F172A" stroke="#10B981" stroke-width="1"/>
+            <text x="36" y="290" fill="#34D399" font-size="13" font-weight="700" font-family="monospace">EXIGENCIA DE DISPONIBILIDAD</text>
+            <text x="36" y="315" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">Cero tolerancia a caídas o bloqueos de red.</text>
+        </g>
+
+        <!-- Web Box -->
+        <g transform="translate(24, 480)">
+            <rect width="402" height="360" rx="10" fill="#131D31" stroke="#38BDF8" stroke-width="2"/>
+            <rect x="16" y="16" width="370" height="40" rx="6" fill="#0C4A6E"/>
+            <text x="201" y="42" fill="#38BDF8" font-size="16" font-weight="800" text-anchor="middle" font-family="system-ui, sans-serif">Portal Web E-Commerce (Next.js 14)</text>
+            <text x="20" y="90" fill="#F8FAFC" font-size="15" font-weight="700" font-family="system-ui, sans-serif">• Tráfico Abierto por Internet (WAN)</text>
+            <text x="20" y="115" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">Ráfagas impredecibles de miles de visitantes.</text>
+            <text x="20" y="145" fill="#F8FAFC" font-size="15" font-weight="700" font-family="system-ui, sans-serif">• Navegación Asíncrona Desacoplada</text>
+            <text x="20" y="170" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">Catálogo con renderizado en servidor (SSR).</text>
+            <text x="20" y="200" fill="#F8FAFC" font-size="15" font-weight="700" font-family="system-ui, sans-serif">• Checkout con Reserva Dinámica</text>
+            <text x="20" y="225" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">TTL de 20 min tarjetas / 240 min manual.</text>
+            
+            <rect x="20" y="260" width="362" height="75" rx="8" fill="#0F172A" stroke="#38BDF8" stroke-width="1"/>
+            <text x="36" y="290" fill="#38BDF8" font-size="13" font-weight="700" font-family="monospace">AISLAMIENTO DE RIESGO</text>
+            <text x="36" y="315" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">Un ataque DDoS web NO debe afectar el POS.</text>
+        </g>
+    </g>
+
+    <!-- COLUMNA 2: PGBOUNCER TRANSACTION POOLING -->
+    <g transform="translate(560, 140)">
+        <rect width="760" height="880" rx="14" fill="#0F172A" stroke="#10B981" stroke-width="2.5"/>
+        <rect x="0" y="0" width="760" height="50" rx="14" fill="#131D31"/>
+        <text x="380" y="33" fill="#10B981" font-size="18" font-weight="800" text-anchor="middle" font-family="system-ui, sans-serif">2. POOLER PGBOUNCER 1.21 (Modo: pool_mode = transaction)</text>
+
+        <!-- Pool POS -->
+        <g transform="translate(30, 80)">
+            <rect width="700" height="360" rx="10" fill="#131D31" stroke="#10B981" stroke-width="2"/>
+            <rect x="20" y="16" width="660" height="55" rx="8" fill="#064E3B"/>
+            <text x="40" y="50" fill="#34D399" font-size="20" font-weight="800" font-family="monospace">pool_pos (Alta Prioridad LAN)</text>
+            <text x="660" y="50" fill="#F8FAFC" font-size="18" font-weight="900" text-anchor="end" font-family="monospace">50 CONEXIONES</text>
+            
+            <text x="30" y="105" fill="#F8FAFC" font-size="16" font-weight="700" font-family="system-ui, sans-serif">• Conexiones Dedicadas y Garantizadas:</text>
+            <text x="50" y="130" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">50 slots persistentes reservados exclusivamente para las cajas de tienda y almacén.</text>
+            
+            <text x="30" y="165" fill="#F8FAFC" font-size="16" font-weight="700" font-family="system-ui, sans-serif">• Latencia de Conexión Nula (&lt; 1 ms):</text>
+            <text x="50" y="190" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">El cajero nunca espera encolamiento de conexiones; respuesta inmediata.</text>
+            
+            <text x="30" y="225" fill="#F8FAFC" font-size="16" font-weight="700" font-family="system-ui, sans-serif">• Inmunidad Total ante Sobrecarga Externa:</text>
+            <text x="50" y="250" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">Aunque la web reciba 100,000 peticiones, pool_pos permanece 100% disponible.</text>
+
+            <rect x="30" y="280" width="640" height="60" rx="8" fill="#0F172A" stroke="#10B981" stroke-width="1"/>
+            <text x="50" y="315" fill="#34D399" font-size="14" font-weight="700" font-family="monospace">GARANTÍA AC01: P95 &lt; 250 ms en API Core | Cobro en caja &lt; 2.0 s</text>
+        </g>
+
+        <!-- Pool Web -->
+        <g transform="translate(30, 480)">
+            <rect width="700" height="360" rx="10" fill="#131D31" stroke="#38BDF8" stroke-width="2"/>
+            <rect x="20" y="16" width="660" height="55" rx="8" fill="#0C4A6E"/>
+            <text x="40" y="50" fill="#38BDF8" font-size="20" font-weight="800" font-family="monospace">pool_web (Pool Limitado con Backpressure)</text>
+            <text x="660" y="50" fill="#F8FAFC" font-size="18" font-weight="900" text-anchor="end" font-family="monospace">30 CONEXIONES</text>
+            
+            <text x="30" y="105" fill="#F8FAFC" font-size="16" font-weight="700" font-family="system-ui, sans-serif">• Cuota Máxima Estricta (Max Client Connections):</text>
+            <text x="50" y="130" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">Tope inviolable de 30 conexiones activas hacia la base de datos PostgreSQL.</text>
+            
+            <text x="30" y="165" fill="#F8FAFC" font-size="16" font-weight="700" font-family="system-ui, sans-serif">• Control de Contención y Encolamiento (Backpressure):</text>
+            <text x="50" y="190" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">Timeout de espera en cola de 5 segundos; previene el colapso del motor relacional.</text>
+            
+            <text x="30" y="225" fill="#F8FAFC" font-size="16" font-weight="700" font-family="system-ui, sans-serif">• Desacoplamiento de Lecturas con Dapper:</text>
+            <text x="50" y="250" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">Navegación de catálogo usa micro-ORM optimizado liberando conexiones en &lt; 15 ms.</text>
+
+            <rect x="30" y="280" width="640" height="60" rx="8" fill="#0F172A" stroke="#38BDF8" stroke-width="1"/>
+            <text x="50" y="315" fill="#38BDF8" font-size="14" font-weight="700" font-family="monospace">PROTECCIÓN ANTI-STARVATION: El tráfico web nunca asfixia a la tienda física</text>
+        </g>
+    </g>
+
+    <!-- COLUMNA 3: PERSISTENCIA SEGREGADA -->
+    <g transform="translate(1370, 140)">
+        <rect width="490" height="880" rx="14" fill="#0F172A" stroke="#334155" stroke-width="1.5"/>
+        <rect x="0" y="0" width="490" height="50" rx="14" fill="#131D31"/>
+        <text x="245" y="33" fill="#F8FAFC" font-size="17" font-weight="800" text-anchor="middle" font-family="system-ui, sans-serif">3. PERSISTENCIA SEGREGADA</text>
+
+        <!-- OLTP DB -->
+        <g transform="translate(24, 80)">
+            <rect width="442" height="360" rx="10" fill="#131D31" stroke="#F59E0B" stroke-width="2"/>
+            <rect x="16" y="16" width="410" height="40" rx="6" fill="#78350F"/>
+            <text x="221" y="42" fill="#FBBF24" font-size="16" font-weight="800" text-anchor="middle" font-family="system-ui, sans-serif">PostgreSQL 16: sigic_oltp (Transaccional)</text>
+            
+            <text x="20" y="90" fill="#F8FAFC" font-size="15" font-weight="700" font-family="system-ui, sans-serif">• Transacciones ACID Inmediatas</text>
+            <text x="20" y="115" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">Aislamiento Read Committed con bloqueo de fila.</text>
+            
+            <text x="20" y="145" fill="#F8FAFC" font-size="15" font-weight="700" font-family="system-ui, sans-serif">• SELECT ... FOR UPDATE Ordenado</text>
+            <text x="20" y="170" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">Erradicación de deadlocks multilínea.</text>
+            
+            <text x="20" y="200" fill="#F8FAFC" font-size="15" font-weight="700" font-family="system-ui, sans-serif">• Tablas Inmutables caja_arqueo</text>
+            <text x="20" y="225" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">Sin UPDATE ni DELETE para cajeros.</text>
+            
+            <rect x="20" y="260" width="402" height="75" rx="8" fill="#0F172A" stroke="#F59E0B" stroke-width="1"/>
+            <text x="36" y="290" fill="#FBBF24" font-size="13" font-weight="700" font-family="monospace">NÚCLEO FINANCIERO / AC02</text>
+            <text x="36" y="315" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">Protegido de contención y bloqueos masivos.</text>
+        </g>
+
+        <!-- OLAP DB -->
+        <g transform="translate(24, 480)">
+            <rect width="442" height="360" rx="10" fill="#131D31" stroke="#A855F7" stroke-width="2"/>
+            <rect x="16" y="16" width="410" height="40" rx="6" fill="#581C87"/>
+            <text x="221" y="42" fill="#C084FC" font-size="16" font-weight="800" text-anchor="middle" font-family="system-ui, sans-serif">PostgreSQL 16: sigic_olap (Analítico)</text>
+            
+            <text x="20" y="90" fill="#F8FAFC" font-size="15" font-weight="700" font-family="system-ui, sans-serif">• Datamart Dimensional en Estrella</text>
+            <text x="20" y="115" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">Tablas de hechos: Fact_Ventas, Fact_Kardex.</text>
+            
+            <text x="20" y="145" fill="#F8FAFC" font-size="15" font-weight="700" font-family="system-ui, sans-serif">• Job ETL Asíncrono Diario</text>
+            <text x="20" y="170" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">Extracción nocturna sin impacto en horario de venta.</text>
+            
+            <text x="20" y="200" fill="#F8FAFC" font-size="15" font-weight="700" font-family="system-ui, sans-serif">• Reportes Gerenciales Pesados</text>
+            <text x="20" y="225" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">Kardex valorizado mensual y utilidades por familia.</text>
+            
+            <rect x="20" y="260" width="402" height="75" rx="8" fill="#0F172A" stroke="#A855F7" stroke-width="1"/>
+            <text x="36" y="290" fill="#C084FC" font-size="13" font-weight="700" font-family="monospace">AISLAMIENTO CPU / RNF-PERF-002</text>
+            <text x="36" y="315" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">Consultas analíticas pesadas no tocan el OLTP.</text>
+        </g>
+    </g>
+</svg>

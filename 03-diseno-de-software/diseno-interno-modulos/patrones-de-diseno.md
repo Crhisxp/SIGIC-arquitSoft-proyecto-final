@@ -1,9 +1,22 @@
+---
+id: "03-patrones-de-diseno"
+doc: "03-diseno-de-software/diseno-interno-modulos/patrones-de-diseno.md"
+version: "2.2.0"
+estado: "VALIDADO_PARA_EXPOSICION"
+tipo: "Catálogo de Patrones de Diseño"
+proyecto: "SIGIC-Ferreteria-v2.2"
+autor: "Crhistian Emanuel Flores Marquina"
+evaluacion: "IS-488 UNSCH"
+fecha: "2026-10-30"
+---
+
 # Catálogo de Patrones de Diseño — SIGIC Ferretería
 
 > **Documento:** `03-diseno-de-software/diseno-interno-modulos/patrones-de-diseno.md`  
 > **Versión de Especificación:** 2.2 (Oficial – SIGIC Ferretería)  
 > **Disciplina:** Patrones de Diseño de Software (GoF & Patrones de Arquitectura Empresarial)  
-> **Sistema:** SIGIC Ferretería (Monolito Modular ASP.NET Core 8 Web API)
+> **Sistema:** SIGIC Ferretería (Monolito Modular ASP.NET Core 8 Web API)  
+> **Evaluación Académica:** IS-488 Arquitectura de Software (UNSCH)
 
 ---
 
@@ -15,19 +28,19 @@ El diseño técnico de **SIGIC Ferretería v2.2** aplica un conjunto disciplinad
 mindmap
   root((Patrones SIGIC))
     GoF Comportamiento
-      Strategy (Tarifas y Precios)
+      Strategy (Tarifas y Precios AC01)
       Observer / Domain Events (Efectos Colaterales)
     GoF Creacional
       Factory Method (Payloads Tributarios SUNAT)
     GoF Estructural
-      Adapter (Pasarelas de Pago e Integraciones)
+      Adapter (Pasarelas de Pago y Storage)
     Concurrencia
-      Pessimistic Locking Determinista (ORDER BY)
+      Pessimistic Locking Determinista (ORDER BY AC02)
       Background Worker (TTL Dinámico de Reservas)
     Arquitectura y Persistencia
-      Repository & Unit of Work (EF Core)
-      CQRS Ligero (MediatR)
-      Transactional Outbox (Auditoría Inmutable)
+      Repository & Unit of Work (EF Core 8)
+      CQRS Ligero (MediatR & Dapper AC01)
+      Transactional Outbox (Auditoría Inmutable AC03)
 ```
 
 ---
@@ -65,7 +78,7 @@ classDiagram
     MotorPreciosContext o-- IPrecioStrategy
 ```
 
-#### Ejemplo de Implementación en C#:
+#### Implementación en C#:
 ```csharp
 public interface IPrecioStrategy
 {
@@ -76,7 +89,7 @@ public class PrecioContratistaMayoristaStrategy : IPrecioStrategy
 {
     public PrecioCalculadoDto CalcularPrecio(Articulo articulo, decimal cantidad, PerfilCliente perfil)
     {
-        // Aplica Lista 3 (Mayorista) verificando margen mínimo de seguridad sobre el CPP
+        // Aplica Lista 3 (Mayorista) verificando margen mínimo de seguridad sobre el CPP (AC02)
         decimal precioBase = articulo.ObtenerPrecioLista3();
         if (precioBase < articulo.CostoPromedioPonderado * 1.05m)
             throw new MargenInvalidoException("El precio mayorista no puede perforar el costo ponderado.");
@@ -122,7 +135,7 @@ classDiagram
 ## 4. Patrones GoF Estructurales
 
 ### 4.1. Patrón Adapter: Integración de Pasarelas de Pago Web (`IPaymentGatewayAdapter`)
-- **Problema de Negocio:** El portal web requiere procesar tarjetas de crédito/débito a través de proveedores certificados (ej. Niubiz, Culqi, Mercado Pago). Para no atar el módulo de pedidos a la API propietaria de un proveedor específico (`RF-WEB-003`), se requiere un adaptador que normalice las solicitudes y los webhooks entrantes.
+- **Problema de Negocio:** El portal web requiere procesar tarjetas de crédito/débito a través de proveedores certificados (Niubiz, Culqi). Para no atar el módulo de pedidos a la API propietaria de un proveedor específico (`RF-WEB-003`), se requiere un adaptador que normalice las solicitudes y los webhooks entrantes.
 - **Solución:** Se introduce la interfaz `IPaymentGatewayAdapter` que convierte la semántica del dominio en las llamadas de red del proveedor seleccionado.
 
 ```mermaid
@@ -151,7 +164,7 @@ classDiagram
 
 ## 5. Patrones de Persistencia y Concurrencia
 
-### 5.1. Bloqueo Pesimista Ordenado Anti-Deadlock (`SELECT ... FOR UPDATE`)
+### 5.1. Bloqueo Pesimista Ordenado Anti-Deadlock (`SELECT ... FOR UPDATE` - AC02)
 - **Problema de Negocio:** En concurrencia extrema (cajeros cobrando y clientes en checkout compitiendo por bolsas de cemento o varillas de fierro), si dos transacciones adquieren bloqueos en orden inverso, ocurre un *deadlock* en PostgreSQL 16 (`RNF-CON-002`).
 - **Solución:** Se obliga a ordenar los identificadores de productos ascendentemente (`ORDER BY producto_id ASC`) en memoria antes de emitir el bloqueo pesimista en la base de datos.
 
@@ -159,16 +172,16 @@ classDiagram
 sequenceDiagram
     autonumber
     participant App as CheckoutHandler (C#)
-    participant DB as PostgreSQL 16 (sigic_oltp)
+    participant DB as PostgreSQL 16 (sigic_oltp via pool_web)
 
     Note over App: 1. Ordena IDs en memoria: [3, 15, 42]
     App->>DB: BEGIN TRANSACTION (Isolation: Read Committed)
     App->>DB: SELECT id, stock_fisico, stock_comprometido FROM inventario_stock WHERE id IN (3, 15, 42) ORDER BY id ASC FOR UPDATE;
     Note over DB: Adquiere Row-Level Locks deterministas
-    App->>App: Evalúa: (stock_fisico - stock_comprometido) >= Solicitado
+    App->>App: Evalúa Invariante: (stock_fisico - stock_comprometido) >= Solicitado
     alt Stock Suficiente
         App->>DB: UPDATE inventario_stock SET stock_comprometido = stock_comprometido + @Cant WHERE id = @Id;
-        App->>DB: INSERT INTO reserva_pedido (...) VALUES (...);
+        App->>DB: INSERT INTO reserva_stock_pedido (...) VALUES (...);
         App->>DB: COMMIT;
         Note over App,DB: Reserva garantizada sin deadlocks
     else Stock Insuficiente
@@ -180,5 +193,5 @@ sequenceDiagram
 ### 5.2. Patrón Repository & Unit of Work (EF Core 8)
 - Centraliza la persistencia transaccional ACID dentro de un límite de transacción unificado. El `IUnitOfWork` garantiza que todas las mutaciones sobre el inventario, los asientos de venta y las reservas se confirmen atómicamente (`CommitAsync()`) o se reviertan en su totalidad ante cualquier fallo.
 
-### 5.3. Patrón Transactional Outbox para Auditoría Inmutable
-- Todas las operaciones sensibles (`RNF-SEG-004`) se insertan en la tabla `Audit_Log` dentro de la **misma transacción relacional** que muta el estado de negocio. Esto elimina la posibilidad de discrepancias entre los datos reales y la bitácora de auditoría.
+### 5.3. Patrón Transactional Outbox para Auditoría Inmutable (AC03)
+- Todas las operaciones sensibles (`RNF-SEG-004`) y las mutaciones de arqueo ciego se insertan en la tabla `Audit_Log` dentro de la **misma transacción relacional** que muta el estado de negocio. Esto elimina de raíz la posibilidad de discrepancias entre los datos operacionales y la bitácora de auditoría.

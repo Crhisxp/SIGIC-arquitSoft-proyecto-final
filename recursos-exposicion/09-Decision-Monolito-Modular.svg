@@ -1,0 +1,162 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+    
+    <defs>
+        <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#080D1A"/>
+            <stop offset="100%" stop-color="#0F172A"/>
+        </linearGradient>
+        <linearGradient id="cardGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#1E293B"/>
+            <stop offset="100%" stop-color="#111827"/>
+        </linearGradient>
+        <linearGradient id="emeraldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#10B981"/>
+            <stop offset="100%" stop-color="#059669"/>
+        </linearGradient>
+        <linearGradient id="skyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#38BDF8"/>
+            <stop offset="100%" stop-color="#0284C7"/>
+        </linearGradient>
+        <linearGradient id="amberGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#F59E0B"/>
+            <stop offset="100%" stop-color="#D97706"/>
+        </linearGradient>
+        <linearGradient id="purpleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#A855F7"/>
+            <stop offset="100%" stop-color="#7E22CE"/>
+        </linearGradient>
+        <marker id="arrow-emerald" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#10B981" />
+        </marker>
+        <marker id="arrow-sky" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#38BDF8" />
+        </marker>
+        <marker id="arrow-amber" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#F59E0B" />
+        </marker>
+        <marker id="arrow-slate" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#64748B" />
+        </marker>
+    </defs>
+
+    <rect width="1920" height="1080" fill="url(#bgGrad)" />
+    
+    <!-- HEADER -->
+    <rect x="0" y="0" width="1920" height="100" fill="#0D1527" />
+    <line x1="0" y1="100" x2="1920" y2="100" stroke="#1E293B" stroke-width="2" />
+    <rect x="60" y="24" width="16" height="52" rx="4" fill="#10B981" />
+    <text x="96" y="52" fill="#F8FAFC" font-size="28" font-weight="700" font-family="system-ui, -apple-system, sans-serif">DECISIÓN ARQUITECTÓNICA: MONOLITO MODULAR VS MICROSERVICIOS</text>
+    <text x="96" y="80" fill="#94A3B8" font-size="16" font-family="system-ui, -apple-system, sans-serif">Evaluación Rigurosa de Trade-Offs de Ingeniería de Software (IS-488 UNSCH / Guía 03)</text>
+    
+    <!-- BADGE -->
+    <rect x="1530" y="32" width="330" height="36" rx="18" fill="#1E293B" stroke="#334155" stroke-width="1.5" />
+    <circle cx="1554" cy="50" r="6" fill="#10B981" />
+    <text x="1572" y="55" fill="#F8FAFC" font-size="14" font-weight="600" font-family="system-ui, -apple-system, sans-serif">IS-488 UNSCH | DECISIÓN</text>
+
+
+    <!-- HEADER DE COMPARACIÓN -->
+    <g transform="translate(60, 130)">
+        <rect width="420" height="50" rx="8" fill="#131D31" stroke="#334155" stroke-width="1"/>
+        <text x="210" y="32" fill="#F8FAFC" font-size="16" font-weight="800" text-anchor="middle" font-family="system-ui, sans-serif">CRITERIO ARQUITECTÓNICO</text>
+
+        <rect x="440" y="0" width="660" height="50" rx="8" fill="#1F1528" stroke="#EF4444" stroke-width="1.5"/>
+        <text x="770" y="32" fill="#F87171" font-size="16" font-weight="800" text-anchor="middle" font-family="system-ui, sans-serif">ARQUITECTURA DE MICROSERVICIOS (DESESTIMADA)</text>
+
+        <rect x="1120" y="0" width="680" height="50" rx="8" fill="#0C251F" stroke="#10B981" stroke-width="2"/>
+        <text x="1460" y="32" fill="#34D399" font-size="16" font-weight="800" text-anchor="middle" font-family="system-ui, sans-serif">MONOLITO MODULAR CLEAN ARCHITECTURE (SIGIC v2.2)</text>
+    </g>
+
+    <!-- FILA 1: CONSISTENCIA TRANSACCIONAL (AC02) -->
+    <g transform="translate(60, 195)">
+        <rect width="420" height="180" rx="10" fill="#131D31" stroke="#38BDF8" stroke-width="1.5"/>
+        <text x="24" y="40" fill="#38BDF8" font-size="18" font-weight="800" font-family="system-ui, sans-serif">1. Consistencia Transaccional</text>
+        <text x="24" y="65" fill="#94A3B8" font-size="13" font-family="monospace">ATRIBUTO RECTOR AC02</text>
+        <text x="24" y="105" fill="#F8FAFC" font-size="14" font-family="system-ui, sans-serif">Garantía de inventario crítico sin sobreventa de fierro y cemento en horas pico.</text>
+
+        <rect x="440" y="0" width="660" height="180" rx="10" fill="#181324" stroke="#7F1D1D" stroke-width="1"/>
+        <text x="464" y="38" fill="#F87171" font-size="16" font-weight="700" font-family="system-ui, sans-serif">Consistencia Eventual (Eventual Consistency)</text>
+        <text x="464" y="70" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">• Requiere orquestación compleja de Sagas o Two-Phase Commit (2PC).</text>
+        <text x="464" y="98" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">• Ventanas de sobreventa crítica cuando un cliente reserva y el cajero cobra.</text>
+        <text x="464" y="126" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">• Desfase de compensación (rollbacks distribuidos lentos e inconsistentes).</text>
+        <text x="464" y="154" fill="#F87171" font-size="13" font-weight="700" font-family="monospace">RIESGO CRÍTICO: Sobrevendido en obra física.</text>
+
+        <rect x="1120" y="0" width="680" height="180" rx="10" fill="#091E19" stroke="#059669" stroke-width="1.5"/>
+        <text x="1144" y="38" fill="#34D399" font-size="16" font-weight="700" font-family="system-ui, sans-serif">Transacciones ACID Inmediatas</text>
+        <text x="1144" y="70" fill="#F8FAFC" font-size="14" font-family="system-ui, sans-serif">• Mutación atómica en una única instancia relacional PostgreSQL 16.</text>
+        <text x="1144" y="98" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">• Bloqueo pesimista de fila (SELECT ... FOR UPDATE) ordenado por producto_id.</text>
+        <text x="1144" y="126" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">• Cero desfase entre descuento de stock físico y reserva web.</text>
+        <text x="1144" y="154" fill="#10B981" font-size="13" font-weight="700" font-family="monospace">RESULTADO VERIFICADO: 0 Sobreventas garantizadas.</text>
+    </g>
+
+    <!-- FILA 2: LATENCIA INTER-MÓDULO (AC01) -->
+    <g transform="translate(60, 395)">
+        <rect width="420" height="180" rx="10" fill="#131D31" stroke="#38BDF8" stroke-width="1.5"/>
+        <text x="24" y="40" fill="#38BDF8" font-size="18" font-weight="800" font-family="system-ui, sans-serif">2. Latencia Inter-Módulo</text>
+        <text x="24" y="65" fill="#94A3B8" font-size="13" font-family="monospace">ATRIBUTO RECTOR AC01</text>
+        <text x="24" y="105" fill="#F8FAFC" font-size="14" font-family="system-ui, sans-serif">Velocidad de facturación en mostrador presencial con colas de clientes.</text>
+
+        <rect x="440" y="0" width="660" height="180" rx="10" fill="#181324" stroke="#7F1D1D" stroke-width="1"/>
+        <text x="464" y="38" fill="#F87171" font-size="16" font-weight="700" font-family="system-ui, sans-serif">20 ms a 50 ms por Llamada de Red</text>
+        <text x="464" y="70" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">• Cada validación (Inventario, Precios, Caja) requiere saltos de red HTTP/gRPC.</text>
+        <text x="464" y="98" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">• Serialización/deserialización JSON/Protobuf redundante en cada paso.</text>
+        <text x="464" y="126" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">• Latencia acumulada en caja > 1.5 s por comprobante.</text>
+        <text x="464" y="154" fill="#F87171" font-size="13" font-weight="700" font-family="monospace">INCUMPLE SLA: Causa colas y lentitud en punto de venta.</text>
+
+        <rect x="1120" y="0" width="680" height="180" rx="10" fill="#091E19" stroke="#059669" stroke-width="1.5"/>
+        <text x="1144" y="38" fill="#34D399" font-size="16" font-weight="700" font-family="system-ui, sans-serif">&lt; 1 ms en Memoria del Proceso Kestrel</text>
+        <text x="1144" y="70" fill="#F8FAFC" font-size="14" font-family="system-ui, sans-serif">• Invocaciones tipadas directas en memoria mediante MediatR CQRS.</text>
+        <text x="1144" y="98" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">• Cero sobrecarga de serialización en el núcleo transaccional.</text>
+        <text x="1144" y="126" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">• Cumple estrictamente P95 &lt; 250 ms en API y cobro total &lt; 2.0 s.</text>
+        <text x="1144" y="154" fill="#10B981" font-size="13" font-weight="700" font-family="monospace">VELOCIDAD MÁXIMA: Alta reactividad en red local LAN.</text>
+    </g>
+
+    <!-- FILA 3: SOBRECARGA OPERACIONAL (DEVOPS) -->
+    <g transform="translate(60, 595)">
+        <rect width="420" height="180" rx="10" fill="#131D31" stroke="#38BDF8" stroke-width="1.5"/>
+        <text x="24" y="40" fill="#38BDF8" font-size="18" font-weight="800" font-family="system-ui, sans-serif">3. Complejidad y DevOps</text>
+        <text x="24" y="65" fill="#94A3B8" font-size="13" font-family="monospace">EFICIENCIA Y MANTENIBILIDAD</text>
+        <text x="24" y="105" fill="#F8FAFC" font-size="14" font-family="system-ui, sans-serif">Alineación con el tamaño del equipo de TI y presupuesto ferretero regional.</text>
+
+        <rect x="440" y="0" width="660" height="180" rx="10" fill="#181324" stroke="#7F1D1D" stroke-width="1"/>
+        <text x="464" y="38" fill="#F87171" font-size="16" font-weight="700" font-family="system-ui, sans-serif">Alta Complejidad y Sobrecosto</text>
+        <text x="464" y="70" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">• Múltiples repositorios, clúster Kubernetes, service mesh, API gateways.</text>
+        <text x="464" y="98" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">• Trazabilidad distribuida (Jaeger/OpenTelemetry) obligatoria para depurar.</text>
+        <text x="464" y="126" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">• Despliegues fragmentados con riesgo de fallos en cascada.</text>
+        <text x="464" y="154" fill="#F87171" font-size="13" font-weight="700" font-family="monospace">INVIABLE: Desproporcionado para retail comercial local.</text>
+
+        <rect x="1120" y="0" width="680" height="180" rx="10" fill="#091E19" stroke="#059669" stroke-width="1.5"/>
+        <text x="1144" y="38" fill="#34D399" font-size="16" font-weight="700" font-family="system-ui, sans-serif">Un Solo Pipeline CI/CD y Un Solo Artefacto</text>
+        <text x="1144" y="70" fill="#F8FAFC" font-size="14" font-family="system-ui, sans-serif">• Repositorio modular unificado con Clean Architecture estricta.</text>
+        <text x="1144" y="98" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">• Despliegue atómico en contenedor Docker o servicio systemd.</text>
+        <text x="1144" y="126" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">• Monitoreo y logging unificado sin fragmentación.</text>
+        <text x="1144" y="154" fill="#10B981" font-size="13" font-weight="700" font-family="monospace">EFICACIA COMPROBADA: Mantenible por equipo ágil.</text>
+    </g>
+
+    <!-- FILA 4: INTEGRIDAD Y AUDITORÍA (AC03) -->
+    <g transform="translate(60, 795)">
+        <rect width="420" height="180" rx="10" fill="#131D31" stroke="#38BDF8" stroke-width="1.5"/>
+        <text x="24" y="40" fill="#38BDF8" font-size="18" font-weight="800" font-family="system-ui, sans-serif">4. Integridad y Auditoría</text>
+        <text x="24" y="65" fill="#94A3B8" font-size="13" font-family="monospace">ATRIBUTO RECTOR AC03</text>
+        <text x="24" y="105" fill="#F8FAFC" font-size="14" font-family="system-ui, sans-serif">Trazabilidad legal contable inmutable de arqueos y comprobantes de pago.</text>
+
+        <rect x="440" y="0" width="660" height="180" rx="10" fill="#181324" stroke="#7F1D1D" stroke-width="1"/>
+        <text x="464" y="38" fill="#F87171" font-size="16" font-weight="700" font-family="system-ui, sans-serif">Bitácoras Distribuidas Desincronizadas</text>
+        <text x="464" y="70" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">• Múltiples bases de datos heterogéneas dificultan la conciliación.</text>
+        <text x="464" y="98" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">• Riesgo de pérdida de eventos en colas durante cortes de red.</text>
+        <text x="464" y="126" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">• Auditoría forense compleja que requiere reconstrucción de trazas.</text>
+        <text x="464" y="154" fill="#F87171" font-size="13" font-weight="700" font-family="monospace">VULNERABILIDAD: Brechas en auditoría tributaria.</text>
+
+        <rect x="1120" y="0" width="680" height="180" rx="10" fill="#091E19" stroke="#059669" stroke-width="1.5"/>
+        <text x="1144" y="38" fill="#34D399" font-size="16" font-weight="700" font-family="system-ui, sans-serif">Esquema Relacional Append-Only Unificado</text>
+        <text x="1144" y="70" fill="#F8FAFC" font-size="14" font-family="system-ui, sans-serif">• Tablas caja_arqueo y Audit_Log en la misma transacción de PostgreSQL.</text>
+        <text x="1144" y="98" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">• Transactional Outbox Pattern atómico para eventos externos.</text>
+        <text x="1144" y="126" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">• Revocación de UPDATE y DELETE para asegurar no repudio legal.</text>
+        <text x="1144" y="154" fill="#10B981" font-size="13" font-weight="700" font-family="monospace">AUDITORÍA TOTAL: Integridad contable certificada al 100%.</text>
+    </g>
+
+    <!-- FOOTER BADGE -->
+    <g transform="translate(60, 995)">
+        <rect width="1800" height="50" rx="8" fill="#131D31" stroke="#334155" stroke-width="1"/>
+        <text x="900" y="31" fill="#38BDF8" font-size="14" font-weight="700" text-anchor="middle" font-family="system-ui, sans-serif">CONCLUSIÓN ARQUITECTÓNICA: El Monolito Modular en ASP.NET Core 8 maximiza consistencia ACID y minimiza latencia, cumpliendo al 100% las restricciones de IS-488 UNSCH.</text>
+    </g>
+</svg>

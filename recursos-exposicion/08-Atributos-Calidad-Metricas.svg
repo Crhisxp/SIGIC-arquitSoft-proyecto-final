@@ -1,0 +1,180 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+    
+    <defs>
+        <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#080D1A"/>
+            <stop offset="100%" stop-color="#0F172A"/>
+        </linearGradient>
+        <linearGradient id="cardGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#1E293B"/>
+            <stop offset="100%" stop-color="#111827"/>
+        </linearGradient>
+        <linearGradient id="emeraldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#10B981"/>
+            <stop offset="100%" stop-color="#059669"/>
+        </linearGradient>
+        <linearGradient id="skyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#38BDF8"/>
+            <stop offset="100%" stop-color="#0284C7"/>
+        </linearGradient>
+        <linearGradient id="amberGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#F59E0B"/>
+            <stop offset="100%" stop-color="#D97706"/>
+        </linearGradient>
+        <linearGradient id="purpleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#A855F7"/>
+            <stop offset="100%" stop-color="#7E22CE"/>
+        </linearGradient>
+        <marker id="arrow-emerald" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#10B981" />
+        </marker>
+        <marker id="arrow-sky" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#38BDF8" />
+        </marker>
+        <marker id="arrow-amber" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#F59E0B" />
+        </marker>
+        <marker id="arrow-slate" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#64748B" />
+        </marker>
+    </defs>
+
+    <rect width="1920" height="1080" fill="url(#bgGrad)" />
+    
+    <!-- HEADER -->
+    <rect x="0" y="0" width="1920" height="100" fill="#0D1527" />
+    <line x1="0" y1="100" x2="1920" y2="100" stroke="#1E293B" stroke-width="2" />
+    <rect x="60" y="24" width="16" height="52" rx="4" fill="#10B981" />
+    <text x="96" y="52" fill="#F8FAFC" font-size="28" font-weight="700" font-family="system-ui, -apple-system, sans-serif">ATRIBUTOS DE CALIDAD RECTORES Y MÉTRICAS CUANTIFICABLES</text>
+    <text x="96" y="80" fill="#94A3B8" font-size="16" font-family="system-ui, -apple-system, sans-serif">Priorización Estratégica bajo Estándar ISO/IEC 25010 y Restricciones de Concurrencia Ferretera</text>
+    
+    <!-- BADGE -->
+    <rect x="1530" y="32" width="330" height="36" rx="18" fill="#1E293B" stroke="#334155" stroke-width="1.5" />
+    <circle cx="1554" cy="50" r="6" fill="#10B981" />
+    <text x="1572" y="55" fill="#F8FAFC" font-size="14" font-weight="600" font-family="system-ui, -apple-system, sans-serif">IS-488 UNSCH | ATRIBUTOS</text>
+
+
+    <!-- 3 MAIN RECTOR CARDS -->
+    <!-- AC01 -->
+    <g transform="translate(60, 135)">
+        <rect width="560" height="660" rx="14" fill="#0F172A" stroke="#38BDF8" stroke-width="2.5"/>
+        <rect x="0" y="0" width="560" height="52" rx="14" fill="#131D31"/>
+        <rect x="20" y="14" width="8" height="24" rx="2" fill="#38BDF8"/>
+        <text x="38" y="34" fill="#38BDF8" font-size="18" font-weight="800" font-family="system-ui, sans-serif">AC01: RENDIMIENTO TRANSACCIONAL</text>
+        
+        <rect x="24" y="70" width="512" height="80" rx="8" fill="#1E293B" stroke="#38BDF8" stroke-width="1.5"/>
+        <text x="280" y="105" fill="#38BDF8" font-size="28" font-weight="900" text-anchor="middle" font-family="monospace">P95 &lt; 250 ms</text>
+        <text x="280" y="132" fill="#94A3B8" font-size="14" text-anchor="middle" font-family="system-ui, sans-serif">Latencia en Endpoints de Cobro POS en Red LAN</text>
+
+        <text x="24" y="185" fill="#F8FAFC" font-size="16" font-weight="700" font-family="system-ui, sans-serif">• Velocidad de Operación en Mostrador:</text>
+        <text x="44" y="212" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">Adición de ítem por lector láser ≤ 1.0 s.</text>
+        <text x="44" y="234" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">Cierre total de venta con cobro mixto ≤ 2.0 s (P95).</text>
+
+        <text x="24" y="275" fill="#F8FAFC" font-size="16" font-weight="700" font-family="system-ui, sans-serif">• Optimización de Acceso a Datos:</text>
+        <text x="44" y="302" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">Consultas de catálogo mediante Dapper Micro-ORM &lt; 15 ms.</text>
+        <text x="44" y="324" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">Llamadas en memoria intra-monolito &lt; 1 ms (sin saltos de red).</text>
+
+        <text x="24" y="365" fill="#F8FAFC" font-size="16" font-weight="700" font-family="system-ui, sans-serif">• Concurrencia Simultánea:</text>
+        <text x="44" y="392" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">20 terminales POS concurrentes y 200 sesiones web activas</text>
+        <text x="44" y="414" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">sin degradación superior al 10% en mostrador.</text>
+
+        <rect x="24" y="455" width="512" height="175" rx="10" fill="#131D31" stroke="#334155" stroke-width="1"/>
+        <text x="40" y="485" fill="#38BDF8" font-size="14" font-weight="700" font-family="monospace">MECANISMO ARQUITECTÓNICO</text>
+        <text x="40" y="512" fill="#F8FAFC" font-size="14" font-weight="600" font-family="system-ui, sans-serif">PgBouncer: pool_pos dedicado</text>
+        <text x="40" y="535" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">50 conexiones exclusivas reservadas para LAN.</text>
+        <text x="40" y="557" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">Eliminación de contención con el portal e-commerce.</text>
+        <text x="40" y="582" fill="#38BDF8" font-size="13" font-weight="700" font-family="monospace">ESTÁNDAR: RNF-PERF-001 / RNF-PERF-005</text>
+        <text x="40" y="605" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">Prioridad transaccional absoluta de venta física en tienda.</text>
+    </g>
+
+    <!-- AC02 -->
+    <g transform="translate(680, 135)">
+        <rect width="560" height="660" rx="14" fill="#0F172A" stroke="#10B981" stroke-width="2.5"/>
+        <rect x="0" y="0" width="560" height="52" rx="14" fill="#131D31"/>
+        <rect x="20" y="14" width="8" height="24" rx="2" fill="#10B981"/>
+        <text x="38" y="34" fill="#10B981" font-size="18" font-weight="800" font-family="system-ui, sans-serif">AC02: CONSISTENCIA TRANSACCIONAL</text>
+        
+        <rect x="24" y="70" width="512" height="80" rx="8" fill="#1E293B" stroke="#10B981" stroke-width="1.5"/>
+        <text x="280" y="105" fill="#34D399" font-size="28" font-weight="900" text-anchor="middle" font-family="monospace">0 SOBREVENTAS</text>
+        <text x="280" y="132" fill="#94A3B8" font-size="14" text-anchor="middle" font-family="system-ui, sans-serif">Cero Saldos Negativos en Concurrencia Extrema</text>
+
+        <text x="24" y="185" fill="#F8FAFC" font-size="16" font-weight="700" font-family="system-ui, sans-serif">• Invariante de Inventario Inviolable:</text>
+        <text x="44" y="212" fill="#34D399" font-size="15" font-weight="700" font-family="monospace">Stock Disponible = Stock Físico - Comprometido</text>
+        <text x="44" y="234" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">Bloqueo estricto de autorizaciones directas por físico.</text>
+
+        <text x="24" y="275" fill="#F8FAFC" font-size="16" font-weight="700" font-family="system-ui, sans-serif">• Erradicación Determinista de Deadlocks:</text>
+        <text x="44" y="302" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">Ordenamiento en memoria: ORDER BY producto_id ASC</text>
+        <text x="44" y="324" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">previo a la adquisición de cerrojos SELECT ... FOR UPDATE.</text>
+
+        <text x="24" y="365" fill="#F8FAFC" font-size="16" font-weight="700" font-family="system-ui, sans-serif">• TTL Dinámico de Reserva Web:</text>
+        <text x="44" y="392" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">20 minutos exactos para pasarela de tarjetas.</text>
+        <text x="44" y="414" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">240 minutos para pagos manuales (60 min máx voucher).</text>
+
+        <rect x="24" y="455" width="512" height="175" rx="10" fill="#131D31" stroke="#334155" stroke-width="1"/>
+        <text x="40" y="485" fill="#10B981" font-size="14" font-weight="700" font-family="monospace">PRUEBA DE ESTRÉS CONCURRENTE</text>
+        <text x="40" y="512" fill="#F8FAFC" font-size="14" font-weight="600" font-family="system-ui, sans-serif">100 hilos concurrentes compitiendo por 5 unidades:</text>
+        <text x="40" y="535" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">Exactamente 5 unidades confirmadas; 95 rechazadas.</text>
+        <text x="40" y="557" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">Liberación asíncrona cada 60s con SKIP LOCKED.</text>
+        <text x="40" y="582" fill="#10B981" font-size="13" font-weight="700" font-family="monospace">ESTÁNDAR: RNF-CON-001 / RNF-CON-003</text>
+        <text x="40" y="605" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">Consistencia relacional ACID inmediata en PostgreSQL 16.</text>
+    </g>
+
+    <!-- AC03 -->
+    <g transform="translate(1300, 135)">
+        <rect width="560" height="660" rx="14" fill="#0F172A" stroke="#A855F7" stroke-width="2.5"/>
+        <rect x="0" y="0" width="560" height="52" rx="14" fill="#131D31"/>
+        <rect x="20" y="14" width="8" height="24" rx="2" fill="#A855F7"/>
+        <text x="38" y="34" fill="#A855F7" font-size="18" font-weight="800" font-family="system-ui, sans-serif">AC03: TRAZABILIDAD Y ARQUEO CIEGO</text>
+        
+        <rect x="24" y="70" width="512" height="80" rx="8" fill="#1E293B" stroke="#A855F7" stroke-width="1.5"/>
+        <text x="280" y="105" fill="#C084FC" font-size="28" font-weight="900" text-anchor="middle" font-family="monospace">100% INMUTABLE</text>
+        <text x="280" y="132" fill="#94A3B8" font-size="14" text-anchor="middle" font-family="system-ui, sans-serif">Auditoría Append-Only sin UPDATE / DELETE</text>
+
+        <text x="24" y="185" fill="#F8FAFC" font-size="16" font-weight="700" font-family="system-ui, sans-serif">• Protocolo de Arqueo Ciego (RF-CAJ-002):</text>
+        <text x="44" y="212" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">Declaración de efectivo por denominaciones físicas sin ver el sistema.</text>
+        <text x="44" y="234" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">Triple conciliación: Efectivo vs Teórico vs Pasarelas.</text>
+
+        <text x="24" y="275" fill="#F8FAFC" font-size="16" font-weight="700" font-family="system-ui, sans-serif">• Seguridad Criptográfica en Servidor:</text>
+        <text x="44" y="302" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">JWT asimétricos RS256 (RSA 2048 bits, validez 15 min).</text>
+        <text x="44" y="324" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">Contraseñas protegidas con Argon2id (m=65536, t=3, p=4).</text>
+
+        <text x="24" y="365" fill="#F8FAFC" font-size="16" font-weight="700" font-family="system-ui, sans-serif">• Custodia de Vouchers Bancarios:</text>
+        <text x="44" y="392" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">Storage Privado cifrado para comprobantes de hasta 5 MB.</text>
+        <text x="44" y="414" fill="#94A3B8" font-size="14" font-family="system-ui, sans-serif">Cero exposición pública; acceso exclusivo para Tesorería.</text>
+
+        <rect x="24" y="455" width="512" height="175" rx="10" fill="#131D31" stroke="#334155" stroke-width="1"/>
+        <text x="40" y="485" fill="#A855F7" font-size="14" font-weight="700" font-family="monospace">REGLA DDL DE POSTGRESQL</text>
+        <text x="40" y="512" fill="#F8FAFC" font-size="13" font-weight="600" font-family="monospace">REVOKE UPDATE, DELETE ON caja_arqueo FROM rol_cajero;</text>
+        <text x="40" y="535" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">Garantiza no repudio y trazabilidad contable auditada.</text>
+        <text x="40" y="557" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">100% de operaciones sensibles registradas en Audit_Log.</text>
+        <text x="40" y="582" fill="#A855F7" font-size="13" font-weight="700" font-family="monospace">ESTÁNDAR: RNF-SEG-003 / RNF-SEG-004</text>
+        <text x="40" y="605" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">Alineado a la Ley de Protección de Datos Personales N.° 29733.</text>
+    </g>
+
+    <!-- BOTTOM ROW: RNF COMPLEMENTARIOS -->
+    <g transform="translate(60, 825)">
+        <rect width="1800" height="205" rx="14" fill="#131D31" stroke="#334155" stroke-width="1.5"/>
+        <text x="30" y="38" fill="#F8FAFC" font-size="17" font-weight="800" font-family="system-ui, sans-serif">ATRIBUTOS COMPLEMENTARIOS DE USABILIDAD Y DISPONIBILIDAD</text>
+
+        <g transform="translate(30, 60)">
+            <rect width="560" height="115" rx="8" fill="#1E293B" stroke="#38BDF8" stroke-width="1"/>
+            <text x="20" y="32" fill="#38BDF8" font-size="15" font-weight="700" font-family="monospace">RNF-USA-002: ERGONOMÍA POS</text>
+            <text x="20" y="60" fill="#F8FAFC" font-size="14" font-weight="600" font-family="system-ui, sans-serif">Viewport 1024x768 px sin Scroll Horizontal</text>
+            <text x="20" y="85" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">Navegación 100% por atajos de teclado F1-F12 y escáner láser sin tocar el ratón.</text>
+        </g>
+
+        <g transform="translate(620, 60)">
+            <rect width="560" height="115" rx="8" fill="#1E293B" stroke="#10B981" stroke-width="1"/>
+            <text x="20" y="32" fill="#10B981" font-size="15" font-weight="700" font-family="monospace">RNF-DIS-001: ALTA DISPONIBILIDAD</text>
+            <text x="20" y="60" fill="#F8FAFC" font-size="14" font-weight="600" font-family="system-ui, sans-serif">Disponibilidad ≥ 99.5% en Horario Comercial</text>
+            <text x="20" y="85" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">Operación continua Lunes a Sábado 07:00 - 20:00 h; respaldos diarios con pg_dump.</text>
+        </g>
+
+        <g transform="translate(1210, 60)">
+            <rect width="560" height="115" rx="8" fill="#1E293B" stroke="#A855F7" stroke-width="1"/>
+            <text x="20" y="32" fill="#A855F7" font-size="15" font-weight="700" font-family="monospace">RNF-DIS-001: DISASTER RECOVERY</text>
+            <text x="20" y="60" fill="#F8FAFC" font-size="14" font-weight="600" font-family="system-ui, sans-serif">RTO ≤ 60 min | RPO ≤ 15 min</text>
+            <text x="20" y="85" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">Point-In-Time Recovery con archivado de WAL para restauración ante fallos de hardware.</text>
+        </g>
+    </g>
+</svg>

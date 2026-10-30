@@ -1,0 +1,306 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+    
+    <defs>
+        <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#080D1A"/>
+            <stop offset="100%" stop-color="#0F172A"/>
+        </linearGradient>
+        <linearGradient id="cardGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#1E293B"/>
+            <stop offset="100%" stop-color="#111827"/>
+        </linearGradient>
+        <linearGradient id="emeraldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#10B981"/>
+            <stop offset="100%" stop-color="#059669"/>
+        </linearGradient>
+        <linearGradient id="skyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#38BDF8"/>
+            <stop offset="100%" stop-color="#0284C7"/>
+        </linearGradient>
+        <linearGradient id="amberGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#F59E0B"/>
+            <stop offset="100%" stop-color="#D97706"/>
+        </linearGradient>
+        <linearGradient id="purpleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#A855F7"/>
+            <stop offset="100%" stop-color="#7E22CE"/>
+        </linearGradient>
+        <marker id="arrow-emerald" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#10B981" />
+        </marker>
+        <marker id="arrow-sky" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#38BDF8" />
+        </marker>
+        <marker id="arrow-amber" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#F59E0B" />
+        </marker>
+        <marker id="arrow-slate" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#64748B" />
+        </marker>
+        <marker id="arrow-purple" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#A855F7" />
+        </marker>
+    </defs>
+
+    <rect width="1920" height="1080" fill="url(#bgGrad)" />
+    
+    <!-- HEADER -->
+    <rect x="0" y="0" width="1920" height="100" fill="#0D1527" />
+    <line x1="0" y1="100" x2="1920" y2="100" stroke="#1E293B" stroke-width="2" />
+    <rect x="60" y="24" width="16" height="52" rx="4" fill="#10B981" />
+    <text x="96" y="52" fill="#F8FAFC" font-size="28" font-weight="700" font-family="system-ui, -apple-system, sans-serif">MODELO C4 — NIVEL 3: DIAGRAMA DE COMPONENTES INTERNOS</text>
+    <text x="96" y="80" fill="#94A3B8" font-size="16" font-family="system-ui, -apple-system, sans-serif">Estructura Modular Clean Architecture dentro del Backend ASP.NET Core 8 Web API — SIGIC Ferretería v2.2</text>
+    
+    <!-- BADGE -->
+    <rect x="1560" y="32" width="300" height="36" rx="18" fill="#1E293B" stroke="#334155" stroke-width="1.5" />
+    <circle cx="1584" cy="50" r="6" fill="#10B981" />
+    <text x="1602" y="55" fill="#F8FAFC" font-size="14" font-weight="600" font-family="system-ui, -apple-system, sans-serif">C4 NIVEL 3 | COMPONENTES</text>
+    
+
+    <!-- CAPA 1: PRESENTACIÓN (y = 130..290) -->
+    <text x="60" y="135" fill="#38BDF8" font-size="16" font-weight="800" letter-spacing="1.5" font-family="system-ui, sans-serif">1. CAPA DE PRESENTACIÓN (CONTROLADORES REST Y MIDDLEWARES DE BORDE)</text>
+
+    <!-- Componente 1: VentasPOSController -->
+    <g transform="translate(60, 150)">
+        <rect width="420" height="135" rx="12" fill="#131D31" stroke="#10B981" stroke-width="2"/>
+        <rect x="0" y="0" width="420" height="32" rx="12" fill="#1E293B"/>
+        <rect x="0" y="20" width="420" height="12" fill="#1E293B"/>
+        <circle cx="20" cy="16" r="6" fill="#10B981"/>
+        <text x="36" y="21" fill="#F8FAFC" font-size="14" font-weight="800" font-family="system-ui, sans-serif">Controlador Venta [VentasPOSController]</text>
+        <text x="16" y="52" fill="#F8FAFC" font-size="12" font-weight="600" font-family="system-ui, sans-serif">• Endpoint: /api/v1/internal/pos/ventas (Red LAN Mostrador)</text>
+        <text x="16" y="72" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• Facturación rápida por atajos de teclado F1-F12 y escáner láser.</text>
+        <text x="16" y="92" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• Despacha comando a RegistrarVentaPOSCommandHandler.</text>
+        <rect x="16" y="104" width="388" height="22" rx="4" fill="#0F172A"/>
+        <text x="24" y="119" fill="#34D399" font-size="11" font-weight="700" font-family="monospace">Auth: JWT RS256 (SIGIC_InternalStaff) • P95 &lt; 1.0s</text>
+    </g>
+
+    <!-- Componente 2: CheckoutWebController -->
+    <g transform="translate(510, 150)">
+        <rect width="420" height="135" rx="12" fill="#131D31" stroke="#38BDF8" stroke-width="2"/>
+        <rect x="0" y="0" width="420" height="32" rx="12" fill="#1E293B"/>
+        <rect x="0" y="20" width="420" height="12" fill="#1E293B"/>
+        <circle cx="20" cy="16" r="6" fill="#38BDF8"/>
+        <text x="36" y="21" fill="#F8FAFC" font-size="14" font-weight="800" font-family="system-ui, sans-serif">Controlador Checkout [CheckoutWebController]</text>
+        <text x="16" y="52" fill="#F8FAFC" font-size="12" font-weight="600" font-family="system-ui, sans-serif">• Endpoint: /api/v1/public/checkout (Portal Web / Internet)</text>
+        <text x="16" y="72" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• Entrada para compras e-commerce de materiales pesados y acabados.</text>
+        <text x="16" y="92" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• Despacha comando a IniciarCheckoutCommandHandler.</text>
+        <rect x="16" y="104" width="388" height="22" rx="4" fill="#0F172A"/>
+        <text x="24" y="119" fill="#38BDF8" font-size="11" font-weight="700" font-family="monospace">Auth: JWT RS256 (SIGIC_WebClient) • Revalidación Atómica</text>
+    </g>
+
+    <!-- Componente 3: DespachoMostradorController -->
+    <g transform="translate(960, 150)">
+        <rect width="420" height="135" rx="12" fill="#131D31" stroke="#F59E0B" stroke-width="1.5"/>
+        <rect x="0" y="0" width="420" height="32" rx="12" fill="#1E293B"/>
+        <rect x="0" y="20" width="420" height="12" fill="#1E293B"/>
+        <circle cx="20" cy="16" r="6" fill="#F59E0B"/>
+        <text x="36" y="21" fill="#F8FAFC" font-size="14" font-weight="800" font-family="system-ui, sans-serif">Despacho Mostrador [DespachoController]</text>
+        <text x="16" y="52" fill="#F8FAFC" font-size="12" font-weight="600" font-family="system-ui, sans-serif">• Endpoint: /api/v1/internal/pos/despacho (RF-POS-011)</text>
+        <text x="16" y="72" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• Pantalla ligera de retiro en tienda cotejando Código y DNI.</text>
+        <text x="16" y="92" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• Cero acceso a dinero, vouchers ni saldos contables.</text>
+        <rect x="16" y="104" width="388" height="22" rx="4" fill="#0F172A"/>
+        <text x="24" y="119" fill="#FBBF24" font-size="11" font-weight="700" font-family="monospace">Frontera Operativa Estricta • Transición "Entregado"</text>
+    </g>
+
+    <!-- Componente 4: Auth & Rate Limiting Middleware -->
+    <g transform="translate(1410, 150)">
+        <rect width="450" height="135" rx="12" fill="#131D31" stroke="#A855F7" stroke-width="1.5"/>
+        <rect x="0" y="0" width="450" height="32" rx="12" fill="#1E293B"/>
+        <rect x="0" y="20" width="450" height="12" fill="#1E293B"/>
+        <circle cx="20" cy="16" r="6" fill="#A855F7"/>
+        <text x="36" y="21" fill="#F8FAFC" font-size="14" font-weight="800" font-family="system-ui, sans-serif">Seguridad [DualIdentityAuthMiddleware]</text>
+        <text x="16" y="52" fill="#F8FAFC" font-size="12" font-weight="600" font-family="system-ui, sans-serif">• Validación criptográfica asimétrica JWT con algoritmo RS256.</text>
+        <text x="16" y="72" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• Segrega audiencias: SIGIC_InternalStaff vs. SIGIC_WebClient.</text>
+        <text x="16" y="92" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• Bloquea con HTTP 403 Forbidden intentos de escalada web a LAN.</text>
+        <rect x="16" y="104" width="418" height="22" rx="4" fill="#0F172A"/>
+        <text x="24" y="119" fill="#C084FC" font-size="11" font-weight="700" font-family="monospace">Clave Pública RSA 2048 • Argon2id para passwords</text>
+    </g>
+
+    <!-- CAPA 2: APLICACIÓN (CQRS MEDIATR) (y = 320..500) -->
+    <text x="60" y="325" fill="#10B981" font-size="16" font-weight="800" letter-spacing="1.5" font-family="system-ui, sans-serif">2. CAPA DE APLICACIÓN (CASOS DE USO Y ORQUESTADORES CQRS SOBRE MEDIATR)</text>
+
+    <!-- Orquestador Checkout -->
+    <g transform="translate(60, 340)">
+        <rect width="580" height="150" rx="12" fill="#131D31" stroke="#10B981" stroke-width="2.5"/>
+        <rect x="0" y="0" width="580" height="32" rx="12" fill="#1E293B"/>
+        <rect x="0" y="20" width="580" height="12" fill="#1E293B"/>
+        <circle cx="20" cy="16" r="6" fill="#10B981"/>
+        <text x="36" y="21" fill="#F8FAFC" font-size="14" font-weight="800" font-family="system-ui, sans-serif">Orquestador Checkout [IniciarCheckoutCommandHandler]</text>
+        <text x="16" y="52" fill="#F8FAFC" font-size="13" font-weight="700" font-family="system-ui, sans-serif">1. Ordenamiento Anti-Deadlock: items.OrderBy(x => x.ProductoId)</text>
+        <text x="16" y="72" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">2. Abre transacción ACID (Read Committed) en PgBouncer pool_web.</text>
+        <text x="16" y="90" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">3. Revalida precio vigente y existencia atómica (Disponible = Físico - Comprometido).</text>
+        <text x="16" y="108" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">4. Asigna TTL dinámico (20 min pasarela / 4 h manual con 1 h comprobante).</text>
+        <rect x="16" y="118" width="548" height="24" rx="4" fill="#0F172A"/>
+        <text x="24" y="134" fill="#34D399" font-size="11" font-weight="700" font-family="monospace">Garantiza Invariante AC02 • Cero Sobreventas en Concurrencia</text>
+    </g>
+
+    <!-- Orquestador Venta POS -->
+    <g transform="translate(670, 340)">
+        <rect width="580" height="150" rx="12" fill="#131D31" stroke="#38BDF8" stroke-width="2"/>
+        <rect x="0" y="0" width="580" height="32" rx="12" fill="#1E293B"/>
+        <rect x="0" y="20" width="580" height="12" fill="#1E293B"/>
+        <circle cx="20" cy="16" r="6" fill="#38BDF8"/>
+        <text x="36" y="21" fill="#F8FAFC" font-size="14" font-weight="800" font-family="system-ui, sans-serif">Orquestador Venta POS [RegistrarVentaPOSCommandHandler]</text>
+        <text x="16" y="52" fill="#F8FAFC" font-size="13" font-weight="700" font-family="system-ui, sans-serif">1. Ejecución de Venta Inmediata de Mostrador en Red LAN</text>
+        <text x="16" y="72" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">2. Decrementa stock físico local de tienda con bloqueo de fila en pool_pos.</text>
+        <text x="16" y="90" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">3. Emite payload tributario oficial hacia PSE/OSE SUNAT (Boleta/Factura 18% IGV).</text>
+        <text x="16" y="108" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">4. Registra asiento de movimiento de caja en el turno activo del cajero.</text>
+        <rect x="16" y="118" width="548" height="24" rx="4" fill="#0F172A"/>
+        <text x="24" y="134" fill="#38BDF8" font-size="11" font-weight="700" font-family="monospace">Tiempo de Ejecución &lt; 1.0s (AC01) • Impresión directa ESC/POS</text>
+    </g>
+
+    <!-- Servicio Arqueo Ciego -->
+    <g transform="translate(1280, 340)">
+        <rect width="580" height="150" rx="12" fill="#131D31" stroke="#A855F7" stroke-width="2"/>
+        <rect x="0" y="0" width="580" height="32" rx="12" fill="#1E293B"/>
+        <rect x="0" y="20" width="580" height="12" fill="#1E293B"/>
+        <circle cx="20" cy="16" r="6" fill="#A855F7"/>
+        <text x="36" y="21" fill="#F8FAFC" font-size="14" font-weight="800" font-family="system-ui, sans-serif">Servicio Arqueo Ciego [ArqueoCajaCommandHandler]</text>
+        <text x="16" y="52" fill="#F8FAFC" font-size="13" font-weight="700" font-family="system-ui, sans-serif">1. Cierre Ciego de Turno sin Visibilidad de Saldo Teórico</text>
+        <text x="16" y="72" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">2. Captura declaración física exacta por denominación de billetes y monedas.</text>
+        <text x="16" y="90" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">3. Persistencia estrictamente Append-Only en caja_arqueo (Prohibido UPDATE/DELETE).</text>
+        <text x="16" y="108" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">4. Cálculo de diferencias en servidor y registro de auditoría inmutable (AC03).</text>
+        <rect x="16" y="118" width="548" height="24" rx="4" fill="#0F172A"/>
+        <text x="24" y="134" fill="#C084FC" font-size="11" font-weight="700" font-family="monospace">RF-CAJ-002 • Invariante de Trazabilidad y No Repudio</text>
+    </g>
+
+    <!-- CAPA 3: DOMINIO PURO (y = 525..705) -->
+    <text x="60" y="530" fill="#F59E0B" font-size="16" font-weight="800" letter-spacing="1.5" font-family="system-ui, sans-serif">3. CAPA DE DOMINIO PURO (SERVICIOS DE DOMINIO E INVARIANTES DE NEGOCIO)</text>
+
+    <!-- Servicio Reserva Stock -->
+    <g transform="translate(60, 545)">
+        <rect width="580" height="150" rx="12" fill="#131D31" stroke="#F59E0B" stroke-width="2"/>
+        <rect x="0" y="0" width="580" height="32" rx="12" fill="#1E293B"/>
+        <rect x="0" y="20" width="580" height="12" fill="#1E293B"/>
+        <circle cx="20" cy="16" r="6" fill="#F59E0B"/>
+        <text x="36" y="21" fill="#F8FAFC" font-size="14" font-weight="800" font-family="system-ui, sans-serif">Servicio Reserva Stock [ReservaStockService]</text>
+        <text x="16" y="52" fill="#F8FAFC" font-size="13" font-weight="700" font-family="system-ui, sans-serif">Gobernanza de Tiempos de Vida (TTL) de Reservas Web</text>
+        <text x="16" y="72" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• Tarjetas (Pasarela): TTL = 20 minutos exactos improrrogables.</text>
+        <text x="16" y="90" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• Manuales (Yape/Plin/Transferencia): TTL total = 240 minutos (4 horas).</text>
+        <text x="16" y="108" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• Ventana estricta de 60 minutos (1 hora) para subir voucher bancario.</text>
+        <rect x="16" y="118" width="548" height="24" rx="4" fill="#0F172A"/>
+        <text x="24" y="134" fill="#FBBF24" font-size="11" font-weight="700" font-family="monospace">Transición atómica a stock_comprometido • Liberación periódica</text>
+    </g>
+
+    <!-- InventarioDomainService -->
+    <g transform="translate(670, 545)">
+        <rect width="580" height="150" rx="12" fill="#131D31" stroke="#10B981" stroke-width="2"/>
+        <rect x="0" y="0" width="580" height="32" rx="12" fill="#1E293B"/>
+        <rect x="0" y="20" width="580" height="12" fill="#1E293B"/>
+        <circle cx="20" cy="16" r="6" fill="#10B981"/>
+        <text x="36" y="21" fill="#F8FAFC" font-size="14" font-weight="800" font-family="system-ui, sans-serif">Servicio de Inventario [InventarioDomainService]</text>
+        <text x="16" y="52" fill="#F8FAFC" font-size="13" font-weight="700" font-family="system-ui, sans-serif">Regla Cardinal Inviolable: Stock Disponible</text>
+        <text x="16" y="72" fill="#34D399" font-size="13" font-weight="700" font-family="monospace">Stock Disponible = stock_fisico - stock_comprometido</text>
+        <text x="16" y="92" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• Cálculo de Costo Promedio Ponderado (CPP) tras compras a proveedores.</text>
+        <text x="16" y="110" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• Validación de márgenes mínimos mayoristas antes de autorizar ventas B2B.</text>
+        <rect x="16" y="118" width="548" height="24" rx="4" fill="#0F172A"/>
+        <text x="24" y="134" fill="#34D399" font-size="11" font-weight="700" font-family="monospace">Fórmula Transaccional Universal (POS y Web comparten la regla)</text>
+    </g>
+
+    <!-- MotorTarifasDomainService -->
+    <g transform="translate(1280, 545)">
+        <rect width="580" height="150" rx="12" fill="#131D31" stroke="#38BDF8" stroke-width="2"/>
+        <rect x="0" y="0" width="580" height="32" rx="12" fill="#1E293B"/>
+        <rect x="0" y="20" width="580" height="12" fill="#1E293B"/>
+        <circle cx="20" cy="16" r="6" fill="#38BDF8"/>
+        <text x="36" y="21" fill="#F8FAFC" font-size="14" font-weight="800" font-family="system-ui, sans-serif">Motor de Tarifas [MotorTarifasDomainService]</text>
+        <text x="16" y="52" fill="#F8FAFC" font-size="13" font-weight="700" font-family="system-ui, sans-serif">Patrón Strategy: Aplicación de Escalas Comerciales</text>
+        <text x="16" y="72" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• Lista 1: Público General (Precios minoristas estándar mostrador/web).</text>
+        <text x="16" y="90" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• Lista 2: Maestro de Obra (Descuentos por volumen medio y fidelidad).</text>
+        <text x="16" y="108" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• Lista 3: Contratista Mayorista B2B (Márgenes acotados sobre el CPP).</text>
+        <rect x="16" y="118" width="548" height="24" rx="4" fill="#0F172A"/>
+        <text x="24" y="134" fill="#38BDF8" font-size="11" font-weight="700" font-family="monospace">Conversión de unidades: Bolsa vs. Tonelada vs. Millar</text>
+    </g>
+
+    <!-- CAPA 4: INFRAESTRUCTURA (ADAPTADORES Y PERSISTENCIA) (y = 730..990) -->
+    <text x="60" y="735" fill="#A855F7" font-size="16" font-weight="800" letter-spacing="1.5" font-family="system-ui, sans-serif">4. CAPA DE INFRAESTRUCTURA (ADAPTADORES DE PERSISTENCIA, PUERTOS Y STORAGE)</text>
+
+    <!-- Repositorio Inventario (EF Core) -->
+    <g transform="translate(60, 750)">
+        <rect width="420" height="240" rx="12" fill="#131D31" stroke="#10B981" stroke-width="2"/>
+        <rect x="0" y="0" width="420" height="32" rx="12" fill="#1E293B"/>
+        <rect x="0" y="20" width="420" height="12" fill="#1E293B"/>
+        <circle cx="20" cy="16" r="6" fill="#10B981"/>
+        <text x="36" y="21" fill="#F8FAFC" font-size="14" font-weight="800" font-family="system-ui, sans-serif">Repositorio Inventario [InventarioRepository]</text>
+        <text x="16" y="52" fill="#F8FAFC" font-size="12" font-weight="600" font-family="system-ui, sans-serif">• Entity Framework Core 8 DbContext &amp; Unit of Work</text>
+        <text x="16" y="72" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• Mapeo relacional fluido sobre esquema sigic_oltp.</text>
+        <text x="16" y="92" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• Bloqueo Pesimista Nativo a nivel de fila:</text>
+        <rect x="16" y="102" width="388" height="60" rx="6" fill="#0F172A"/>
+        <text x="24" y="120" fill="#34D399" font-size="11" font-family="monospace">SELECT id, fisico, comprometido</text>
+        <text x="24" y="136" fill="#34D399" font-size="11" font-family="monospace">FROM inventario_stock WHERE ...</text>
+        <text x="24" y="152" fill="#FBBF24" font-size="11" font-weight="700" font-family="monospace">ORDER BY producto_id ASC FOR UPDATE;</text>
+        <text x="16" y="180" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• Confirmación atómica vía CommitAsync() relacional.</text>
+        <rect x="16" y="198" width="388" height="28" rx="4" fill="#0F172A"/>
+        <text x="24" y="217" fill="#34D399" font-size="11" font-weight="700" font-family="monospace">Garantía Invariante AC02 • Transaccionalidad ACID</text>
+    </g>
+
+    <!-- CatalogoDapperRepository -->
+    <g transform="translate(510, 750)">
+        <rect width="420" height="240" rx="12" fill="#131D31" stroke="#38BDF8" stroke-width="2"/>
+        <rect x="0" y="0" width="420" height="32" rx="12" fill="#1E293B"/>
+        <rect x="0" y="20" width="420" height="12" fill="#1E293B"/>
+        <circle cx="20" cy="16" r="6" fill="#38BDF8"/>
+        <text x="36" y="21" fill="#F8FAFC" font-size="14" font-weight="800" font-family="system-ui, sans-serif">Consultas de Catálogo [CatalogoDapperRepo]</text>
+        <text x="16" y="52" fill="#F8FAFC" font-size="12" font-weight="600" font-family="system-ui, sans-serif">• Dapper Micro-ORM para Lecturas Masivas</text>
+        <text x="16" y="72" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• Ejecuta sentencias SQL crudas indexadas optimizadas.</text>
+        <text x="16" y="92" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• Retorna DTOs inmutables con latencia sub-15ms.</text>
+        <rect x="16" y="102" width="388" height="60" rx="6" fill="#0F172A"/>
+        <text x="24" y="120" fill="#38BDF8" font-size="11" font-family="monospace">SELECT p.id, p.nombre, lp.precio</text>
+        <text x="24" y="136" fill="#38BDF8" font-size="11" font-family="monospace">FROM producto p JOIN ...</text>
+        <text x="24" y="152" fill="#FBBF24" font-size="11" font-weight="700" font-family="monospace">WHERE p.disponible_en_web = true;</text>
+        <text x="16" y="180" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• Elude seguimiento de EF Core (AsNoTracking).</text>
+        <rect x="16" y="198" width="388" height="28" rx="4" fill="#0F172A"/>
+        <text x="24" y="217" fill="#38BDF8" font-size="11" font-weight="700" font-family="monospace">Latencia Sub-15ms (AC01) • Filtro Estricto 404</text>
+    </g>
+
+    <!-- StoragePrivadoAdapter -->
+    <g transform="translate(960, 750)">
+        <rect width="420" height="240" rx="12" fill="#131D31" stroke="#F59E0B" stroke-width="2"/>
+        <rect x="0" y="0" width="420" height="32" rx="12" fill="#1E293B"/>
+        <rect x="0" y="20" width="420" height="12" fill="#1E293B"/>
+        <circle cx="20" cy="16" r="6" fill="#F59E0B"/>
+        <text x="36" y="21" fill="#F8FAFC" font-size="14" font-weight="800" font-family="system-ui, sans-serif">Storage Privado [StoragePrivadoAdapter]</text>
+        <text x="16" y="52" fill="#F8FAFC" font-size="12" font-weight="600" font-family="system-ui, sans-serif">• Implementación de IStoragePrivadoService</text>
+        <text x="16" y="72" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• Custodia de comprobantes bancarios Yape/Plin.</text>
+        <text x="16" y="92" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• Límite estricto de tamaño: hasta 5 MB por archivo.</text>
+        <rect x="16" y="102" width="388" height="60" rx="6" fill="#0F172A"/>
+        <text x="24" y="120" fill="#FBBF24" font-size="11" font-family="monospace">Volumen Local Cifrado / MinIO S3</text>
+        <text x="24" y="136" fill="#94A3B8" font-size="11" font-family="monospace">/storage/private/vouchers/{hash}.bin</text>
+        <text x="24" y="152" fill="#34D399" font-size="11" font-family="monospace">Sin exposición HTTP directa perimetral</text>
+        <text x="16" y="180" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• Descarga mediada exclusivamente por Tesorería.</text>
+        <rect x="16" y="198" width="388" height="28" rx="4" fill="#0F172A"/>
+        <text x="24" y="217" fill="#FBBF24" font-size="11" font-weight="700" font-family="monospace">Trazabilidad Segura (AC03) • RF-WEB-003</text>
+    </g>
+
+    <!-- Adaptadores Externos PSE y Pasarela -->
+    <g transform="translate(1410, 750)">
+        <rect width="450" height="240" rx="12" fill="#131D31" stroke="#A855F7" stroke-width="2"/>
+        <rect x="0" y="0" width="450" height="32" rx="12" fill="#1E293B"/>
+        <rect x="0" y="20" width="450" height="12" fill="#1E293B"/>
+        <circle cx="20" cy="16" r="6" fill="#A855F7"/>
+        <text x="36" y="21" fill="#F8FAFC" font-size="14" font-weight="800" font-family="system-ui, sans-serif">Adaptadores Externos [PSE &amp; Pagos]</text>
+        <text x="16" y="52" fill="#F8FAFC" font-size="12" font-weight="600" font-family="system-ui, sans-serif">1. PseFacturacionAdapter (IFacturacionPort):</text>
+        <text x="16" y="72" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• Genera payload normalizado JSON/XML (18% IGV).</text>
+        <text x="16" y="90" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• Despacha a PSE/OSE SUNAT con reintentos Polly.</text>
+        <text x="16" y="112" fill="#F8FAFC" font-size="12" font-weight="600" font-family="system-ui, sans-serif">2. PasarelaTarjetaAdapter (IPagoGatewayPort):</text>
+        <text x="16" y="132" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• Inicializa sesión de cobro Niubiz / Culqi (TTL 20m).</text>
+        <text x="16" y="150" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• Valida firma criptográfica HMAC de webhooks entrantes.</text>
+        <text x="16" y="168" fill="#94A3B8" font-size="12" font-family="system-ui, sans-serif">• Idempotencia: evita duplicidad de cobro ante reintentos.</text>
+        <rect x="16" y="198" width="418" height="28" rx="4" fill="#0F172A"/>
+        <text x="24" y="217" fill="#C084FC" font-size="11" font-weight="700" font-family="monospace">Patrón Adapter • Desacopla APIs de Terceros</text>
+    </g>
+
+    <!-- CONNECTING ARROWS -->
+    <path d="M 270 285 L 270 340" stroke="#10B981" stroke-width="2" marker-end="url(#arrow-emerald)"/>
+    <path d="M 720 285 L 350 340" stroke="#38BDF8" stroke-width="2" marker-end="url(#arrow-sky)"/>
+    <path d="M 350 490 L 350 545" stroke="#10B981" stroke-width="2" marker-end="url(#arrow-emerald)"/>
+    <path d="M 960 490 L 960 545" stroke="#10B981" stroke-width="2" marker-end="url(#arrow-emerald)"/>
+    <path d="M 350 695 L 270 750" stroke="#10B981" stroke-width="2" marker-end="url(#arrow-emerald)"/>
+    <path d="M 960 695 L 720 750" stroke="#38BDF8" stroke-width="2" marker-end="url(#arrow-sky)"/>
+    <path d="M 640 415 L 1170 750" stroke="#F59E0B" stroke-width="2" stroke-dasharray="4" marker-end="url(#arrow-amber)"/>
+
+    <!-- FOOTER -->
+    <rect x="60" y="1010" width="1800" height="45" rx="8" fill="#0D1527" stroke="#1E293B" stroke-width="1.5"/>
+    <text x="80" y="1038" fill="#10B981" font-size="13" font-weight="700" font-family="system-ui, sans-serif">CLEAN ARCHITECTURE INTERNA:</text>
+    <text x="330" y="1038" fill="#94A3B8" font-size="13" font-family="system-ui, sans-serif">Las dependencias fluyen estrictamente hacia el dominio • Inversión de control vía MediatR y Puertos • Repositorio con SELECT FOR UPDATE.</text>
+</svg>

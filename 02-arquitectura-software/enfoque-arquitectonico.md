@@ -1,15 +1,28 @@
+---
+id: "02-enfoque-arquitectonico"
+doc: "02-arquitectura-software/enfoque-arquitectonico.md"
+version: "2.2.0"
+estado: "VALIDADO_PARA_EXPOSICION"
+tipo: "Enfoque Arquitectónico Clean Architecture"
+proyecto: "SIGIC-Ferreteria-v2.2"
+autor: "Crhistian Emanuel Flores Marquina"
+evaluacion: "IS-488 UNSCH"
+fecha: "2026-10-30"
+---
+
 # Enfoque Arquitectónico: Clean Architecture para SIGIC Ferretería
 
-> **Documento:** `arquitectura/enfoque/enfoque-arquitectonico.md`  
+> **Documento:** `02-arquitectura-software/enfoque-arquitectonico.md`  
 > **Versión de Especificación:** 2.2 (Oficial – SIGIC Ferretería)  
 > **Disciplina:** Diseño de Arquitectura de Software y Patrones Estructurales  
-> **Metodología:** Alineado a la Guía 03 (Enfoque de Clean Architecture, Regla de Dependencia, Trazabilidad SOLID y Flujos de Dominio)
+> **Metodología:** Alineado a la Guía 03 (Enfoque de Clean Architecture, Regla de Dependencia, Trazabilidad SOLID y Flujos de Dominio)  
+> **Evaluación Académica:** IS-488 Arquitectura de Software (UNSCH)
 
 ---
 
 ## 1. Propósito y Regla de Dependencia
 
-El enfoque arquitectónico adoptado para **SIGIC Ferretería** se fundamenta en los principios de **Clean Architecture** (Arquitectura Limpia), complementado con el patrón de **Puertos y Adaptadores** (*Arquitectura Hexagonal*). El objetivo primordial de este diseño es aislar rigurosamente las políticas del negocio ferretero y los modelos del dominio transaccional de los detalles volátiles de infraestructura: frameworks web, bibliotecas ORM, motores de bases de datos, protocolos de red e interfaces de usuario.
+El enfoque arquitectónico adoptado para **SIGIC Ferretería v2.2** se fundamenta en los principios de **Clean Architecture** (Arquitectura Limpia), complementado con el patrón de **Puertos y Adaptadores** (*Arquitectura Hexagonal*). El objetivo primordial de este diseño es aislar rigurosamente las políticas del negocio ferretero y los modelos del dominio transaccional de los detalles volátiles de infraestructura: frameworks web, bibliotecas ORM, motores de bases de datos, protocolos de red e interfaces de usuario.
 
 ```
        +--------------------------------------------------------+
@@ -39,8 +52,8 @@ En Clean Architecture, el código fuente se organiza en capas concéntricas gobe
 > **Las dependencias de código fuente solo pueden apuntar hacia adentro, hacia las políticas de más alto nivel.**
 
 Esto se traduce en las siguientes garantías para SIGIC Ferretería:
-1. **Independencia del Motor de Persistencia:** Las entidades centrales (`Articulo`, `InventarioStock`, `PedidoWeb`, `GuiaTraslado`) y los cálculos de costo promedio ponderado y existencias disponibles se desconocen por completo si la persistencia subyacente es PostgreSQL 16, SQL Server o una estructura en memoria para pruebas. La base de datos es tratada como un mecanismo de E/S periférico.
-2. **Independencia de los Canales de Entrada (UI):** Ni la SPA del mostrador (React 18) ni el portal e-commerce (Next.js 14) imponen lógica al dominio. Ambos canales son tratados como mecanismos externos que entregan solicitudes HTTP y reciben DTOs estructurados.
+1. **Independencia del Motor de Persistencia (AC02):** Las entidades centrales (`Articulo`, `InventarioStock`, `PedidoWeb`, `GuiaTraslado`, `ArqueoCaja`) y los cálculos de costo promedio ponderado y existencias disponibles se desconocen por completo si la persistencia subyacente es PostgreSQL 16 o una estructura en memoria para pruebas. La base de datos es tratada como un mecanismo de E/S periférico.
+2. **Independencia de los Canales de Entrada (AC01):** Ni la SPA del mostrador (React 18) ni el portal e-commerce (Next.js 14) imponen lógica al dominio. Ambos canales son tratados como mecanismos externos que entregan solicitudes HTTP y reciben DTOs estructurados.
 3. **Independencia de Proveedores Tributarios y Pasarelas:** La facturación electrónica con el PSE/OSE y el procesamiento de pagos se definen como contratos abstractos (puertos). Cambiar de proveedor de facturación SUNAT o de pasarela no altera ni una sola línea del núcleo de negocio ferretero.
 4. **Testabilidad Completa del Dominio:** El 100 % de las reglas de sobreventa, bloqueos lógicos, descuentos mayoristas y transiciones de guías pueden probarse mediante pruebas unitarias rápidas y deterministas en memoria, sin requerir la instanciación de un servidor web ni de contenedores de base de datos.
 
@@ -55,7 +68,7 @@ SIGIC.Solution/
 ├── src/
 │   ├── SIGIC.Domain/           (Capa Núcleo: Entidades, Value Objects, Reglas Puras)
 │   ├── SIGIC.Application/      (Capa Casos de Uso: Commands, Queries, Puertos)
-│   ├── SIGIC.Infrastructure/   (Capa Adaptadores: EF Core 8, Npgsql, PSE, Pagos)
+│   ├── SIGIC.Infrastructure/   (Capa Adaptadores: EF Core 8, Npgsql, PSE, Pagos, Storage Privado)
 │   └── SIGIC.Presentation/     (Capa Entrada: Controllers POS/Web, Middlewares)
 ```
 
@@ -67,7 +80,7 @@ Es el corazón del sistema y representa el nivel más alto de abstracción. Cont
 
 #### Componentes Principales:
 - **Entidades del Núcleo y Agregados:**
-  - `Articulo`: Encapsula código correlativo, SKU, EAN-13, familia, subfamilia, marca, unidad base y el flag `DisponibleEnWeb`.
+  - `Articulo` / `Producto`: Encapsula código correlativo, SKU, EAN-13, familia, subfamilia, marca, unidad base y el flag `DisponibleEnWeb`.
   - `Almacen`: Identifica depósitos físicos (Almacén Central, Mostrador 1, Mostrador 2) y sus ubicaciones.
   - `InventarioStock`: Agregado que gobierna las cantidades físicas y comprometidas de un artículo en un almacén específico:
     $$\text{StockDisponible} = \text{StockFisico} - \text{StockComprometido}$$
@@ -75,7 +88,7 @@ Es el corazón del sistema y representa el nivel más alto de abstracción. Cont
   - `PedidoWeb`: Agregado raíz que modela el pedido de comercio electrónico, controlando sus líneas, importes desglosados y transiciones de estado.
   - `ReservaStock`: Modela el bloqueo temporal de existencias con marca de tiempo UTC y tiempo de vida dinámico (*TTL*).
   - `GuiaTraslado`: Representa la transferencia interna entre Almacén Central y tiendas físicas con custodia en tránsito.
-  - `CajaTurno`: Modela la sesión de cobro del cajero, fondo inicial y el arqueo ciego.
+  - `ArqueoCaja`: Modela el cierre de turno y declaración física de efectivo y medios digitales con política estrictamente *append-only*.
 
 - **Objetos de Valor (*Value Objects*):**
   - `Dinero`: Moneda formal en Soles peruanos (`decimal Monto`), garantizando redondeo contable exacto a dos decimales.
@@ -90,7 +103,7 @@ Es el corazón del sistema y representa el nivel más alto de abstracción. Cont
   - `PerfilCliente`: `PublicoGeneral`, `MaestroDeObra`, `Contratista`, `Distribuidor`.
 
 - **Reglas de Negocio Puras en Dominio:**
-  - *Invariante de Inventario:* El stock físico jamás admite saldos negativos; toda operación que resulte en $StockFisico < 0$ lanza `InventarioInsuficienteException`.
+  - *Invariante de Inventario (AC02):* El stock físico jamás admite saldos negativos; toda operación que resulte en $\text{StockFisico} < 0$ lanza `InventarioInsuficienteException`.
   - *Regla de Reserva Dinámica:* TTL de 20 minutos para transacciones de pasarela con tarjeta; TTL de hasta 4 horas para pagos manuales con ventana de 1 hora para adjuntar el comprobante.
 
 ---
@@ -108,13 +121,13 @@ Orquesta el flujo de información hacia y desde el dominio. Contiene la lógica 
   - `CerrarTurnoCajaCommand`: Procesa el arqueo ciego del cajero, contrasta contra el saldo teórico del sistema y registra discrepancias contables.
 
 - **Consultas Optimizadas (Queries):**
-  - `ObtenerCatalogoWebQuery`: Consulta de alta velocidad del catálogo público con precios según el perfil autenticado y stock disponible proyectado.
+  - `ObtenerCatalogoWebQuery`: Consulta de alta velocidad del catálogo público con precios según el perfil autenticado y stock disponible proyectado ($P95 < 250\text{ ms}$).
   - `ObtenerDisponibilidadPosQuery`: Consulta en tiempo real sub-segundo del stock físico y comprometido por almacén para el mostrador.
   - `ObtenerPedidosListosParaRetiroQuery`: Consulta ligera para la pantalla del despachador en mostrador (`RF-POS-011`).
 
 - **Puertos de Salida (Interfaces de Abstracción):**
   - `IInventarioRepository`: Métodos de persistencia transaccional con semántica de bloqueo pesimista (`ObtenerParaActualizarConBloqueoAsync`).
-  - `IPedidoWebRepository`, `IVentaPosRepository`, `ICajaRepository`.
+  - `IPedidoWebRepository`, `IVentaPosRepository`, `ICajaRepository`, `IStoragePrivadoService`.
   - `IPagoGatewayPort`: Contrato para integración con pasarelas de pago con tarjeta (`ProcesarPagoAsync`, `VerificarWebhookAsync`).
   - `IFacturacionElectronicaPort`: Contrato para generar y despachar el payload JSON/XML estandarizado hacia el PSE/OSE tributario.
   - `IUnitOfWork`: Manejador transaccional atómico sobre la base de datos relacional.
@@ -123,7 +136,7 @@ Orquesta el flujo de información hacia y desde el dominio. Contiene la lógica 
 
 ### 2.3. Capa de Infraestructura (`SIGIC.Infrastructure`)
 
-Contiene las implementaciones tecnológicas concretas de las interfaces declaradas en la Capa de Aplicación. Comunica con el mundo exterior: bases de datos, brokers, sistemas tributarios y servicios de red.
+Contiene las implementaciones tecnológicas concretas de las interfaces declaradas en la Capa de Aplicación. Comunica con el mundo exterior: bases de datos, brokers, sistemas tributarios y servicios de almacenamiento.
 
 #### Componentes Principales:
 - **Persistencia Transaccional (PostgreSQL 16 y EF Core 8):**
@@ -134,10 +147,11 @@ Contiene las implementaciones tecnológicas concretas de las interfaces declarad
 - **Adaptadores de Integración Externa:**
   - `PseFacturacionAdapter`: Implementa `IFacturacionElectronicaPort`, construyendo el payload estructurado JSON/XML con desglose de IGV (18 %) y despachándolo vía cliente HTTP resiliente (Polly) hacia el PSE/OSE contratado.
   - `PasarelaTarjetaAdapter`: Implementa `IPagoGatewayPort`, validando las firmas de los webhooks de pasarela y protegiendo ante solicitudes repetidas.
+  - `FileSystemPrivateStorageService`: Implementa `IStoragePrivadoService`, almacenando comprobantes bancarios ($\le 5\text{ MB}$) y respuestas CDR de SUNAT con acceso restringido.
 
 - **Servicios en Segundo Plano (*Background Services*):**
-  - `ReservaExpiracionWorker`: Tarea periódica en segundo plano que se ejecuta cada minuto, busca pedidos con reservas vencidas que no confirmaron comprobante o validación, e invoca de manera idempotente la liberación del stock comprometido.
-  - `EtlAnaliticoJob`: Tarea programada en ventana nocturna que extrae los datos de `sigic_oltp`, ejecuta el cálculo del costo promedio ponderado de kardex y puebla el Datamart en estrella `sigic_olap`.
+  - `ReservaExpiracionWorker`: Tarea periódica en segundo plano que se ejecuta cada 60 segundos, busca pedidos con reservas vencidas que no confirmaron comprobante o validación, e invoca de manera idempotente la liberación del stock comprometido.
+  - `EtlAnaliticoJob`: Tarea programada en ventana nocturna (01:00 UTC-5) que extrae los datos de `sigic_oltp`, ejecuta el cálculo del costo promedio ponderado de kardex y puebla el Datamart en estrella `sigic_olap`.
 
 - **Servicios Criptográficos y de Seguridad:**
   - `Argon2idPasswordHasher`: Implementación del algoritmo Argon2id ($m=65536, t=3, p=4$) con sal aleatoria de 16 bytes.
@@ -151,21 +165,21 @@ Es la puerta de entrada de la aplicación HTTP. Despacha las solicitudes hacia l
 
 #### Componentes Principales:
 - **Segregación de Superficies de Controladores:**
-  - **Superficie Interna (`/api/internal/*`):** Exclusiva para la red local y colaboradores autenticados.
+  - **Superficie Interna (`/api/v1/internal/*`):** Exclusiva para la red local y colaboradores autenticados.
     - `PosVentasController`: Endpoints de alta prioridad para búsqueda de artículos y cobro en mostrador.
     - `InventarioAlmacenController`: Gestión de recepciones, transferencias entre sucursales y ajustes de inventario.
     - `CajaTurnosController`: Apertura, cobros, cierres y arqueo ciego.
     - `BackofficeTesoreriaController`: Validación de comprobantes bancarios (Yape/Plin/Transferencias).
     - `DespachoMostradorController`: Pantalla ligera de retiro en tienda (`RF-POS-011`).
-  - **Superficie Pública (`/api/public/*`):** Expuesta al portal e-commerce a través de Internet.
-    - `CatalogoPublicoController`: Listado jerárquico de materiales, navegación por familias y fichas técnicas con cache HTTP.
+  - **Superficie Pública (`/api/v1/public/*`):** Expuesta al portal e-commerce a través de Internet.
+    - `CatalogoPublicoController`: Listado jerárquico de materiales, navegación por familias y fichas técnicas con cache HTTP. Si `disponible_en_web == false`, responde `HTTP 404`.
     - `CheckoutWebController`: Creación del pedido web, reserva atómica de existencias y subida de comprobantes de pago.
     - `WebhooksController`: Recepción de eventos firmados de la pasarela de pagos.
 
 - **Middlewares Perimetrales y Filtros:**
-  - `DualIdentityAuthorizationMiddleware`: Verifica el emisor y audiencia del JWT. Bloquea con `HTTP 403 Forbidden` cualquier intento de un token de cliente web (`SIGIC_WebClient`) de acceder a la ruta `/api/internal/*`.
+  - `DualIdentityAuthorizationMiddleware`: Verifica el emisor y audiencia del JWT. Bloquea con `HTTP 403 Forbidden` cualquier intento de un token de cliente web (`SIGIC_WebClient`) de acceder a la ruta `/api/v1/internal/*`.
   - `ExceptionHandlingMiddleware`: Captura excepciones de dominio (`InventarioInsuficienteException`, `ReglaNegocioException`) y las traduce a respuestas estandarizadas RFC 7807 (*Problem Details*) con códigos `HTTP 400`, `HTTP 409` o `HTTP 422`.
-  - `TransactionAuditMiddleware`: Registra de forma inmutable en `Audit_Log` la IP, usuario y mutación efectuada sobre entidades sensibles (`RNF-SEG-004`).
+  - `TransactionAuditMiddleware`: Registra de forma inmutable en `Audit_Log` la IP, usuario y mutación efectuada sobre entidades sensibles (`RNF-SEG-004`, `AC03`).
 
 ---
 
@@ -191,13 +205,6 @@ El diseño de SIGIC Ferretería aplica de manera explícita los principios de in
 5. **Dependency Inversion Principle (DIP - Inversión de Dependencias):**
    - Las capas de Dominio y Aplicación no hacen referencia a ningún paquete de PostgreSQL, Entity Framework Core o librerías de terceros. La Capa de Infraestructura es quien depende de las interfaces declaradas en la Capa de Aplicación.
 
-### 3.2. Patrones de Diseño Arquitectónicos Utilizados
-
-- **Repository Pattern:** Abstrae la persistencia de las entidades (`IInventarioRepository`), permitiendo consultar agregados completos y garantizar invariantes antes de persistir.
-- **Adapter Pattern (Puertos y Adaptadores):** Encapsula las particularidades de protocolos de pasarelas de pago y esquemas tributarios de SUNAT.
-- **Unit of Work:** Coordina transacciones compuestas de múltiples repositorios garantizando confirmación atómica (*Commit*) o reversión total (*Rollback*).
-- **Outbox Pattern:** Asegura que los eventos de auditoría y payloads tributarios generados en una venta se guarden en la misma transacción relacional de la venta, garantizando que ninguna factura quede sin registro auditable ante caídas de red.
-
 ---
 
 ## 4. Diagramas Arquitectónicos del Enfoque
@@ -208,7 +215,7 @@ El siguiente diagrama ilustra la estructura de capas concéntricas y cómo las d
 
 ```mermaid
 graph TD
-    subgraph CapaPresentacion ["Capa de Presentacion (Presentation / Web API)"]
+    subgraph CapaPresentacion ["Capa de Presentación (Presentation / Web API)"]
         CTRL_POS["PosVentasController"]
         CTRL_DESP["DespachoMostradorController"]
         CTRL_WEB["CheckoutWebController"]
@@ -223,11 +230,12 @@ graph TD
         REPO_PED_IMPL["PedidoWebRepository"]
         ADAPT_PSE["PseFacturacionAdapter (JSON/XML)"]
         ADAPT_PAG["PasarelaTarjetaAdapter"]
+        STORAGE_SRV["FileSystemPrivateStorageService"]
         WORKER_RES["ReservaExpiracionWorker (BackgroundService)"]
         CRYPTO["Argon2id & JwtRS256Service"]
     end
 
-    subgraph CapaAplicacion ["Capa de Aplicacion (Application)"]
+    subgraph CapaAplicacion ["Capa de Aplicación (Application)"]
         CMD_VENTA["RegistrarVentaPosCommand"]
         CMD_CHECKOUT["CrearCheckoutWebCommand"]
         CMD_VALIDAPAGO["ValidarPagoManualCommand"]
@@ -236,14 +244,16 @@ graph TD
         PORT_PED["IPedidoWebRepository"]
         PORT_PSE["IFacturacionElectronicaPort"]
         PORT_PAGO["IPagoGatewayPort"]
+        PORT_STOR["IStoragePrivadoService"]
         PORT_UOW["IUnitOfWork"]
     end
 
     subgraph CapaDominio ["Capa de Dominio (Domain Core)"]
-        ENT_ART["Articulo (Aggregate Root)"]
-        ENT_INV["InventarioStock (Fisico - Comprometido)"]
+        ENT_ART["Articulo / Producto (Aggregate Root)"]
+        ENT_INV["InventarioStock (Físico - Comprometido)"]
         ENT_PED["PedidoWeb (Estados, TTL)"]
-        ENT_GUIA["GuiaTraslado (Custodia Transito)"]
+        ENT_GUIA["GuiaTraslado (Custodia Tránsito)"]
+        ENT_ARQ["ArqueoCaja (Append-Only)"]
         VO_DINERO["Value Object: Dinero"]
         VO_DOC["Value Object: DocumentoIdentidad"]
         ENUM_EST["Enums: EstadoPedido, EstadoGuia"]
@@ -260,7 +270,7 @@ graph TD
 
 ### 4.2. Flujo de Control vs. Inversión de Dependencias: Creación de Pedido Web con Reserva Atómica
 
-El siguiente diagrama detalla cómo interactúan las capas durante una operación crítica: un cliente ejecuta el checkout en el portal web y el sistema adquiere una reserva atómica sobre existencias de cemento y fierro en el Almacén Central:
+El siguiente diagrama detalla cómo interactúan las capas durante una operación crítica: un cliente ejecuta el checkout en el portal web y el sistema adquiere una reserva atómica sobre existencias en el Almacén Central:
 
 ```mermaid
 sequenceDiagram
@@ -275,7 +285,7 @@ sequenceDiagram
     participant DB as PostgreSQL 16 (sigic_oltp via pool_web)
 
     Cliente->>UI: Clic en "Confirmar Pedido y Reservar"
-    UI->>Controller: POST /api/public/checkout (JWT Web, Carrito, MetodoPago)
+    UI->>Controller: POST /api/v1/public/checkout (JWT Web, Carrito, MetodoPago)
     Note over Controller: DualIdentityAuthorizationMiddleware valida token y origen
     Controller->>Command: Dispatch(CrearCheckoutWebCommand)
     
@@ -290,7 +300,7 @@ sequenceDiagram
         
         loop Para cada artículo del pedido
             Command->>Domain: ReservarStockWeb(cantidad, ttlMinutos)
-            Note over Domain: Valida Invariante:<br/>(Fisico - Comprometido) >= Cantidad
+            Note over Domain: Valida Invariante AC02:<br/>(Fisico - Comprometido) >= Cantidad
             Domain-->>Domain: stock_comprometido += cantidad
         end
     end
@@ -313,7 +323,8 @@ sequenceDiagram
 
 ## 5. Conclusiones y Beneficios para el Proyecto
 
-La aplicación rigurosa de **Clean Architecture** en **SIGIC Ferretería** garantiza:
-1. **Protección del Negocio frente al Cambio Tecnológico:** Las reglas complejas de kardex valorizado, factores de conversión y márgenes comerciales quedan blindadas en el dominio, facilitando migraciones tecnológicas futuras sin riesgo de regresión en las reglas operativas.
-2. **Cero Acoplamiento con Entornos Inestables:** Las dependencias hacia entes externos (SUNAT, pasarelas bancarias locales) se mantienen estrictamente confinadas en adaptadores periféricos descartables o sustituibles.
-3. **Escalabilidad y Seguridad Operativa:** La segregación estricta entre controladores internos (POS) y públicos (Web) elimina de raíz riesgos de acceso indebido, mientras que la organización de casos de uso permite un crecimiento ordenado del equipo de desarrollo de la asignatura.
+La aplicación rigurosa de **Clean Architecture** en **SIGIC Ferretería v2.2** garantiza:
+1. **Cumplimiento de Atributos de Calidad:** AC01 (Rendimiento $P95 < 250\text{ ms}$), AC02 (Consistencia ACID sin sobreventas) y AC03 (Trazabilidad y no repudio mediante bitácora inmutable).
+2. **Protección del Negocio frente al Cambio Tecnológico:** Las reglas complejas de Kardex valorizado, factores de conversión y márgenes comerciales quedan blindadas en el dominio, facilitando migraciones tecnológicas futuras sin riesgo de regresión en las reglas operativas.
+3. **Cero Acoplamiento con Entornos Inestables:** Las dependencias hacia entes externos (SUNAT, pasarelas bancarias locales) se mantienen estrictamente confinadas en adaptadores periféricos descartables o sustituibles.
+4. **Seguridad Operativa y Segregación:** Controladores internos y públicos estrictamente separados a nivel de ruta y token criptográfico, previniendo escalada de privilegios.

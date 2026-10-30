@@ -1,55 +1,78 @@
+---
+id: "02-estilo-arquitectonico"
+doc: "02-arquitectura-software/estilo-arquitectonico.md"
+version: "2.2.0"
+estado: "VALIDADO_PARA_EXPOSICION"
+tipo: "Estilo Arquitectónico Global"
+proyecto: "SIGIC-Ferreteria-v2.2"
+autor: "Crhistian Emanuel Flores Marquina"
+evaluacion: "IS-488 UNSCH"
+fecha: "2026-10-30"
+---
+
 # Estilo Arquitectónico Global: Monolito Modular en Capas (Cliente-Servidor)
 
-> **Documento:** `arquitectura/estilo-arquitectonico.md`  
+> **Documento:** `02-arquitectura-software/estilo-arquitectonico.md`  
 > **Versión de Especificación:** 2.2 (Oficial – SIGIC Ferretería)  
 > **Disciplina:** Arquitectura de Software y Diseño de Sistemas Distribuidos  
-> **Metodología y Estándar:** Alineado a la Guía 03 (Paso 4: Estilo Arquitectónico, Justificación Técnica, Reglas Estructurales y Topología Mermaid)  
-> **Sistema:** SIGIC Ferretería (Sistema Integrado de Gestión de Inventario y Comercialización)
+> **Metodología y Estándar:** Alineado a la Guía 03 (Estilo Arquitectónico, Justificación Técnica, Reglas Estructurales y Topología Mermaid)  
+> **Evaluación Académica:** IS-488 Arquitectura de Software (UNSCH)
 
 ---
 
 ## 1. Justificación del Estilo Seleccionado
 
-Para dar respuesta rigurosa a los desafíos de concurrencia omnicanal, consistencia de inventario y mantenibilidad en **SIGIC Ferretería v2.2**, se adopta formalmente el estilo arquitectónico de **Monolito Modular con Arquitectura en Capas bajo el Paradigma Cliente-Servidor Desacoplado**.
+Para dar respuesta rigurosa a los desafíos de concurrencia omnicanal, consistencia de inventario y mantenibilidad en **SIGIC Ferretería v2.2**, se adopta formalmente el estilo arquitectónico de **Monolito Modular con Clean Architecture bajo el Paradigma Cliente-Servidor Desacoplado**.
 
-### 1.1. Un solo artefacto backend desplegable en ASP.NET Core 8 Web API
-El backend transaccional se compila y ejecuta como una única unidad de despliegue altamente cohesiva y estructurada internamente en módulos funcionales autónomos:
-- **`Inventario` (Kardex y Stock):** Gestión centralizada de existencias físicas, valorización por Costo Promedio Ponderado (CPP), multialmacén y control de mermas/roturas.
-- **`VentasPOS`:** Facturación rápida de mostrador presencial, emisión de boletas/facturas electrónicas y despacho inmediato.
-- **`PedidosWeb`:** Gestión de compras e-commerce, reservas de existencias con caducidad temporal (TTL) y seguimiento de estados de retiro en tienda.
-- **`Precios`:** Motor de tarifas multiescala (minorista, maestro de obra, contratista B2B, promociones y factores de conversión por bulto/unidad).
-- **`Caja`:** Apertura, arqueo ciego, control de flujo en efectivo y cierre diario por turno de cajero.
-- **`Seguridad` (Identidad y Auditoría):** Autenticación criptográfica con JWT asimétricos (RS256), autorización basada en roles (RBAC) y bitácora inmutable de auditoría.
-
-### 1.2. Mitigación de sobrecarga operacional y eliminación de complejidad distribuida
+### 1.1. Monolito Modular con Clean Architecture frente a Microservicios
 Frente a una aproximación basada en microservicios independientes, la adopción del Monolito Modular resuelve de raíz las siguientes fricciones técnicas y operativas:
-1. **Eliminación de la sobrecarga operacional (DevOps Overhead):** Un único pipeline de integración y despliegue continuo (CI/CD), un solo proceso runtime en ASP.NET Core 8 gestionado por systemd/Docker, y supervisión centralizada que se ajusta a la capacidad del equipo de ingeniería.
-2. **Latencia de red nula en red de área local (LAN mostrador):** La comunicación entre los módulos de precios, inventario y caja ocurre en memoria mediante llamadas tipadas directas ($< 1$ ms) en lugar de saltos de red HTTP/gRPC inter-servicio, garantizando tiempos de respuesta de cobro en mostrador físico $p95 \le 1.0$ segundo.
-3. **Eliminación de transacciones distribuidas (Patrón Saga / 2PC):** En una ferretería de materiales pesados (cemento, fierro de construcción, agregados), la *eventual consistencia* propia de los microservicios generaría ventanas de sobreventa crítica cuando un cliente compra en línea y simultáneamente un cajero factura en ventanilla. El monolito modular asegura **transacciones ACID inmediatas** respaldadas de forma nativa por el motor relacional **PostgreSQL 16**, con bloqueos pesimistas a nivel de fila (`SELECT ... FOR UPDATE`) sobre la misma base de datos relacional.
 
-### 1.3. Modelo Cliente-Servidor Desacoplado vía APIs REST
-El sistema divide radicalmente la presentación del cómputo de negocio mediante contratos RESTful estandarizados sobre HTTPS/JSON:
-- **Cliente SPA Mostrador POS (React 18):** Optimizado para la red local (LAN), enfocado en ultra-baja latencia, navegación exclusiva por atajos de teclado (`F1`-`F12`), integración con lectoras de código de barras y compatibilidad con impresoras térmicas ESC/POS.
-- **Cliente Portal Web (Next.js 14 SSR):** Diseñado para clientes públicos y corporativos en Internet (móvil y desktop), optimizado para SEO, catálogo interactivo con renderizado del lado del servidor (SSR) y tiempos de carga interactiva $LCP \le 1.5$ segundos en redes móviles 4G.
-- Ambos clientes consumen de forma unificada pero segregada la superficie de exposición del backend Web API, asegurando que la lógica de cálculo comercial resida exclusivamente en el servidor.
+| Criterio de Decisión | Arquitectura de Microservicios | Monolito Modular en SIGIC v2.2 | Justificación Técnica de la Elección |
+| :--- | :--- | :--- | :--- |
+| **Consistencia Transaccional (AC02)** | Consistencia Eventual (*Eventual Consistency*) mediante patrones Saga o Two-Phase Commit (2PC). | **Transacciones ACID Inmediatas** sobre una única instancia relacional PostgreSQL 16. | En una ferretería de materiales pesados (cemento, fierro de construcción), la consistencia eventual genera ventanas críticas de sobreventa cuando un cliente web reserva y un cajero factura en ventanilla simultáneamente. |
+| **Latencia Inter-Módulo (AC01)** | 20 a 50 ms por llamada de red (HTTP/gRPC) entre servicios distribuidos. | **$< 1\text{ ms}$** mediante llamadas tipadas directas en memoria del proceso Kestrel. | Garantiza tiempo de respuesta en mostrador físico $P95 \le 1.0\text{ s}$ y $P95 < 250\text{ ms}$ en la API Core sin degradación de red LAN. |
+| **Sobrecarga Operacional (DevOps)** | Múltiples repositorios, clúster Kubernetes, service mesh, tracing distribuido y monitoreo fragmentado. | **Un solo pipeline CI/CD**, un solo artefacto ejecutable desplegado en systemd/Docker. | Se ajusta con precisión al tamaño del equipo de ingeniería y presupuesto de una mediana empresa comercial en Ayacucho. |
+| **Integridad de Datos y Auditoría (AC03)** | Dificultad para coordinar bitácoras distribuidas entre múltiples bases de datos. | **Transactional Outbox y Bitácora Unificada** (`Audit_Log`, `caja_arqueo` *append-only*). | Cero desfase entre el registro contable y la mutación física de stock en la misma transacción relacional. |
 
 ---
 
-## 2. Reglas de la Arquitectura
+### 1.2. Justificación Técnica de la Pila Tecnológica Seleccionada
 
-Para salvaguardar la integridad del sistema, prevenir el acoplamiento caótico ("código espagueti") y garantizar la evolución a largo plazo, se establecen tres reglas cardinales de observancia obligatoria:
+#### A. ASP.NET Core 8 Web API (Backend Monolítico Modular)
+- **Runtime Kestrel de Ultra-Alto Rendimiento:** Capaz de procesar miles de peticiones HTTP concurrentes con consumo mínimo de CPU y memoria, optimizado con C# 12 y recolección de basura (*Server GC*) para baja latencia.
+- **Implementación Estricta de Clean Architecture:** Estructuración concéntrica (`Domain`, `Application`, `Infrastructure`, `Presentation`) con el patrón Mediador (**MediatR**) que orquesta comandos y consultas (CQRS), aplicando comportamientos de validación declarativa con **FluentValidation**.
+- **Acceso a Datos Híbrido:** Combinación sinérgica de **Entity Framework Core 8** para transacciones de escritura complejas con seguimiento de entidades, y **Dapper Micro-ORM** para consultas de catálogo y reportes de lectura ultrarrápidos ($< 15\text{ ms}$).
+
+#### B. PostgreSQL 16 con PgBouncer (Motor Transaccional y Pooler Segregado)
+- **Aislamiento ACID Robusto:** Soporte nativo para bloqueos pesimistas a nivel de fila (`SELECT ... FOR UPDATE`) con cláusulas `SKIP LOCKED` y tipos de datos avanzados (`numeric(12,2)`, `jsonb`, `timestamptz`).
+- **Segregación de Conexiones mediante PgBouncer:** Configurado en modo transacción (*Transaction Pooling*) con dos pools aislados:
+  - `pool_pos`: 50 conexiones dedicadas de alta prioridad para mostrador físico y LAN.
+  - `pool_web`: 30 conexiones limitadas para el tráfico e-commerce, aplicando control de contención (*backpressure*) para que ningún pico de tráfico web sature la base de datos de las tiendas.
+
+#### C. Portal Web en Next.js 14 (App Router y React Server Components)
+- **Renderizado del Lado del Servidor (SSR):** Optimización para motores de búsqueda (SEO) de materiales de construcción y tiempos de carga interactiva $LCP \le 1.5\text{ s}$ en redes móviles 4G.
+- **Desacoplamiento Total:** El portal web actúa como un cliente HTTP/REST externo; no posee lógica de cálculo comercial ni acceso directo a la base de datos, consumiendo exclusivamente la superficie de API pública (`/api/v1/public/*`).
+
+#### D. Terminal Mostrador POS en SPA React 18
+- **Ergonomía de Misión Crítica:** Aplicación SPA servida en red LAN, diseñada para monitores de $1024 \times 768$ píxeles sin scroll horizontal (`RNF-USA-002`), operada al 100% mediante atajos de teclado (`F1`-`F12`) y escáner láser sin tocar el ratón (`RF-POS-003`).
+
+---
+
+## 2. Reglas Cardinales de la Arquitectura
+
+Para salvaguardar la integridad del sistema, prevenir el acoplamiento caótico y garantizar la evolución a largo plazo, se establecen tres reglas de observancia obligatoria:
 
 ### Regla 1: Comunicación Estricta entre Capas e Inversión de Dependencias
 - La solución backend se rige bajo los principios de **Clean Architecture**:
   $$\text{Presentation} \longrightarrow \text{Infrastructure} \longrightarrow \text{Application} \longrightarrow \text{Domain}$$
-- Cada capa lógica únicamente puede invocar a la capa inmediatamente inferior. La capa de **Dominio** constituye el núcleo puro y no posee referencias a frameworks, bibliotecas externas ni bases de datos.
-- Todo acceso a infraestructura periférica (acceso a base de datos relacional, pasarela de pago web, servicios del Proveedor de Servicios Electrónicos SUNAT - PSE/OSE) debe realizarse a través de interfaces y abstracciones (puertos) inyectadas mediante el contenedor de Inversión de Control de ASP.NET Core (`IServiceCollection`).
+- Las dependencias de código fuente solo apuntan hacia adentro. La capa de **Dominio** constituye el núcleo puro y no posee referencias a frameworks, bibliotecas externas ni bases de datos.
+- Todo acceso a infraestructura periférica (acceso a base de datos relacional, pasarela de pago web, servicios del Proveedor de Servicios Electrónicos SUNAT - PSE/OSE, storage privado) debe realizarse a través de interfaces y abstracciones (puertos) inyectadas mediante el contenedor de Inversión de Control de ASP.NET Core (`IServiceCollection`).
 
 ### Regla 2: Límites Lógicos Modulares Estrictos y Encapsulamiento de Datos
 - Cada módulo funcional (`Inventario`, `VentasPOS`, `PedidosWeb`, `Precios`, `Caja`, `Seguridad`) posee un *Bounded Context* rigurosamente demarcado.
 - **Prohibición de acceso cruzado directo a tablas:** Queda terminantemente prohibido que el código de un módulo (por ejemplo, `PedidosWeb`) ejecute consultas SQL directas o instancie entidades del `DbContext` pertenecientes a otro módulo (por ejemplo, `Caja` o `Kardex`).
 - La interacción inter-módulo se efectúa exclusivamente mediante:
-  1. **Servicios de Aplicación o Contratos de Interfaz Púbica:** Métodos tipados expuestos intencionalmente por el módulo receptor (ej. `IInventarioReservaService`).
+  1. **Servicios de Aplicación o Contratos de Interfaz Pública:** Métodos tipados expuestos intencionalmente por el módulo receptor (ej. `IInventarioReservaService`).
   2. **Eventos de Dominio en Memoria:** Notificaciones asíncronas dentro del mismo proceso (vía mediadores en memoria) para efectos colaterales (ej. `VentaPOSCompletadaEvent` que desencadena la salida del Kardex y la actualización del saldo de caja).
 
 ### Regla 3: Persistencia Transaccional Unificada con Pools Segregados en PgBouncer
@@ -62,7 +85,7 @@ Para salvaguardar la integridad del sistema, prevenir el acoplamiento caótico (
 
 ## 3. Diagrama de Arquitectura Global
 
-El siguiente diagrama modela la arquitectura integral de **SIGIC Ferretería v2.2**, reflejando la interacción completa entre actores, frontends segregados, proxy perimetral, la estructura modular en capas del backend ASP.NET Core 8, la capa de persistencia administrada con PgBouncer y las integraciones con sistemas externos:
+El siguiente diagrama modela la arquitectura integral de **SIGIC Ferretería v2.2**, reflejando la interacción completa entre actores, frontends segregados, proxy perimetral, la estructura modular en capas del backend ASP.NET Core 8, la capa de persistencia administrada con PgBouncer, el storage privado y las integraciones con sistemas externos:
 
 ```mermaid
 graph TD
@@ -102,13 +125,13 @@ graph TD
             MID_RATE["Rate Limiting & Correlation ID"]
             MID_VAL["Filtros de Validación (FluentValidation)"]
             MID_LOG["Serilog / Registro de Errores Global"]
-            CTRL_POS["Controladores API Internos<br/>(/api/v1/pos, /api/v1/caja)"]
-            CTRL_WEB["Controladores API Públicos<br/>(/api/v1/catalogo, /api/v1/pedidos)"]
-            CTRL_ADM["Controladores Backoffice<br/>(/api/v1/pagos, /api/v1/inventario)"]
+            CTRL_POS["Controladores API Internos<br/>(/api/v1/internal/*)"]
+            CTRL_WEB["Controladores API Públicos<br/>(/api/v1/public/*)"]
+            CTRL_ADM["Controladores Backoffice<br/>(/api/v1/internal/backoffice/*)"]
         end
 
         %% Módulos Funcionales Lógicos (Bounded Contexts)
-        subgraph MODULOS ["Lógica de Negocio y Aplicación por Módulos"]
+        subgraph MODULOS ["Lógica de Negocio y Aplicación por Módulos (MediatR CQRS)"]
             MOD_INV["Módulo Catálogo e Inventario<br/>- Control Kardex Ponderado (CPP)<br/>- Fórmulas Disponible/Comprometido<br/>- Bloqueo Pesimista (FOR UPDATE)"]
             MOD_POS["Módulo POS y Caja<br/>- Emisión Rápida de Comprobantes<br/>- Apertura y Arqueo Ciego de Caja<br/>- Despacho Inmediato en Tienda"]
             MOD_WEB["Módulo PedidosWeb y Reservas<br/>- Reserva Dinámica con TTL (20m / 4h)<br/>- Tracking de Estados de Retiro<br/>- Worker de Liberación Automática"]
@@ -126,14 +149,15 @@ graph TD
     %% =======================================================
     %% CAPA DE PERSISTENCIA Y BASES DE DATOS
     %% =======================================================
-    subgraph PERSISTENCIA ["Capa de Persistencia Relacional y Analítica"]
+    subgraph PERSISTENCIA ["Capa de Persistencia Relacional, Analítica y Storage"]
         subgraph GESTOR_POOLS ["Pooler de Conexiones (PgBouncer en Modo Transacción)"]
-            PGB_POS["pool_pos (Prioritario LAN)<br/>- Conexiones Garantizadas POS/Caja<br/>- Cero Espera en Mostrador"]
-            PGB_WEB["pool_web (Contenido Internet)<br/>- Cuota de Conexiones Web Limitada<br/>- Aislamiento Frente a Sobrecarga"]
+            PGB_POS["pool_pos (Prioritario LAN)<br/>- 50 Conexiones Garantizadas POS/Caja<br/>- Cero Espera en Mostrador"]
+            PGB_WEB["pool_web (Contenido Internet)<br/>- 30 Conexiones Web Limitadas<br/>- Aislamiento Frente a Sobrecarga"]
         end
         
         DB_OLTP[("PostgreSQL 16 OLTP<br/>(sigic_oltp)<br/>- Esquema Transaccional ACID<br/>- Tablas Particionadas / Kardex<br/>- Índices B-Tree y GiST")]
         DB_OLAP[("PostgreSQL 16 OLAP<br/>(sigic_olap - Datamart)<br/>- Esquema Estrella (Fact_Ventas)<br/>- ETL Nocturno Asíncrono")]
+        STORAGE_PRIV[("Storage Privado de Archivos<br/>- Vouchers Bancarios <= 5MB<br/>- Facturas XML/CDR SUNAT<br/>- Acceso Restringido")]
     end
 
     %% =======================================================
@@ -192,6 +216,7 @@ graph TD
     MOD_PRC --> EF_CORE
     MOD_PAG --> EF_CORE
     MOD_SEG --> EF_CORE
+    MOD_WEB --> STORAGE_PRIV
 
     %% EF Core a Pools de PgBouncer
     EF_CORE -->|Conexiones POS/Almacén| PGB_POS
@@ -214,11 +239,13 @@ graph TD
 
 ## 4. Trazabilidad con Decisiones de Arquitectura y Atributos de Calidad
 
-| Elemento Estructural | Justificación Técnica en SIGIC Ferretería v2.2 | Decisión / Requisito Asociado |
-| :--- | :--- | :--- |
-| **Monolito Modular ASP.NET Core 8** | Evita latencias inter-nodo y garantiza transacciones ACID unificadas sobre el inventario compartido. | `ADR-001`, `ADR-002`, `DA-01`, `DA-06` |
-| **Doble Frontend (React 18 / Next.js 14)** | Interfaz ultrarrápida para escáner/teclado en LAN mostrador versus catálogo SEO con SSR en Web. | `ADR-007`, `DA-02`, `DA-05` |
-| **Segregación PgBouncer (`pool_pos` / `pool_web`)** | Protege el mostrador físico frente a picos de tráfico en línea, blindando la disponibilidad transaccional. | `ADR-004`, `DA-02`, `DA-05` |
-| **Reserva con TTL Dinámico** | Bloqueo temporal para evitar sobreventa en materiales de alta demanda (cemento, fierro) sin congelar stock permanentemente. | `ADR-003`, `DA-01`, `DA-04` |
-| **Dualidad de Identidad y JWT RS256** | Firma asimétrica con claims segregados que impide escalada de privilegios de usuarios web a funciones internas. | `ADR-005`, `DA-03` |
-| **Aislamiento OLTP / OLAP** | El cálculo analítico pesado de Kardex valorizado no compite por recursos de CPU/RAM con las ventas en curso. | `ADR-008`, `DA-07` |
+| Elemento Estructural | Justificación Técnica en SIGIC Ferretería v2.2 | Decisión / Requisito Asociado | Atributo de Calidad |
+| :--- | :--- | :--- | :--- |
+| **Monolito Modular ASP.NET Core 8** | Evita latencias inter-nodo y garantiza transacciones ACID unificadas sobre el inventario compartido. | `ADR-001`, `ADR-002`, `DA-01`, `DA-06` | **AC01**, **AC02** |
+| **Doble Frontend (React 18 / Next.js 14)** | Interfaz ultrarrápida para escáner/teclado en LAN mostrador versus catálogo SEO con SSR en Web. | `ADR-007`, `DA-02`, `DA-05` | **AC01** |
+| **Segregación PgBouncer (`pool_pos` / `pool_web`)** | Protege el mostrador físico frente a picos de tráfico en línea, blindando la disponibilidad transaccional. | `ADR-004`, `DA-02`, `DA-05` | **AC01**, **AC02** |
+| **Reserva con TTL Dinámico** | Bloqueo temporal para evitar sobreventa en materiales pesados (cemento, fierro) sin congelar stock permanentemente. | `ADR-003`, `DA-01`, `DA-04` | **AC02** |
+| **Dualidad de Identidad y JWT RS256** | Firma asimétrica con claims segregados que impide escalada de privilegios de usuarios web a funciones internas. | `ADR-005`, `DA-03` | **AC03** |
+| **Aislamiento OLTP / OLAP** | El cálculo analítico pesado de Kardex valorizado no compite por recursos de CPU/RAM con las ventas en curso. | `ADR-008`, `DA-07` | **AC01** |
+| **Arqueo Ciego de Caja Append-Only** | Prevención de fraude e inmutabilidad estricta sin exposición de saldos teóricos al cajero. | `ADR-002`, `DA-03`, `RF-CAJ-002` | **AC03** |
+| **Storage Privado de Vouchers y XML** | Custodia cifrada de constancias bancarias ($\le 5\text{ MB}$) y documentos fiscales sin exposición pública directa. | `ADR-002`, `RF-WEB-003`, `RNF-SEG-004` | **AC03** |
