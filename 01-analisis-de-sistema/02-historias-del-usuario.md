@@ -24,6 +24,13 @@ fecha: "2026-10-30"
 
 Las historias de usuario aquí documentadas formalizan los flujos transaccionales y de interacción críticos del sistema **SIGIC Ferretería v2.2**, resolviendo la concurrencia operativa entre el mostrador físico (POS) y el canal digital e-commerce sobre una persistencia relacional unificada en PostgreSQL 16 con PgBouncer.
 
+### 1.1 Contexto de Relevamiento Operativo y Casos de Dolor Real
+El diseño de estas historias responde directamente a la realidad del retail ferretero de alta rotación en Huamanga (Ayacucho):
+1. **Volumen de 150 comprobantes diarios por punto de venta:** Alta densidad de atención presencial en mostrador donde la velocidad de captura y cobro es de vida o muerte para no congestionar la tienda.
+2. **Materiales de alta rotación y alto volumen (Cemento Portland Tipo I y Fierro Corrugado de 1/2"):** Ítems críticos para obras de construcción civil donde la falta de stock o la sobreventa paraliza cuadrillas y genera pérdidas económicas.
+3. **El conflicto físico vs. web de las 40 bolsas de cemento:** Ocurre cuando un cliente web reserva 40 bolsas de cemento Portland Tipo I vía e-commerce (incrementando `stock_comprometido`), mientras simultáneamente un maestro de obra se encuentra en el mostrador físico intentando facturar y retirar en efectivo las últimas 40 bolsas disponibles en tienda. El sistema debe garantizar que quien reserve primero gane el cerrojo atómico y la otra transacción sea notificada con stock insuficiente (`HTTP 409 Conflict`), erradicando sobreventas.
+4. **Cuadre manual tradicional defectuoso:** Cierres de turno con calculadora propensos a omisiones y adulteraciones en la rendición de las 150 ventas del día, subsanado mediante el procedimiento de **Arqueo Ciego Append-Only**.
+
 | Historia de Usuario | Actor Primario | Código RF/RNF Relacionado | Atributo de Calidad Rector |
 | :--- | :--- | :--- | :--- |
 | **HU-01: Venta Rápida POS sin Ratón** | Cajero Mostrador | `RF-POS-003`, `RF-POS-001`, `RF-POS-004` | **AC01** (Latencia P95 < 250ms API / $\le 2$s cobro) |
@@ -102,10 +109,10 @@ Las historias de usuario aquí documentadas formalizan los flujos transaccionale
     - **Dado** que el Almacén Central cuenta con 50 bolsas de Cemento Portland disponibles y el precio es S/ 28.50,
     - **Cuando** el cliente envía la solicitud de checkout para 20 bolsas al precio de S/ 28.50,
     - **Entonces** el sistema bloquea la fila transaccional, valida existencias, incrementa el `Stock Comprometido` en 20 bolsas, genera la orden en estado `Pendiente de Pago` y responde con éxito en menos de 1 segundo.
-  - **Escenario 2: Intento de checkout con stock insuficiente por venta concurrente en mostrador.**
-    - **Dado** que en el catálogo web se visualizaban 5 unidades de un taladro percutor por efecto de la caché, pero el mostrador acaba de vender las últimas 5 unidades hace 10 segundos,
-    - **Cuando** el cliente web pulsa "Confirmar Pedido",
-    - **Entonces** la revalidación atómica detecta que `Stock Disponible = 0`, rechaza la orden sin generar cargo económico, retorna código `HTTP 409 Conflict` e instruye a la interfaz a actualizar el carrito con el aviso "El artículo se ha agotado en almacén".
+  - **Escenario 2: Conflicto crítico de stock entre mostrador y web (Caso de las 40 bolsas de Cemento Portland Tipo I).**
+    - **Dado** que en el inventario físico quedan exactamente 40 bolsas de Cemento Portland Tipo I (y 0 bolsas de stock comprometido), y en el catálogo web se visualizan las 40 bolsas disponibles,
+    - **Cuando** un cliente web presiona "Confirmar Pedido y Reservar" para 40 bolsas a las 09:15:00 h mientras a las 09:15:01 h un maestro de obra compra en efectivo las 40 bolsas en el mostrador POS,
+    - **Entonces** la transacción web adquiere primero el cerrojo pesimista de fila (`SELECT ... FOR UPDATE`), incrementa el `Stock Comprometido` a 40 bolsas dejando `Stock Disponible = 0`; consecuentemente, al ejecutarse la validación en la terminal POS de mostrador, el sistema detecta que `Stock Disponible = 0`, bloquea la venta física alertando al cajero "Stock insuficiente: artículo comprometido por orden en línea", garantizando 0 sobreventas y evitando que dos clientes paguen por el mismo material físico.
 
 ---
 

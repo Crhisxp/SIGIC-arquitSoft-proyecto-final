@@ -29,3 +29,8 @@ DESIGN.md
 GEMINI.md
 .agents/
 .gemini/
+
+# Artefactos de pruebas de .NET
+TestResults/
+bin/
+obj/

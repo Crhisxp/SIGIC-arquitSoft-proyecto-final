@@ -152,6 +152,20 @@ classDiagram
     InventarioStock "1" <-- "0..*" ReservaStockPedido : compromete existencias de
 ```
 
+### 2.1. Tabla Resumen de Clases de Dominio Centrales (C4 Nivel 4)
+
+La siguiente tabla sintetiza las clases de dominio modeladas en el diagrama superior, formalizando sus responsabilidades operativas en la ferretería, métodos de negocio y garantías de concurrencia/persistencia:
+
+| Nombre del Componente / Clase | Responsabilidad en el Negocio de la Ferretería | Interfaz de Entrada / Métodos Clave | Persistencia / Regla de Concurrencia Asociada |
+| :--- | :--- | :--- | :--- |
+| **`Producto`** | Entidad de catálogo y precios. Custodia la ficha técnica (cemento, fierros, herramientas), margen comercial y costo promedio ponderado (CPP) tras recepción de mercadería (`RF-INV-001`). | `ActualizarCostoPonderado(cant, costo)`<br>`EsVisibleParaWeb()`<br>`ValidarMargenSeguridad(precioVenta)` | Tabla `producto`. Invariante 2: si `DisponibleEnWeb == false`, no se expone a la web (retorna HTTP 404 estricto ante cualquier consulta o intento de compra). |
+| **`InventarioStock`** | Agregado de existencias físicas y comprometidas segregadas por almacén (Almacén Central vs Mostrador Tienda). | `StockDisponible()`<br>`BloquearParaReserva(cantidad)`<br>`LiberarReserva(cantidad)`<br>`RegistrarSalidaFisica(cantidad)` | Tabla `inventario_stock`. Invariante 1 (`RNF-CON-003`): $\text{Stock Disponible} = \text{StockFisico} - \text{StockComprometido}$. Invariante 3: Bloqueo pesimista ordenado (`ORDER BY producto_id ASC`) y `SELECT ... FOR UPDATE`. |
+| **`Venta`** | Agregado transaccional de facturación presencial en mostrador. Asocia los ítems vendidos, medios de pago (efectivo, Yape/Plin) y emite comprobantes electrónicos SUNAT (`RF-POS-003`). | `AgregarDetalle(producto, cant, precio)`<br>`RegistrarPago(medio, monto, op)`<br>`ConfirmarVenta()`<br>`AnularVenta(motivo, usuarioId)` | Transacción ACID en `sigic_pos_pool`. Bloqueo pesimista de fila en serie de comprobantes para evitar saltos o duplicados correlativos tributarios. |
+| **`DetalleVenta`** | Entidad granular que representa cada renglón de la transacción física (ej. 40 bolsas de Cemento Portland, 10 varillas de Fierro 1/2"). | `CalcularSubtotal()`<br>`AsignarPrecioUnitario(precio)` | Tabla `detalle_venta`. Utiliza precisión decimal exacta (4 decimales para cálculo de base imponible e IGV, 2 decimales en importe final). |
+| **`ArqueoCaja`** | Entidad inmutable de auditoría para el Arqueo Ciego de turno (`RF-CAJ-002`, `AC03`, `RNF-SEG-004`). Registra el recuento de efectivo sin revelar el saldo teórico del sistema. | `RegistrarDeclaracionCiega(desglose, digital)`<br>`CalcularDiferencia(saldoTeorico)` | Tabla `caja_arqueo`. Estructura estrictamente **Append-Only**: la base de datos revoca permisos `UPDATE` y `DELETE` (`REVOKE UPDATE, DELETE ON caja_arqueo FROM sigic_app_user`), emitiendo error PostgreSQL `42501` si se vulnera. |
+| **`PedidoWeb`** | Agregado de pedidos digitales originados en el e-commerce. Soporta entrega a domicilio o retiro en mostrador (`RF-WEB-002`, `RF-POS-011`). | `AsignarReserva(reserva)`<br>`AprobarPagoPorTesoreria(tesoreroId)`<br>`EntregarEnMostrador(dniReceptor)` | Tabla `pedido_web`. Para modalidad 'Retiro en Tienda', dispara la creación automática de una Guía Interna de Traslado desde Almacén Central hacia mostrador (`RF-INV-003`). |
+| **`ReservaStockPedido`** | Entidad temporal que gobierna el stock comprometido mientras se procesa o audita el pago del cliente. | `EsVencida()`<br>`Consolidar()`<br>`Revocar()` | Tabla `reserva_stock_pedido`. Invariante 4: TTL dinámico estricto de 20 min (pasarela) o hasta 4 h para pagos manuales (con límite improrrogable de 1 h para subir comprobante/voucher). |
+
 ---
 
 ## 3. Diagrama de Secuencia 1: Checkout Web con Revalidación Atómica y TTL Dinámico

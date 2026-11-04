@@ -28,6 +28,19 @@ El sistema **SIGIC Ferretería v2.2** establece un modelo de seguridad basado en
 
 ---
 
+## 1.1 Ficha de Relevamiento Operativo y Problemática Real de Retail Ferretero
+
+Para anclar las especificaciones en la realidad operativa del negocio comercial en Huamanga (Ayacucho), se formaliza la siguiente ficha de relevamiento técnico-operativo:
+
+| Variable Operativa | Relevamiento de Campo (Ferretería Real) | Impacto Arquitectónico y Dolor de Negocio |
+| :--- | :--- | :--- |
+| **Volumen Transaccional Diario** | **~150 comprobantes por turno** (boletas, facturas electrónicas y notas de venta rápida). | Exige que la captura de ítems sea $\le 1.0\text{ s}$ por código de barras y el cierre de cobro $\le 2.0\text{ s}$ en mostrador para evitar colas de contratistas en horas punta. |
+| **Materiales Críticos de Alta Rotación** | **Cemento Portland Tipo I (bolsas de 42.5 kg)** y **Fierro corrugado de 1/2" (varillas de 9 m)**. | Artículos con margen estrecho, alta demanda matutina y gran volumen físico, donde cualquier sobreventa o quiebre de stock paraliza cuadrillas de obra y genera reclamos legales severos. |
+| **Conflicto Concurrente Mostrador vs. Web** | Un cliente web en Huanta reserva **40 bolsas de cemento** vía e-commerce a las 09:15 h; a las 09:16 h, un maestro de obra se presenta en ventanilla intentando pagar en efectivo las últimas **40 bolsas físicas** existentes en tienda. | Si el sistema consultara únicamente el `stock_fisico`, ambas ventas procederían, generando una **sobreventa crítica de 40 bolsas**. Resuelto mediante la ecuación inviolable $\text{Stock Disponible} = \text{Stock Físico} - \text{Stock Comprometido}$ y bloqueos pesimistas ordenados en PostgreSQL 16. |
+| **Cuadre de Caja Manual Tradicional** | Cuadre manual en papel y calculadora al cierre de turno sobre las 150 ventas del día (mezclando efectivo, Yape, Plin y tarjetas). | Altamente propenso a errores humanos, encubrimiento de faltantes cuando el cajero conoce previamente el saldo teórico, y retrasos de hasta 45 minutos en el cierre. Resuelto mediante el **Arqueo Ciego Append-Only** (`REVOKE UPDATE, DELETE ON caja_arqueo`). |
+
+---
+
 ## 2. Cuatro Actores Principales del Sistema
 
 De acuerdo con el modelo de operación ferretera y el estándar de evaluación IS-488 UNSCH, se identifican **cuatro actores rectores**, complementados por roles operativos auxiliares:

@@ -113,7 +113,24 @@ C4Component
 
 ---
 
-## 3. Matriz de Responsabilidades de Componentes Internos
+## 3. Tabla Resumen de Componentes del Backend Monolítico (C4 Nivel 3)
+
+La siguiente tabla sintetiza la descomposición técnica del contenedor backend en ASP.NET Core 8 Web API, mapeando cada componente con su responsabilidad en la ferretería, contratos de entrada y reglas de concurrencia:
+
+| Nombre del Componente / Clase | Responsabilidad en el Negocio de la Ferretería | Interfaz de Entrada / Métodos Clave | Persistencia / Regla de Concurrencia Asociada |
+| :--- | :--- | :--- | :--- |
+| **`VentasPOSController`** | Entrada REST para terminales de mostrador en tienda física. Procesa facturación de cemento, fierro y herramientas con teclado y escáner láser (`RF-POS-003`). | `POST /api/v1/pos/ventas`<br>`POST /api/v1/pos/cajas/arqueo`<br>`GET /api/v1/pos/productos/buscar` | Ruteado prioritario a `sigic_pos_pool`. Ejecución síncrona de baja latencia ($P95 < 250\text{ ms}$). |
+| **`DespachoMostradorController`** | Pantalla ligera de entrega para retiro en tienda física de compras originadas en el portal web (`RF-POS-011`). | `POST /api/v1/pos/despacho/{codigo}/entregar`<br>`GET /api/v1/pos/despacho/buscar` | Valida código de retiro y DNI receptor. Actualiza estado del pedido y rebaja física desde Almacén de Despacho. |
+| **`CatalogoPublicoController`** | API pública de consulta de catálogo para clientes web. Protege el stock interno de la ferretería (`RF-INV-001`, `RF-WEB-001`). | `GET /api/v1/public/catalogo`<br>`GET /api/v1/public/productos/{id}` | Ruteado a `sigic_web_pool`. Filtro estricto `disponible_en_web = true` (retorna HTTP 404 estricto si es exclusivo de mostrador). |
+| **`CheckoutWebController`** | Recepción de órdenes de compra del portal web con revalidación atómica (`RF-WEB-002`, `RF-WEB-005`). | `POST /api/v1/public/checkout`<br>`POST /api/v1/public/pedidos/{id}/comprobante` | Invoca orquestador transaccional en `sigic_web_pool` con TTL dinámico y control de cuota. |
+| **`IniciarCheckoutCommandHandler`** | Orquestador MediatR de checkout transaccional. Elimina condiciones de carrera entre la web y mostrador (`AC02`). | `Handle(IniciarCheckoutCommand, CancellationToken)` | Transacción ACID corta: ordena IDs en memoria (`OrderBy(p => p.ProductoId)`), ejecuta `SELECT ... FOR UPDATE` y actualiza `stock_comprometido`. |
+| **`CrearVentaPOSCommandHandler`** | Orquestador MediatR de facturación presencial inmediata. Descuenta inventario físico y dispara comprobante electrónico. | `Handle(CrearVentaPOSCommand, CancellationToken)` | Transacción inmediata: rebaja directa sobre `stock_fisico`, emisión síncrona a PSE SUNAT y registro en turno de caja. |
+| **`InventarioDomainService`** | Servicio de dominio puro. Gobierna la regla cardinal de disponibilidad y el algoritmo anti-deadlock. | `ValidarDisponible(stockFisico, stockComp, cant)`<br>`OrdenarParaBloqueo(items)`<br>`CalcularCostoPonderado(exist, ent)` | Invariante 1 (`RNF-CON-003`): $\text{Stock Disponible} = \text{stock\_fisico} - \text{stock\_comprometido}$. Cero acceso a I/O de base de datos. |
+| **`ReservaStockService`** | Gobernanza de tiempos de caducidad (TTL) de reservas de inventario web según modalidad de pago. | `CalcularTtl(MedioPago)`<br>`AsignarVentanaComprobante()` | Tarjeta/Pasarela: TTL 20 min exacto. Pagos manuales (Yape/Plin/Transferencia): TTL 4 h con ventana de 60 min para comprobante. |
+| **`InventarioRepository` / `SIGICDbContext`** | Adaptador de persistencia relacional sobre PostgreSQL 16 con aislamiento `Read Committed`. | `ObtenerParaBloqueoAsync(ids, almacenId)`<br>`ActualizarComprometidoAsync(reserva)` | Bloqueo pesimista de fila (`FOR UPDATE`). Conectado mediante PgBouncer segregado (`sigic_pos_pool` / `sigic_web_pool`). |
+| **`CatalogoDapperRepository`** | Micro-ORM de alta velocidad para lecturas de catálogo sin bloqueo ni overhead de tracking (`AC01`). | `GetCatalogoPaginadoAsync(filtros)`<br>`GetProductoPublicoPorIdAsync(id)` | Consultas SQL indexadas sobre vistas materializadas con latencia de ejecución sub-15ms. |
+| **`StoragePrivadoAdapter`** | Custodia aislada de archivos de voucher de pago y archivos XML tributarios SUNAT (`AC03`). | `GuardarComprobanteAsync(stream, ext)`<br>`ObtenerVoucherProtegidoAsync(id)` | Almacenamiento local en volumen cifrado `/var/sigic/storage/` sin acceso web directo. Tamaño máx 5MB, SHA-256. |
+| **`ReservaExpirationWorker`** | Background Worker (`IHostedService`) que se ejecuta cada 60 segundos para sanear reservas abandonadas. | `ExecuteAsync(CancellationToken)` | Identifica reservas con `FechaExpiracionUtc < Now` y ejecuta comando de liberación idempotente de `stock_comprometido`. |
 
 | Componente | Capa de Clean Architecture | Responsabilidad Primaria | Invariantes de Negocio Gobernados |
 | :--- | :--- | :--- | :--- |

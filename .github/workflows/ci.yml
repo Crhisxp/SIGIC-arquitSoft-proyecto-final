@@ -1,0 +1,74 @@
+name: CI/CD Pipeline - SIGIC Ferretería v2.2
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-verify:
+    name: Build, SDD Concurrency Tests & Coverage Gate (>= 95%)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore Dependencies
+        run: dotnet restore SIGIC.sln
+
+      - name: Build Solution (Release with Warnings as Errors)
+        run: dotnet build SIGIC.sln --configuration Release --no-restore -warnaserror
+
+      - name: Run Domain & Concurrency Tests with Coverage
+        run: >
+          dotnet test SIGIC.sln
+          --configuration Release
+          --no-build
+          --collect:"XPlat Code Coverage"
+          --results-directory ./TestResults
+          --logger "console;verbosity=detailed"
+
+      - name: Verify Code Coverage Threshold (>= 95% Line Coverage Gate)
+        shell: bash
+        run: |
+          python3 - << 'EOF'
+          import glob
+          import sys
+          import xml.etree.ElementTree as ET
+
+          coverage_files = glob.glob('./TestResults/**/coverage.cobertura.xml', recursive=True)
+          if not coverage_files:
+              print("❌ ERROR: No se encontró ningún reporte 'coverage.cobertura.xml'.", file=sys.stderr)
+              sys.exit(1)
+
+          latest_report = max(coverage_files, key=lambda f: f)
+          print(f"📊 Analizando reporte: {latest_report}")
+
+          tree = ET.parse(latest_report)
+          root = tree.getroot()
+          line_rate = float(root.attrib.get('line-rate', 0)) * 100
+          branch_rate = float(root.attrib.get('branch-rate', 0)) * 100
+          lines_covered = root.attrib.get('lines-covered', '0')
+          lines_valid = root.attrib.get('lines-valid', '0')
+
+          print(f"==================================================")
+          print(f"📈 SIGIC SDD Quality Gate Summary:")
+          print(f"   Line Coverage:   {line_rate:.2f}% ({lines_covered}/{lines_valid} lines)")
+          print(f"   Branch Coverage: {branch_rate:.2f}%")
+          print(f"   Threshold:       >= 95.00%")
+          print(f"==================================================")
+
+          MIN_THRESHOLD = 95.00
+          if line_rate < MIN_THRESHOLD:
+              print(f"❌ ERROR: Cobertura de código insuficiente ({line_rate:.2f}% < {MIN_THRESHOLD}%). Build fallido por Quality Gate SDD.", file=sys.stderr)
+              sys.exit(1)
+
+          print(f"✅ Quality Gate APROBADO: Cobertura cumple con el estándar >= 95%.")
+          EOF
