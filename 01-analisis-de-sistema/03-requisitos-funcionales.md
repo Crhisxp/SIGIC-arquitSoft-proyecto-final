@@ -46,7 +46,75 @@ $$\text{TIPO}-\text{ÁREA}-\text{NNN}$$
 | **RF-INV-005** | Manejo de múltiples unidades de medida por artículo con factores de conversión (unidad, docena, bolsa, millar, metro). | El stock se almacena en la unidad base; toda venta o traslado se convierte a ella. Los factores admiten decimales y son administrados por el Superadmin. | Conversiones con precisión de 4 decimales; error de redondeo acumulado en kardex = 0 en una prueba de 10 000 movimientos. |
 | **RF-INV-006** | Registro de órdenes de compra y carga de artículos desde comprobantes de compra en Almacén Central. | El stock del Almacén Central se incrementa solo al confirmar la recepción física de la mercadería por el Almacenero, recalculando automáticamente el Costo Promedio Ponderado (CPP). | Recepción parcial soportada; el saldo pendiente de la orden coincide con la diferencia entre lo ordenado y lo recibido. Recálculo de CPP con diferencia monetaria S/ 0.00. |
 | **RF-INV-007** | Ajustes de inventario por toma física periódica, mermas o roturas debidamente justificadas. | Todo ajuste exige motivo registrado, usuario responsable y aprobación de Superadmin. El saldo se concilia con kardex sin alterar movimientos pasados. | Ajuste procesado en $\le 3$ s. Trazabilidad del 100 % de ajustes con usuario, fecha y justificación. |
-| **RF-INV-008** | Carga e Importación Masiva de Catálogo vía Excel (.xlsx) / CSV. | Procesamiento en streaming de alto rendimiento en ASP.NET Core 8 mediante librerías especializadas (`ClosedXML` / `ExcelDataReader`) para mitigar el consumo de memoria ante archivos de hasta 15,000 filas. Validación estricta en memoria por lote antes de persistir: (a) SKU correlativo o EAN-13 único e irrepetible; (b) nombre y descripción comercial no vacíos; (c) unidad de medida base homologada; (d) regla de margen comercial positivo (`PrecioVenta > CostoUnitario`), rechazando márgenes negativos o ventas por debajo de costo; (e) stock físico inicial $\ge 0$; y (f) flag `disponible_en_web` explícito (`true`/`false`). La persistencia se ejecuta como un bloque transaccional atómico utilizando operaciones en lote / *PostgreSQL COPY* (`NpgsqlBinaryImporter`) dentro de una única transacción ACID. Si una sola fila del lote presenta inconsistencias de datos o infringe una restricción de integridad, el sistema cancela la importación completa ejecutando *rollback* total (integridad 'todo o nada', cero inserciones parciales) y retorna un reporte estructurado indicando número de fila, columna y motivo del rechazo. Exclusivo para Superadmin. | Procesamiento, validación y persistencia de 5,000 artículos en $\le 10$ s. Tasa de inconsistencias toleradas = 0 % (100 % de filas válidas importadas o 0 % con reversión completa ante una sola falla). Reporte detallado de celdas erróneas emitido en $\le 2$ s. |
+| **RF-INV-008** | Carga e Importación Masiva de Catálogo vía Excel (.xlsx) / CSV. | **Endpoint Transaccional:** `POST /api/v1/productos/importar-masivo` (`Content-Type: multipart/form-data`).<br>Procesamiento en memoria por *streaming* de alto rendimiento en ASP.NET Core 8 mediante librerías especializadas (`ClosedXML` / `ExcelDataReader`) para mitigar el consumo de memoria ante archivos de hasta 15,000 filas. Validación estricta en memoria fila por fila antes de persistir:<br>1. **Estructura y Cabeceras:** Validación de formato y presencia de todas las columnas obligatorias.<br>2. **Unicidad de Códigos:** SKU correlativo único e irrepetible o EAN-13 con dígito verificador válido.<br>3. **Categorización Homologada:** Verificación de existencia previa de Familia y Subfamilia en la base de datos (rechazo de categorías inexistentes o huérfanas).<br>4. **Reglas Financieras y Precios:** Costo de compra unitario mayor a cero (`CostoCompra > 0`) y margen comercial positivo obligatorio (`PrecioVenta > CostoCompra`), prohibiendo ventas a pérdida o márgenes negativos.<br>5. **Inventario Inicial:** Stock físico inicial mayor o igual a cero (`StockInicial >= 0`).<br>6. **Gobernanza Web:** Indicador explícito `disponible_en_web` (`true`/`false`).<br><br>**Persistencia Transaccional 'All-or-Nothing':** La carga a base de datos se ejecuta en bloque mediante *PostgreSQL COPY* binario (`NpgsqlBinaryImporter`) dentro de una única transacción SQL (`BEGIN TRANSACTION` / `COMMIT`). Si una sola fila del archivo presenta inconsistencias o viola alguna restricción de integridad referencial/negocio, el sistema ejecuta de inmediato un **ROLLBACK integral** (cero inserciones parciales en base de datos) y retorna una respuesta con código `HTTP 422 Unprocessable Entity` acompañada de un informe estructurado detallando número de fila, columna, valor infractor y motivo exacto del rechazo. Exclusivo para Superadmin (`ROLE_SUPERADMIN`). | Procesamiento, validación y persistencia de 5,000 artículos en $\le 10$ s. Tasa de inconsistencias toleradas = 0 % (100 % de filas válidas importadas o 0 % con reversión completa ante una sola falla). Reporte detallado de celdas erróneas emitido en $\le 2$ s. Cero inserciones parciales en caso de fallo. |
+
+---
+
+### 2.1 Especificación Técnica Detallada de RF-INV-008 (Carga Masiva de Catálogo)
+
+Para mitigar el cuello de botella comercial observado en el levantamiento de campo (ingreso manual de guías con más de 100 ítems demorando horas de trabajo administrativo), se formaliza la arquitectura del servicio de carga masiva:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Admin as Superadmin (Navegador / SPA)
+    participant API as CatalogoAdminController
+    participant Stream as StreamValidator (.NET 8 / ExcelDataReader)
+    participant DB as PostgreSQL 16 (sigic_oltp via pool_pos)
+
+    Admin->>API: POST /api/v1/productos/importar-masivo (multipart/form-data: archivo.xlsx)
+    Note over API,Stream: 1. Procesamiento Streaming en Memoria (Bajo Consumo RAM)
+    API->>Stream: ProcesarFlujoLectura(fileStream)
+    
+    loop Validación Fila por Fila en Memoria
+        Stream->>Stream: Validar SKU único, Categoría existente, Costo > 0, Margen > 0, Stock >= 0
+    end
+
+    alt Errores Detectados en una o más Filas
+        Stream-->>API: Colección de Fallas (Fila, Columna, Motivo)
+        API-->>Admin: HTTP 422 Unprocessable Entity + Reporte JSON detallado (0 escrituras en BD)
+    else Archivo 100% Válido
+        API->>DB: BEGIN TRANSACTION (NpgsqlTransaction)
+        Note over API,DB: 2. Persistencia en Bloque: PostgreSQL COPY (NpgsqlBinaryImporter)
+        API->>DB: COPY producto (sku, nombre, costo, precio, web, ...) FROM STDIN (BINARY)
+        API->>DB: COPY inventario_stock (almacen_id, producto_id, stock_fisico, ...) FROM STDIN (BINARY)
+        
+        alt Excepción de Integridad o Caída
+            API->>DB: ROLLBACK (Integridad Todo o Nada)
+            API-->>Admin: HTTP 500 / 409 Transacción Revertida Integralmente
+        else Éxito en Bloque
+            API->>DB: COMMIT TRANSACTION
+            API-->>Admin: HTTP 200 OK ({ totalProcesados: N, tiempoMs: T, estado: "IMPORTACION_COMPLETADA" })
+        end
+    end
+```
+
+#### Estructura del Informe de Inconsistencias (HTTP 422)
+
+```json
+{
+  "estado": "RECHAZO_POR_INCONSISTENCIA",
+  "mensaje": "Se canceló la importación masiva. Ningún registro fue persistido (Rollback total aplicado).",
+  "totalFilasArchivo": 125,
+  "filasConError": 2,
+  "errores": [
+    {
+      "fila": 14,
+      "columna": "MargenComercial",
+      "sku": "TUB-PVC-SAN-2",
+      "valorInvalido": "PrecioVenta: S/ 12.00, CostoCompra: S/ 13.50",
+      "motivo": "Infracción de margen comercial: El precio de venta no puede ser menor o igual al costo de adquisición."
+    },
+    {
+      "fila": 48,
+      "columna": "FamiliaId",
+      "sku": "FIE-ACER-38",
+      "valorInvalido": "ACEROS_ESPECIALES",
+      "motivo": "Categoría no homologada: La familia especificada no existe en el catálogo maestro."
+    }
+  ]
+}
+```
 
 ---
 

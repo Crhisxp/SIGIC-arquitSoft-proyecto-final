@@ -238,6 +238,19 @@ sequenceDiagram
     Ctrl-->>Cliente: HTTP 201 Created (Orden creada y Stock Comprometido reservado)
 ```
 
+### 3.1. Tabla Resumen de Participantes del Flujo de Checkout Web (C4 Nivel 4)
+
+La siguiente tabla resume el rol técnico, los contratos de interacción y las garantías de concurrencia de cada participante en la secuencia de Checkout Web:
+
+| Componente / Agregado / Clase | Responsabilidad en la Ferretería | Interfaz de Entrada / Métodos Clave | Persistencia y Regla de Concurrencia |
+| :--- | :--- | :--- | :--- |
+| **`CheckoutWebController`** | Punto de entrada HTTP público para clientes e-commerce (contratistas y público general). | `POST /api/v1/public/checkout`<br>`POST /api/v1/public/pedidos/{id}/comprobante` | Ruteado a `sigic_web_pool:6432` (pool limitado a 30 conexiones con backpressure). Rate limiting estricto (máx 60 req/min por IP pública). |
+| **`IniciarCheckoutCommandHandler`** | Orquestador transaccional MediatR. Coordina el orden anti-deadlock, validación de tarifas y reserva temporal. | `Handle(IniciarCheckoutCommand, CancellationToken)` | Transacción ACID corta en `sigic_web_pool`. Ordena artículos en memoria por `producto_id ASC` antes de solicitar bloqueos en base de datos. |
+| **`MotorTarifasDomainService`** | Revalida que los precios del carrito coincidan con la tarifa oficial vigente (Público, Maestro o Contratista B2B). | `RevalidarPreciosVigentes(items, perfil)` | Consulta optimizada en memoria/Dapper. Si el precio cambió en el servidor, ejecuta `ROLLBACK` y emite `HTTP 409 Conflict`. |
+| **`InventarioDomainService`** | Aplica la fórmula cardinal de inventario para impedir sobreventas contra el mostrador físico. | `ValidarDisponible(stockFisico, stockComp, cant)` | Regla matemática pura: $\text{Stock Disponible} = \text{Stock Físico} - \text{Stock Comprometido}$. Si $\text{Disponible} < \text{Solicitado}$, aborta con `HTTP 409 Conflict`. |
+| **`ReservaStockPedido`** | Entidad de retención temporal de existencias en el Almacén Central según la modalidad de pago. | `AsignarTtl(MedioPago)`<br>`EsVencida()` | Mutación atómica en `reserva_stock_pedido` e incremento de `stock_comprometido`. Asigna TTL dinámico: 20 min (tarjeta) o 240 min (manual, con 60 min para voucher). |
+| **`StoragePrivadoAdapter`** | Custodia segura y cifrada de las constancias de transferencia bancaria y capturas de Yape/Plin. | `GuardarComprobanteAsync(stream, ext)` | Almacenamiento en volumen privado `/var/sigic/storage/` sin acceso web directo. Tamaño máx 5MB, verificación MIME y hash SHA-256. |
+
 ---
 
 ## 4. Diagrama de Secuencia 2: Venta Rápida en Mostrador POS sin Mouse
@@ -295,3 +308,17 @@ sequenceDiagram
         SPA-->>Cajero: Alerta sonora y visual: "Stock insuficiente en mostrador"
     end
 ```
+
+### 4.1. Tabla Resumen de Participantes del Flujo de Venta Rápida POS (C4 Nivel 4)
+
+La siguiente tabla resume el rol técnico, los contratos de interacción y las garantías de concurrencia de cada participante en la secuencia de facturación rápida en mostrador:
+
+| Componente / Agregado / Clase | Responsabilidad en la Ferretería | Interfaz de Entrada / Métodos Clave | Persistencia y Regla de Concurrencia |
+| :--- | :--- | :--- | :--- |
+| **`SPA POS Mostrador (React 18)`** | Terminal de venta de alta velocidad optimizada para monitores 1024x768. Operación 100% por teclado y escáner láser sin mouse. | Mapeo de teclas de función (`F1` a `F12`), lectura de eventos de pistola óptica (EAN-13/SKU). | Ejecución local en navegador sobre red LAN privada. Mantiene estado en memoria; tiempo de adición de ítem $\le 1.0\text{ s}$. |
+| **`VentasPOSController`** | Controlador interno en ASP.NET Core 8 Web API para recepción de transacciones de caja física. | `POST /api/v1/internal/pos/ventas` | Exclusivo para LAN (valida JWT con claim `scope: pos_terminal`, `caja_id: N` y segmento IP `192.168.1.0/24`). Conectado a `sigic_pos_pool:6432`. |
+| **`RegistrarVentaPOSCommandHandler`** | Orquestador MediatR de la transacción de cobro presencial y liquidación de inventario en mostrador. | `Handle(RegistrarVentaPOSCommand, CancellationToken)` | Transacción ACID en `sigic_pos_pool`. Bloqueo pesimista de fila (`SELECT ... FOR UPDATE`), descuento directo de `stock_fisico` e inserción en kardex. |
+| **`InventarioDomainService`** | Verificación inmediata de existencias físicas disponibles en el almacén de mostrador asignado al punto de venta. | `ValidarExistenciasFisicas(stockFisico, cant)` | Valida que $\text{stock\_fisico} \ge \text{cantidad}$. Si no alcanza, aborta con `HTTP 400 Bad Request` y alerta sonora inmediata en la terminal. |
+| **`PseFacturacionAdapter`** | Construcción del payload estructurado JSON/XML para emisión de comprobantes electrónicos SUNAT (boletas/facturas). | `GenerarPayloadTributario(Venta)` | Transmisión síncrona o encolada hacia el Proveedor de Servicios Electrónicos (PSE/OSE). Persiste correlativo en `comprobante_electronico`. |
+| **`Impresora Térmica ESC/POS`** | Impresión física instantánea del ticket de venta o boleta electrónica en la gaveta del cajero. | Comandos raw ESC/POS vía socket TCP/USB LAN | Emisión inmediata del ticket físico en $< 1.0\text{ s}$ tras el commit en base de datos. Permite dejar el cursor listo para la siguiente venta. |
+

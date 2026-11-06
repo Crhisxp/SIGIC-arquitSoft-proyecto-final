@@ -229,3 +229,84 @@ flowchart LR
 | **`max_client_conn`** | `200` | `500` | Admite múltiples clientes TCP concurrentes encolados en el pool web. |
 | **`query_timeout`** | `10 s` | `5 s` | Consultas web lentas se abortan para evitar saturación del motor. |
 | **`server_idle_timeout`** | `60 s` | `30 s` | Cierre ágil de conexiones ociosas para liberar memoria de base de datos. |
+
+---
+
+## 4. Mecanismo de Segregación Omnicanal: POS LAN vs. Portal Web
+
+Para dar respuesta rigurosa a la **Observación 6** y garantizar la total independencia operativa entre la venta presencial de mostrador y el canal de comercio electrónico, SIGIC Ferretería v2.2 implementa un **mecanismo de segregación técnica en tres capas concéntricas**:
+
+```mermaid
+flowchart TD
+    subgraph Canales ["1. Canales y Autenticación Dual (RS256)"]
+        POS_DEV["Terminal POS Mostrador<br/>IP: 192.168.1.0/24<br/>Claim: scope=pos_terminal, caja_id=N"]
+        WEB_DEV["Cliente Portal Web<br/>IP: Pública Internet<br/>Claim: scope=web_customer, RateLimit=60/min"]
+    end
+
+    subgraph MiddlewareLayer ["2. Ruteo y Segregación de Inyección de Dependencias"]
+        MW_POS["POS Pipeline: Inyecta IPosDbConnection<br/>(Prioridad LAN / Baja Latencia)"]
+        MW_WEB["Web Pipeline: Inyecta IWebDbConnection<br/>(Backpressure / Cuota Acotada)"]
+    end
+
+    subgraph PgBouncerPools ["3. Segregación de Conectividad (PgBouncer:6432)"]
+        P_POS["sigic_pos_pool<br/>50 conexiones fijas reservadas<br/>Cero espera en cola (p95 < 250ms)"]
+        P_WEB["sigic_web_pool<br/>30 conexiones compartidas<br/>Queue Timeout = 3s (HTTP 429/503)"]
+    end
+
+    subgraph ReglasDominio ["4. Reglas de Negocio Diferenciadas en Backend"]
+        REG_POS["POS: Catálogo irrestricto<br/>Disponible = Físico - Comprometido<br/>Cobro inmediato y despacho en mostrador"]
+        REG_WEB["Web: Filtro WHERE disponible_en_web=true<br/>HTTP 404 estricto para mostrador<br/>Reserva temporal TTL 20 min / 240 min"]
+    end
+
+    POS_DEV --> MW_POS --> P_POS --> REG_POS
+    WEB_DEV --> MW_WEB --> P_WEB --> REG_WEB
+```
+
+### 4.1. Capa 1: Autenticación e Identificación Criptográfica de Clientes
+
+La diferenciación inicia en el perímetro HTTP mediante la emisión e inspección de tokens criptográficos asimétricos:
+
+1. **Terminales POS de Mostrador (LAN Privada):**
+   - **Formato del Token:** JWT firmado con clave asimétrica **RS256** (RSA 2048 bits).
+   - **Claims Específicos:** 
+     * `scope`: `pos_terminal`
+     * `caja_id`: Identificador numérico único de la caja física (`1` a `N`).
+     * `usuario_id`: UUID del cajero autenticado.
+     * `rol`: `ROLE_CAJERO` o `ROLE_SUPERADMIN`.
+   - **Validación de Red:** El middleware interno `PosNetworkAuthorizationFilter` valida que la dirección IP de origen provenga estrictamente del segmento de red local privada **`192.168.1.0/24`** (subred LAN cableada de la tienda). Cualquier intento de consumir endpoints POS desde una IP pública o foránea es rechazado inmediatamente con `HTTP 403 Forbidden`.
+   - **Rate Limiting:** Exento de cuotas restrictivas de peticiones por minuto, priorizando la alta velocidad de captura de códigos de barras (EAN-13/SKU) sin estrangulamiento.
+
+2. **Portal Web de Clientes (Internet Pública):**
+   - **Formato del Token:** JWT firmado con RS256 o token de sesión temporal para usuarios no autenticados (`Audience: SIGIC_WebClient`).
+   - **Claims Específicos:**
+     * `scope`: `web_customer`
+     * `perfil_tarifa`: `PUBLICO_GENERAL`, `MAESTRO_OBRA` o `CONTRATISTA_B2B`.
+   - **Política Estricta de Rate Limiting:** Gobernado por middleware perimetral en ASP.NET Core y Nginx, aplicando un límite rígido de **máximo 60 peticiones por minuto por IP pública**. Ráfagas excedentes son frenadas con `HTTP 429 Too Many Requests`, evitando scraping de precios o ataques de denegación de servicio que puedan comprometer la base de datos.
+
+### 4.2. Capa 2: Conectividad y Persistencia Segregada en PgBouncer
+
+Para erradicar la contención de conexiones y evitar la inanición (*thread/connection starvation*) del mostrador físico por picos de tráfico en línea, el sistema inyecta cadenas de conexión independientes conectadas a pools aislados en PgBouncer:
+
+1. **Pool POS (`sigic_pos_pool:6432`):**
+   - **Inyección en Backend:** A través de la interfaz tipada `IPosDbConnectionFactory`.
+   - **Dimensionamiento:** Pool dedicado de **50 conexiones fijas** en modo transacción (`pool_mode = transaction`).
+   - **Garantía Operativa:** Ningún cliente web puede solicitar o tomar conexiones de este pool. Esto asegura **cero latencia en cola de espera para los cajeros**, permitiendo sostener el atributo **AC01** ($P95 < 250\text{ ms}$ en red LAN y cobro $\le 2.0\text{ s}$).
+
+2. **Pool Web (`sigic_web_pool:6432`):**
+   - **Inyección en Backend:** A través de la interfaz tipada `IWebDbConnectionFactory`.
+   - **Dimensionamiento:** Pool limitado a **30 conexiones físicas** sobre el motor relacional.
+   - **Control de Sobrecarga (*Backpressure*):**
+     * Tiempo máximo de espera en cola de PgBouncer: **`query_timeout = 5 s`** y tiempo de adquisición de conexión $\le 3\text{ segundos}$.
+     * Si el tráfico web satura las 30 conexiones, las peticiones adicionales esperan hasta un máximo de 3 s; al superarse, el middleware aborta elegantemente con `HTTP 503 Service Unavailable` o solicita reintento, protegiendo integralmente la CPU y la memoria `work_mem` de PostgreSQL 16.
+
+### 4.3. Capa 3: Reglas de Negocio Diferenciadas en el Backend
+
+El núcleo de dominio en C# y las sentencias SQL ejecutan lógicas de negocio especializadas según el canal:
+
+| Dimensión de Negocio | Canal Mostrador POS (`LAN`) | Canal Portal Web (`Internet`) |
+| :--- | :--- | :--- |
+| **Visibilidad de Catálogo** | **Acceso Total:** Puede consultar y facturar el 100% de los 12,000 SKUs de la ferretería, incluyendo pernería a granel, cortes de manguera y productos exclusivos de tienda física (`disponible_en_web = false`). | **Filtrado Estricto a Nivel SQL:** Las consultas de catálogo aplican invariablemente el predicado `WHERE disponible_en_web = true`. Si un usuario intenta consultar por ID o añadir al carrito un producto exclusivo de mostrador, la API retorna **`HTTP 404 Not Found` absoluto**. |
+| **Cálculo de Disponibilidad** | $\text{Stock Disponible} = \text{stock\_fisico} - \text{stock\_comprometido}$. Si hay existencias físicas en el almacén de mostrador, permite cobro inmediato. | $\text{Stock Disponible} = \text{stock\_fisico} - \text{stock\_comprometido}$ evaluado prioritariamente sobre el **Almacén Central** (`RF-INV-003`). |
+| **Proceso de Cobro y Despacho** | **Cobro Inmediato:** El cliente paga en ventanilla (efectivo, tarjeta física o Yape presencial). La transacción descuenta directamente `stock_fisico`, emite ticket ESC/POS y entrega la mercadería en mano de inmediato. | **Reserva Transaccional con TTL Dinámico:** No descuenta stock físico hasta la confirmación de pago. En su lugar, incrementa `stock_comprometido` y crea un registro en `reserva_stock_pedido` con TTL exacto:<br>• Pasarela (tarjeta): **20 minutos**.<br>• Pago Manual (Yape/Plin/Transferencia): **hasta 240 minutos (4 h)** con plazo máximo de **60 minutos** para adjuntar voucher (`RF-WEB-002`). |
+| **Modalidad Retiro en Tienda** | El cajero/despachador recepciona y entrega pedidos mediante la pantalla ligera `RF-POS-011` cotejando código alfanumérico y DNI, sin acceso a saldos bancarios ni comprobantes. | Dispara la creación automática de una **Guía Interna de Traslado** desde el Almacén Central hacia el mostrador de destino, asegurando que el stock de exhibición en tienda no sea consumido por pedidos digitales. |
+

@@ -131,14 +131,3 @@ La siguiente tabla sintetiza la descomposición técnica del contenedor backend 
 | **`CatalogoDapperRepository`** | Micro-ORM de alta velocidad para lecturas de catálogo sin bloqueo ni overhead de tracking (`AC01`). | `GetCatalogoPaginadoAsync(filtros)`<br>`GetProductoPublicoPorIdAsync(id)` | Consultas SQL indexadas sobre vistas materializadas con latencia de ejecución sub-15ms. |
 | **`StoragePrivadoAdapter`** | Custodia aislada de archivos de voucher de pago y archivos XML tributarios SUNAT (`AC03`). | `GuardarComprobanteAsync(stream, ext)`<br>`ObtenerVoucherProtegidoAsync(id)` | Almacenamiento local en volumen cifrado `/var/sigic/storage/` sin acceso web directo. Tamaño máx 5MB, SHA-256. |
 | **`ReservaExpirationWorker`** | Background Worker (`IHostedService`) que se ejecuta cada 60 segundos para sanear reservas abandonadas. | `ExecuteAsync(CancellationToken)` | Identifica reservas con `FechaExpiracionUtc < Now` y ejecuta comando de liberación idempotente de `stock_comprometido`. |
-
-| Componente | Capa de Clean Architecture | Responsabilidad Primaria | Invariantes de Negocio Gobernados |
-| :--- | :--- | :--- | :--- |
-| **Controlador Venta (`VentasPOSController`)** | Presentación | Punto de entrada para terminales físicas de mostrador. | Operación 100% por teclado, validación de pagos mixtos (`RF-POS-003`, `RF-POS-006`, `AC01`). |
-| **Orquestador Checkout (`IniciarCheckoutCommandHandler`)** | Aplicación | Orquestación transaccional del carrito de compras en línea. | Bloqueo pesimista ordenado (`ORDER BY producto_id ASC`) y revalidación atómica (`RF-WEB-002`, `RF-WEB-005`, `AC02`). |
-| **Servicio Reserva Stock (`ReservaStockService`)** | Dominio | Gobernanza de tiempos de expiración y compromisos de stock. | TTL 20 min (tarjetas), TTL 4 h con 1 h comprobante (manuales) (`RF-WEB-002`, `AC02`). |
-| **Repositorio Inventario (`InventarioRepository` / `SIGICDbContext`)** | Infraestructura | Persistencia transaccional ACID en PostgreSQL 16 con bloqueo de fila. | Transacciones atómicas, aislamiento `Read Committed` y `SELECT ... FOR UPDATE` (`AC02`). |
-| **`InventarioDomainService`** | Dominio | Cálculos puros de Kardex CPP y disponibilidad de existencias. | $\text{Disponible} = \text{Físico} - \text{Comprometido}$ (`RNF-CON-003`), orden determinista anti-deadlock (`RNF-CON-002`). |
-| **`CatalogoDapperRepository`** | Infraestructura | Consultas de lectura desnormalizadas de catálogo. | Filtrado estricto `disponible_en_web = true` y tiempo de respuesta $\le 400\text{ ms}$ (`RNF-PERF-004`, `AC01`). |
-| **`StoragePrivadoAdapter`** | Infraestructura | Custodia aislada de archivos de voucher y comprobantes XML. | Protección de documentos financieros y tributarios sin URL pública (`RF-WEB-003`, `AC03`). |
-| **`ReservaExpirationWorker`** | Infraestructura | Servicio en segundo plano para revocación de reservas vencidas. | Liberación idempotente de existencias comprometidas (`RNF-CON-004`). |

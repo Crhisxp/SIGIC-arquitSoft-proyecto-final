@@ -24,12 +24,19 @@ fecha: "2026-10-30"
 
 Las historias de usuario aquí documentadas formalizan los flujos transaccionales y de interacción críticos del sistema **SIGIC Ferretería v2.2**, resolviendo la concurrencia operativa entre el mostrador físico (POS) y el canal digital e-commerce sobre una persistencia relacional unificada en PostgreSQL 16 con PgBouncer.
 
-### 1.1 Contexto de Relevamiento Operativo y Casos de Dolor Real
-El diseño de estas historias responde directamente a la realidad del retail ferretero de alta rotación en Huamanga (Ayacucho):
-1. **Volumen de 150 comprobantes diarios por punto de venta:** Alta densidad de atención presencial en mostrador donde la velocidad de captura y cobro es de vida o muerte para no congestionar la tienda.
-2. **Materiales de alta rotación y alto volumen (Cemento Portland Tipo I y Fierro Corrugado de 1/2"):** Ítems críticos para obras de construcción civil donde la falta de stock o la sobreventa paraliza cuadrillas y genera pérdidas económicas.
-3. **El conflicto físico vs. web de las 40 bolsas de cemento:** Ocurre cuando un cliente web reserva 40 bolsas de cemento Portland Tipo I vía e-commerce (incrementando `stock_comprometido`), mientras simultáneamente un maestro de obra se encuentra en el mostrador físico intentando facturar y retirar en efectivo las últimas 40 bolsas disponibles en tienda. El sistema debe garantizar que quien reserve primero gane el cerrojo atómico y la otra transacción sea notificada con stock insuficiente (`HTTP 409 Conflict`), erradicando sobreventas.
-4. **Cuadre manual tradicional defectuoso:** Cierres de turno con calculadora propensos a omisiones y adulteraciones en la rendición de las 150 ventas del día, subsanado mediante el procedimiento de **Arqueo Ciego Append-Only**.
+### 1.1 Ficha de Levantamiento de Campo — Caso Ferretería Real en Ayacucho
+
+El diseño de estas historias responde directamente a la realidad del retail ferretero de venta minorista y mayorista en Huamanga (Ayacucho):
+* **Contexto Operativo:** Negocio ferretero regional con venta presencial en tienda y portal e-commerce sincronizado.
+* **Volumen Transaccional Diario:** Emisión de **entre 120 y 180 comprobantes de venta emitidos por día** en mostrador físico, distribuidos en **2 cajas operando en red LAN** conectadas al pool prioritario (`sigic_pos_pool`), en coexistencia con el catálogo web sincronizado de forma asíncrona (`sigic_web_pool`).
+* **Insumos Críticos de Alta Rotación:**
+  1. **Cemento Portland Tipo I (bolsa de 42.5 kg):** Aglomerante para mezclas y vaciados de concreto con alta sensibilidad al quiebre de stock.
+  2. **Fierro Corrugado de 1/2 pulgada (varilla de 9 m, ASTM A615):** Barras de acero corrugado de alta rotación para armaduras estructurales.
+  3. **Tubos de PVC para Instalaciones Sanitarias (PVC SAP / SAL de 2" y 4"):** Tuberías para desagüe y conducción sanitaria con demanda sostenida en obras de saneamiento.
+* **Problemáticas Comerciales Reales Abordadas:**
+  a) **Sobreventa y Quiebre de Stock:** Ocurre cuando un cliente web reserva **40 bolsas de cemento Portland** desde el portal e-commerce incrementando `stock_comprometido`, mientras simultáneamente un maestro de obra compra y retira en mostrador las últimas **40 bolsas físicas** disponibles en tienda. El sistema garantiza que quien reserve primero adquiera el cerrojo atómico pesimista (`SELECT ... FOR UPDATE` ordenado) y la transacción concurrente sea notificada con stock insuficiente (`HTTP 409 Conflict`), erradicando sobreventas.
+  b) **Descuadre en Arqueo de Caja:** Errores y diferencias al final de turno generados por conteos manuales sobre papel y planillas manipulables sobre las 120-180 ventas del día, subsanado mediante el **Arqueo Ciego Append-Only** (`RF-CAJ-002`, `AC03`, `PostgresException 42501 permission denied`).
+  c) **Carga Manual Ineficiente:** Demora de horas al ingresar guías de remisión de proveedores con más de 100 ítems uno a uno en la interfaz, resuelto mediante la **Carga Masiva Transaccional en Streaming con Rollback Integral** (`RF-INV-008`, `HU-09`).
 
 | Historia de Usuario | Actor Primario | Código RF/RNF Relacionado | Atributo de Calidad Rector |
 | :--- | :--- | :--- | :--- |
@@ -41,6 +48,7 @@ El diseño de estas historias responde directamente a la realidad del retail fer
 | **HU-06: Generación Automática de Guía de Traslado** | Almacenero | `RF-WEB-002`, `RF-INV-003`, `RF-POS-011` | **AC02** (Conservación de existencias en tránsito) |
 | **HU-07: Entrega Ágil Mostrador Pedidos Web (F6)** | Despachador / Cajero | `RF-POS-011`, `RNF-PERF-001` | **AC01** (Despacho ligero en $\le 1$s) |
 | **HU-08: Arqueo Ciego de Caja Append-Only** | Cajero Mostrador | `RF-CAJ-002`, `RNF-SEG-004` | **AC03** (Trazabilidad contable inmutable) |
+| **HU-09: Carga Masiva Transaccional Excel/CSV** | Superadmin | `RF-INV-008`, `RNF-CON-003` | **AC02** (Consistencia atómica All-or-Nothing) |
 
 ---
 
@@ -232,3 +240,34 @@ El diseño de estas historias responde directamente a la realidad del retail fer
     - **Dado** que el sistema registró ventas en efectivo por S/ 3,250.00 con un fondo inicial de S/ 200.00 (Total esperado: S/ 3,450.00),
     - **Cuando** el cajero ingresa un conteo físico que totaliza S/ 3,430.00 y confirma el cierre,
     - **Entonces** el sistema cierra el turno de forma irrevocable en PostgreSQL, registra una diferencia de `- S/ 20.00` (Faltante) en un registro inmutable append-only, emite el ticket de cierre y remite el reporte al Superadmin.
+
+---
+
+### HU-09: Carga e Importación Masiva de Catálogo de Productos vía Excel / CSV
+- **Código Relacionado:** `RF-INV-008`, `RNF-CON-003`, `AC02`.
+- **Actor:** Superadmin.
+- **Narrativa:**
+  > **Como** Superadmin de la empresa ferretera,  
+  > **quiero** importar masivamente cientos de artículos desde un archivo Excel o CSV con validaciones automáticas de negocio y persistencia en bloque,  
+  > **para** evitar la digitación manual de guías de proveedores de más de 100 ítems y asegurar que ningún producto se venda por debajo de su costo ni con categorías inválidas.
+- **Reglas de Negocio Asociadas:**
+  - Endpoint transaccional: `POST /api/v1/productos/importar-masivo` (`multipart/form-data`).
+  - Procesamiento streaming en memoria con .NET 8 (`ClosedXML` / `ExcelDataReader`) para mitigar consumo de RAM ante archivos grandes.
+  - Validaciones atómicas fila por fila:
+    * SKU único e irrepetible.
+    * Familia y Subfamilia existentes en el catálogo maestro.
+    * Costo de compra unitario > 0.
+    * Margen comercial positivo (`PrecioVenta > CostoCompra`).
+    * Stock físico inicial $\ge 0$.
+    * Flag `disponible_en_web` (`true`/`false`).
+  - Persistencia 'All-or-Nothing': inserción en bloque mediante PostgreSQL COPY en una única transacción. Si una sola fila falla, se ejecuta `ROLLBACK` total y se retorna HTTP 422 con reporte detallado de filas rechazadas.
+- **Criterios de Aceptación (Given-When-Then):**
+  - **Escenario 1: Importación exitosa de lote sin inconsistencias.**
+    - **Dado** que el Superadmin sube un archivo `.xlsx` con 250 artículos ferreteros válidos (cemento, fierro, tuberías PVC),
+    - **Cuando** el sistema procesa la solicitud mediante streaming y ejecuta el COPY transaccional en PostgreSQL,
+    - **Entonces** los 250 artículos y sus inventarios iniciales quedan persistidos en menos de 5 segundos, retornando `HTTP 200 OK` con el resumen de la importación.
+  - **Escenario 2: Rollback total ante infracción de margen de ganancia o categoría inexistente.**
+    - **Dado** que en un archivo de 100 filas, la fila 48 contiene una familia no registrada y la fila 82 tiene un precio de venta menor al costo de compra,
+    - **Cuando** el backend valida el archivo en memoria,
+    - **Entonces** el sistema aborta la operación sin registrar ningún producto en base de datos (`ROLLBACK` total con cero inserciones parciales) y responde `HTTP 422 Unprocessable Entity` con un informe JSON detallando fila 48 y fila 82 con sus motivos de rechazo.
+

@@ -69,7 +69,7 @@ flowchart TD
 | **Artefacto** | Módulo de Dominio `Inventario`, Servicio `ReservaDinamicaService`, Repositorio de Persistencia transaccional y tablas relacionales `inventario_stock` y `reserva_stock_pedido` en PostgreSQL 16. |
 | **Entorno** | Modo de producción en hora punta comercial de sábado por la mañana (08:30 a 11:30 h), con alta concurrencia en LAN de mostrador y tráfico activo en Internet. |
 | **Respuesta** | El sistema encola y serializa los bloqueos de fila aplicando de forma determinista `ORDER BY producto_id ASC` mediante `SELECT ... FOR UPDATE` y verifica atómicamente la condición estricta: `(stock_fisico - stock_comprometido) >= @CantidadSolicitada`. Autoriza exactamente la cantidad cubierta por el stock real e incrementa `stock_comprometido` (para web) o descuenta `stock_fisico` (para POS). Las transacciones excedentes son abortadas limpiamente con reversión de transacción (*ROLLBACK*) e informadas a la capa de presentación. |
-| **Medida de Respuesta** | **1.** Sobreventa (*overselling*) = 0 unidades (saldo disponible resultante jamás es inferior a cero).<br>**2.** Exactamente 5 unidades vendidas/reservadas y las 95 restantes formalmente rechazadas (`HTTP 409 Conflict` en Web y advertencia inmediata en POS).<br>**3.** Tasa de deadlocks detectados por el motor de base de datos = 0 %.<br>**4.** Tiempo total de resolución de la contención transaccional $\le 400\text{ ms}$ (p95).<br>**5. Instrumental Técnico:** Monitoreo y telemetría de bloqueos pesimistas vía consultas de catálogo a `pg_stat_activity` y `pg_locks` en PostgreSQL 16 (verificando asignación de cerrojos exclusivos de fila y ausencia de ciclos de espera circular). |
+| **Medida de Respuesta** | **1.** Sobreventa (*overselling*) = 0 unidades (saldo disponible resultante jamás es inferior a cero).<br>**2.** Exactamente 5 unidades vendidas/reservadas y las 95 restantes formalmente rechazadas (`HTTP 409 Conflict` en Web y advertencia inmediata en POS).<br>**3.** Tasa de deadlocks detectados por el motor de base de datos = 0 % (cero excepciones `40P01 deadlock_detected`).<br>**4.** Tiempo total de resolución de la contención transaccional $\le 400\text{ ms}$ (p95).<br>**5. Instrumental Técnico de Medición:** Verificación y telemetría de bloqueos pesimistas en PostgreSQL 16 mediante consultas continuas a las vistas de catálogo `pg_stat_activity` y `pg_locks` durante transacciones activas `SELECT ... FOR UPDATE` ordenadas por `producto_id ASC` (inspeccionando que `granted = true` en cerrojos de fila exclusivos sin ciclos de espera circular ni deadlocks). |
 
 ---
 
@@ -86,7 +86,7 @@ flowchart TD
 | **Artefacto** | SPA React 18 Mostrador, Backend ASP.NET Core 8 Web API (`VentasPOSController`, `CrearVentaCommandHandler`) y conexión de base de datos a través del `pool_pos` en PgBouncer. |
 | **Entorno** | Concurrencia máxima sostenida de 20 terminales de mostrador operando en red local (LAN) en paralelo con un pico de tráfico en el portal e-commerce (200 sesiones web activas realizando consultas intensivas de catálogo). |
 | **Respuesta** | El sistema despacha las solicitudes de mostrador a través de conexiones persistentes dedicadas del `pool_pos` con prioridad transaccional. La resolución de cálculo de IGV, validación de inventario en memoria y registro de pagos mixtos se procesa en el servidor con latencia ultrabaja, sin que las peticiones web compitan por las conexiones de mostrador. |
-| **Medida de Respuesta** | **1.** Latencia de backend API Core en red LAN $P95 < 250\text{ ms}$, validada mediante pruebas de carga automatizadas con **k6** midiendo la métrica nativa `http_req_duration{quantile:0.95}`.<br>**2.** Latencia de consultas de persistencia Dapper sub-15ms, recolectada e instrumentada en tiempo real mediante **MiniProfiler** y exportadores de trazas **OpenTelemetry** en ASP.NET Core 8.<br>**3.** Tiempo de respuesta para adición de ítem por escáner $\le 1.0\text{ segundo}$ (p95) en UI.<br>**4.** Tiempo total de confirmación y cierre de venta con emisión de comprobante $\le 2.0\text{ segundos}$ (p95).<br>**5.** La degradación de latencia en mostrador atribuible al tráfico web no supera el $10\text{ \%}$ frente a condiciones de reposo web.<br>**6.** 0 bloqueos de UI o caídas de conexión en los puestos de caja. |
+| **Medida de Respuesta** | **1.** Latencia de backend API Core en red LAN $P95 < 250\text{ ms}$, validada cuantitativamente mediante pruebas de estrés automatizadas con **k6** (`tests/k6/checkout-stress-test.js`), evaluando `http_req_duration{quantile:0.95} < 250ms` con 100 usuarios virtuales (VUs) durante 30s y **tasa de error HTTP 500 = 0%**.<br>**2.** Latencia de consultas de persistencia Dapper sub-15ms, recolectada e instrumentada en tiempo real mediante **MiniProfiler** y exportadores de trazas **OpenTelemetry** en ASP.NET Core 8 para asegurar latencias de acceso a datos $\le 15\text{ ms}$.<br>**3.** Tiempo de respuesta para adición de ítem por escáner $\le 1.0\text{ segundo}$ (p95) en UI.<br>**4.** Tiempo total de confirmación y cierre de venta con emisión de comprobante $\le 2.0\text{ segundos}$ (p95).<br>**5.** La degradación de latencia en mostrador atribuible al tráfico web no supera el $10\text{ \%}$ frente a condiciones de reposo web.<br>**6.** 0 bloqueos de UI o caídas de conexión en los puestos de caja. |
 
 ---
 
@@ -137,7 +137,7 @@ flowchart TD
 | **Artefacto** | Middleware de Rate Limiting en ASP.NET Core / Nginx, Servicio de Autenticación (`IdentityService`), algoritmo de hashing **Argon2id**, tablas relacionales `caja_arqueo` y tabla de auditoría `Audit_Log`. |
 | **Entorno** | Sistema en producción expuesto públicamente sobre Internet bajo protocolo cifrado TLS 1.3 y operación interna en LAN. |
 | **Respuesta** | 1. Para fuerza bruta: al detectarse el quinto ($5^{\circ}$) intento fallido en 15 minutos, el middleware bloquea la cuenta por 15 minutos y retorna `HTTP 429 Too Many Requests`. Se genera una entrada inmutable en `Audit_Log`.<br>2. Para arqueos: el sistema procesa el arqueo mediante inserción pura **append-only**; los permisos del usuario de base de datos prohíben `UPDATE` y `DELETE` en el esquema contable. |
-| **Medida de Respuesta** | **1.** Bloqueo efectivo de cuenta verificado en el $100\text{ \%}$ de los casos tras el 5.° intento fallido consecutivo.<br>**2.** Inmutabilidad contable y auditoría estricta de permisos SQL: cualquier intento de ejecución de sentencias `UPDATE` o `DELETE` sobre las tablas `caja_arqueo` o `caja_arqueo_detalle` es rechazado de inmediato por el motor PostgreSQL 16 con el código de error `42501 permission denied for table caja_arqueo`, garantizando cero ($0$) alteraciones retroactivas de arqueos.<br>**3.** Sobrecarga en CPU del servidor por cálculo de hashing Argon2id contenida ($\le 25\text{ \%}$ de CPU asignada a autenticación).<br>**4.** $0\text{ \%}$ de credenciales o montos comprometidos. |
+| **Medida de Respuesta** | **1.** Bloqueo efectivo de cuenta verificado en el $100\text{ \%}$ de los casos tras el 5.° intento fallido consecutivo.<br>**2.** Inmutabilidad contable y auditoría estricta de permisos SQL: cualquier intento de ejecución de sentencias `UPDATE` o `DELETE` sobre las tablas `caja_arqueo` o `caja_arqueo_detalle` es rechazado de inmediato por el motor PostgreSQL 16 con una excepción `PostgresException 42501 permission denied for table caja_arqueo` en el driver Npgsql de ASP.NET Core 8, garantizando cero ($0$) alteraciones retroactivas de arqueos.<br>**3.** Sobrecarga en CPU del servidor por cálculo de hashing Argon2id contenida ($\le 25\text{ \%}$ de CPU asignada a autenticación).<br>**4.** $0\text{ \%}$ de credenciales o montos comprometidos. |
 
 ---
 
@@ -155,12 +155,48 @@ flowchart TD
 
 ## 4. Instrumental Técnico de Medición y Telemetría de Calidad
 
-Para garantizar que los atributos de calidad rectores sean auditables y reproducibles conforme a los criterios de evaluación de **IS-488 UNSCH**, el sistema implementa el siguiente instrumental tecnológico especializado:
+Para garantizar que los atributos de calidad rectores sean auditables y reproducibles conforme a los criterios de evaluación de **IS-488 UNSCH**, el equipo de ingeniería de SIGIC utiliza el siguiente instrumental tecnológico especializado:
 
 | Atributo Rector | Métrica Cuantitativa | Instrumental Técnico de Medición | Protocolo y Comando de Verificación | Criterio de Aceptación |
 | :--- | :--- | :--- | :--- | :--- |
-| **AC01: Rendimiento Transaccional** | Latencia de API en red LAN **$P95 < 250\text{ ms}$**; Cobro en mostrador $\le 2.0\text{ s}$. | **k6 (Grafana Labs)** ejecutando suites de pruebas de carga automatizadas. | Script `tests/k6/checkout-stress-test.js` evaluando umbral: `http_req_duration{quantile:0.95} < 250`. | Percentil 95 de duración HTTP $\le 250\text{ ms}$ con 100 usuarios virtuales (VUs). |
-| **AC01: Latencia de Persistencia** | Consultas Dapper de lectura de catálogo **$< 15\text{ ms}$**. | **MiniProfiler** y exportadores de trazas **OpenTelemetry** en ASP.NET Core 8. | Interceptores `MiniProfiler.AspNetCore` y trazas OTLP hacia Jaeger/Prometheus inspeccionando tiempos de ejecución SQL. | 100 % de consultas de catálogo indexadas resueltas en tiempo de CPU/red $\le 15\text{ ms}$. |
-| **AC02: Consistencia Transaccional** | **0 sobreventas** y 0 saldos negativos bajo 100 hilos concurrentes compitiendo por el mismo SKU. | Vistas del catálogo administrativo de PostgreSQL 16: `pg_stat_activity` y `pg_locks`. | Consultas continuas sobre `pg_locks` filtrando `locktype = 'relation'` y `mode = 'ExclusiveLock'`, verificando que las transacciones bloqueen ordenadamente por `producto_id ASC`. | Cero registros con `stock_fisico - stock_comprometido < 0`. Ausencia total de eventos de interbloqueo (*deadlocks*). |
-| **AC03: Trazabilidad y Auditoría** | Inmutabilidad estricta **Append-Only**; 0 modificaciones retroactivas en arqueos contables. | Auditoría de permisos de base de datos SQL sobre el rol operativo `rol_cajero`. | Ejecución forzada de `UPDATE caja_arqueo SET total_efectivo_declarado = 0;` o `DELETE FROM caja_arqueo;` mediante script de prueba. | El motor PostgreSQL 16 rechaza inmediatamente la sentencia emitiendo el código de error `42501 permission denied for table caja_arqueo`. |
+| **AC01: Rendimiento Transaccional en Checkout** | Latencia de API en red LAN **$P95 < 250\text{ ms}$**; Cobro en mostrador $\le 2.0\text{ s}$ y **tasa de error 500 = 0%**. | **k6 (Grafana Labs)** ejecutando suites de pruebas de estrés automatizadas (`tests/k6/checkout-stress-test.js`). | `k6 run tests/k6/checkout-stress-test.js`<br>Evaluando umbrales:<br>• `http_req_duration{quantile:0.95} < 250`<br>• `http_req_failed{rate < 0.05}` (tolerando 200/201 venta y 409 conflicto de stock)<br>• `sigic_500_errors: count == 0` | Percentil 95 de duración HTTP $\le 250\text{ ms}$ con 100 usuarios virtuales (VUs) durante 30s. Exactamente 0% de respuestas HTTP 500 (Internal Server Error) o deadlocks de base de datos. |
+| **AC01: Latencia de Persistencia SQL** | Consultas Dapper de lectura de catálogo **$< 15\text{ ms}$** en base de datos. | **MiniProfiler** y exportadores de trazas **OpenTelemetry** en ASP.NET Core 8. | Interceptores `MiniProfiler.AspNetCore` integrados en el pipeline HTTP y exportadores OTLP hacia Jaeger/Prometheus inspeccionando tiempos de ejecución de consultas Dapper. | 100 % de consultas de catálogo indexadas resueltas en tiempo de CPU/red de motor $\le 15\text{ ms}$ sin overhead de tracking de entidades. |
+| **AC02: Consistencia ACID en Reservas Concurrentes** | **0 sobreventas** y 0 saldos negativos bajo 100 hilos concurrentes compitiendo por los mismos SKUs ferreteros. | Vistas de catálogo administrativo de PostgreSQL 16: **`pg_stat_activity`** y **`pg_locks`** durante transacciones `SELECT ... FOR UPDATE`. | Inspección activa de bloqueos pesimistas de fila:<br>`SELECT locktype, relation::regclass, mode, granted, pid FROM pg_locks WHERE locktype = 'tuple' OR locktype = 'relation';`<br>Cruzado con `pg_stat_activity` para verificar serialización ordenada por `producto_id ASC`. | Cero registros con `stock_fisico - stock_comprometido < 0`. Ausencia total de ciclos de bloqueo mutuo (deadlocks PostgreSQL código `40P01`). |
+| **AC03: Auditoría e Inmutabilidad de Arqueo Ciego** | Inmutabilidad estricta **Append-Only**; 0 modificaciones retroactivas en arqueos contables de caja. | Validación de restricciones de seguridad y permisos sobre el rol `rol_cajero` esperando excepción Npgsql específica. | Ejecución forzada en tests unitarios/integración:<br>`UPDATE caja_arqueo SET total_efectivo_declarado = 0 WHERE id = @Id;`<br>`DELETE FROM caja_arqueo WHERE id = @Id;` | El motor PostgreSQL 16 rechaza inmediatamente la operación y el driver Npgsql en .NET 8 arroja la excepción: `PostgresException 42501 permission denied for table caja_arqueo`. |
+
+### 4.1 Scripts y Consultas Técnicas Utilizadas por el Equipo de Ingeniería
+
+```sql
+-- Verificación AC02: Monitoreo de bloqueos pesimistas ordenados en tiempo real (PostgreSQL 16)
+SELECT 
+    a.pid,
+    a.usename,
+    a.application_name,
+    l.locktype,
+    l.mode,
+    l.granted,
+    substring(a.query from 1 for 80) AS query_truncada
+FROM pg_stat_activity a
+JOIN pg_locks l ON a.pid = l.pid
+WHERE a.query ILIKE '%inventario_stock%FOR UPDATE%'
+  AND a.pid <> pg_backend_pid();
+```
+
+```csharp
+// Verificación AC03: Test de Inmutabilidad Append-Only esperando PostgresException 42501
+[Fact]
+[Trait("Category", "Security")]
+public async Task ArqueoCaja_IntentoModificacion_ArrojaPostgresException42501()
+{
+    using var connection = new NpgsqlConnection(_connectionStringCajero);
+    await connection.OpenAsync();
+    
+    var sqlUpdate = "UPDATE caja_arqueo SET total_efectivo_declarado = 9999.00 WHERE id = @Id;";
+    var ex = await Assert.ThrowsAsync<PostgresException>(() => 
+        connection.ExecuteAsync(sqlUpdate, new { Id = Guid.NewGuid() }));
+        
+    // Código 42501: insufficient_privilege / permission denied
+    Assert.Equal("42501", ex.SqlState);
+}
+```
 

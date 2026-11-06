@@ -46,6 +46,18 @@ flowchart TD
     CTX_POS -->|Entrega Pedidos Retiro en Tienda| CTX_WEB
 ```
 
+### 1.1. Tabla Resumen de Bounded Contexts y Arquitectura Modular
+
+Para facilitar la evaluación docente de **IS-488 UNSCH** y resolver la legibilidad técnica (**Observación 3**), la siguiente tabla sintetiza la responsabilidad de negocio ferretero, contratos de entrada y persistencia de cada módulo arquitectónico:
+
+| Componente / Agregado / Clase | Responsabilidad en la Ferretería | Interfaz de Entrada / Métodos Clave | Persistencia y Regla de Concurrencia |
+| :--- | :--- | :--- | :--- |
+| **`Módulo de Inventario y Almacenes`**<br>(`SIGIC.Modules.Inventory`) | Control centralizado de existencias físicas y comprometidas de materiales (cemento, fierro, tuberías), cálculo de Kardex CPP y emisión de guías de traslado inter-almacén (`RF-INV-001`, `RF-INV-003`). | `CalcularStockDisponible()`<br>`RegistrarEntradaMercaderia()`<br>`EmitirGuiaTraslado()`<br>`POST /api/v1/productos/importar-masivo` | Transacciones ACID en PostgreSQL 16 con nivel de aislamiento `Read Committed`. Gobernado por la fórmula $\text{Stock Disponible} = \text{stock\_fisico} - \text{stock\_comprometido}$. Bloqueo pesimista ordenado (`ORDER BY producto_id ASC`). |
+| **`Módulo de Ventas Mostrador POS`**<br>(`SIGIC.Modules.SalesPOS`) | Facturación presencial de alta velocidad en LAN sin mouse para cajeros de tienda. Cobro mixto y despacho ligero en mostrador de compras online (`RF-POS-003`, `RF-POS-011`). | `POST /api/v1/internal/pos/ventas`<br>`POST /api/v1/pos/despacho/{codigo}/entregar`<br>`Atajos F1 a F12 y lector EAN-13` | Conexión directa y prioritaria a `sigic_pos_pool:6432`. Descuento atómico sobre `stock_fisico`, emisión síncrona a PSE y comando inmediato a impresora térmica ESC/POS en $< 1.0\text{ s}$. |
+| **`Módulo de E-commerce y Pedidos Web`**<br>(`SIGIC.Modules.OrdersWeb`) | Catálogo asíncrono para clientes B2B/B2C, carrito de compras y checkout transaccional con retención temporal de existencias (`RF-WEB-001`, `RF-WEB-002`, `RF-WEB-005`). | `POST /api/v1/public/checkout`<br>`POST /api/v1/public/pedidos/{id}/comprobante`<br>`GET /api/v1/public/catalogo` | Ruteado a `sigic_web_pool:6432`. Revalidación atómica pesimista de precio y stock con `SELECT ... FOR UPDATE`. Incrementa `stock_comprometido` y asigna TTL dinámico (20 min tarjeta / 240 min manual). |
+| **`Módulo de Caja y Tesorería`**<br>(`SIGIC.Modules.CashManagement`) | Control de aperturas y cierres de turno, Arqueo Ciego inmutable y auditoría de comprobantes bancarios en la consola de Backoffice (`RF-CAJ-002`, `RF-WEB-003`, `AC03`). | `AperturaTurno()`<br>`RegistrarArqueoCiego(desglose)`<br>`AprobarPagoTesoreria(voucherId)` | Persistencia estrictamente **Append-Only** en tabla `caja_arqueo` con permisos SQL `REVOKE UPDATE, DELETE`. Lanza `PostgresException 42501 permission denied` ante cualquier alteración retroactiva. |
+| **`Módulo de Tarifas y Seguridad`**<br>(`SIGIC.Modules.PricingSecurity`) | Gobernanza de tarifas comerciales (Público, Maestro de Obra, Contratista B2B), autenticación criptográfica dual y control RBAC (`RF-PRE-001`, `RNF-SEG-001`). | `ObtenerPrecioPorPerfil(sku, perfil)`<br>`ValidarMargenSeguridad(precio)`<br>`POST /api/v1/auth/login` | Firma de tokens JWT asimétricos con algoritmo **RS256** (RSA 2048 bits). Cifrado de contraseñas bajo **Argon2id**. Validación estricta de claims (`scope: pos_terminal` vs `scope: web_customer`). |
+
 ---
 
 ## 2. Especificación Detallada por Módulo
@@ -197,3 +209,40 @@ El proceso de cierre de caja en SIGIC Ferretería obedece al principio de **Arqu
    - Si $\text{Diferencia} > 0$: Se tipifica como **Sobrante de Caja**.
    - Si $\text{Diferencia} = 0$: Cuadre exacto.
 5. **Auditoría y Disparador Inmutable:** El evento de arqueo se serializa y se persiste en `Audit_Log` (`RNF-SEG-004`) con la dirección IP de la terminal, ID del cajero y marca de tiempo UTC. La visualización de la liquidación comparativa queda restringida al Superadministrador y Auditor en la consola de Backoffice.
+
+---
+
+## 5. Mecanismo de Segregación Omnicanal: POS LAN vs. Portal Web
+
+Para dar cumplimiento formal a la **Observación 6** y garantizar la total autonomía operativa del mostrador físico frente a la demanda del canal e-commerce, el diseño interno del software articula una **segregación técnica en tres niveles**:
+
+### 5.1. Capa de Autenticación e Identificación de Clientes
+1. **Terminales POS de Mostrador (LAN Privada):**
+   - **Autenticación Criptográfica:** Token JWT firmado asimétricamente mediante **RS256** (RSA 2048 bits).
+   - **Claims de Control:** Contiene obligatoriamente los claims `scope: pos_terminal`, `caja_id: N` (identificador físico de gaveta/punto de cobro) y `usuario_id` del colaborador con rol `ROLE_CAJERO` o `ROLE_SUPERADMIN`.
+   - **Restricción de Segmento IP:** El filtro `PosNetworkAuthorizationFilter` valida que el origen TCP pertenezca exclusivamente al segmento de red local cableado **`192.168.1.0/24`**. Cualquier invocación desde el exterior es interceptada con `HTTP 403 Forbidden`.
+   - **Política de Cuota:** Exento de rate-limiting restrictivo para garantizar que el cajero capture artículos por código de barras de manera continua a razón de $\le 1.0\text{ s}$ por ítem.
+
+2. **Portal Web de Clientes (Internet Pública):**
+   - **Identificación:** Token JWT firmado con RS256 o token de sesión temporal con claim `scope: web_customer` (`Audience: SIGIC_WebClient`).
+   - **Rate Limiting Estricto:** Limitación perimetral de **máximo 60 peticiones por minuto por IP pública**. Peticiones abusivas o scripts automáticos reciben `HTTP 429 Too Many Requests`.
+
+### 5.2. Capa de Conectividad y Persistencia en PgBouncer
+La inyección de dependencias en ASP.NET Core 8 entrega fábricas de conexión totalmente aisladas:
+1. **Pipeline POS (`sigic_pos_pool:6432`):**
+   - **Inyección:** `IPosDbConnectionFactory` apunta al pool reservado `sigic_pos_pool`.
+   - **Capacidad:** 50 conexiones físicas dedicadas exclusivas para las cajas de tienda.
+   - **Garantía:** Cero tiempos de espera en cola de base de datos para los cajeros ($P95 < 250\text{ ms}$ sostenido).
+2. **Pipeline Web (`sigic_web_pool:6432`):**
+   - **Inyección:** `IWebDbConnectionFactory` apunta al pool secundario `sigic_web_pool`.
+   - **Capacidad:** 30 conexiones físicas compartidas con control de backpressure.
+   - **Resiliencia:** Tiempo de espera máximo en cola de 3 segundos; si se satura, aborta con `HTTP 503 Service Unavailable`, impidiendo que una avalancha web degrade la atención presencial.
+
+### 5.3. Reglas de Negocio Diferenciadas en Backend
+1. **Canal Mostrador POS:**
+   - **Catálogo:** Acceso irrestricto al 100% de los productos (incluyendo pernería a granel y cortes sin empaque con `disponible_en_web = false`).
+   - **Stock y Cobro:** Evalúa existencias mediante $\text{Stock Disponible} = \text{Stock Físico} - \text{Stock Comprometido}$. Realiza cobro inmediato y salida directa de inventario físico en mano.
+2. **Canal Portal Web:**
+   - **Catálogo:** Filtrado mandatorio en base de datos (`WHERE disponible_en_web = true`), respondiendo `HTTP 404 Not Found` ante intentos de consulta o compra de ítems restringidos.
+   - **Reservas Temporales (TTL):** No descuenta stock físico inmediatamente; en su lugar, incrementa `stock_comprometido` y asigna un TTL estricto: **20 minutos** para pasarelas de tarjeta o **240 minutos (4 h)** para pagos diferidos (Yape/Plin/Transferencia) con **60 minutos** para subir el voucher, liberándose automáticamente si expira (`RF-WEB-002`).
+
