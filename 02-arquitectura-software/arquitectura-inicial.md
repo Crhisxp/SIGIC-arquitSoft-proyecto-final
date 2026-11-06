@@ -25,9 +25,9 @@ fecha: "2026-10-30"
 La arquitectura de **SIGIC Ferretería v2.2** está concebida bajo el paradigma de **Clean Architecture** (Arquitectura Limpia) sobre un **Monolito Modular en ASP.NET Core 8 Web API**, con un desacoplamiento estricto entre el núcleo de dominio transaccional, los mecanismos de persistencia y las capas de presentación de los dos canales de captura comercial: el **Punto de Venta Mostrador (SPA React 18 en LAN)** y el **Portal Web E-commerce B2B/B2C (Next.js 14 SSR en Internet)**.
 
 La plataforma garantiza de manera determinante:
-1. **Rendimiento de Misión Crítica (AC01):** Tiempos de respuesta $P95 < 250\text{ ms}$ en la API transaccional Core, consultas de catálogo con Dapper sub-$15\text{ ms}$, y cobro en mostrador físico $P95 \le 1.0\text{ s}$ sin degradación por ráfagas web.
+1. **Rendimiento de Misión Crítica (AC01):** Tiempos de respuesta $P95 < 250\text{ ms}$ en la API transaccional Core, consultas de catálogo con Dapper sub-15 ms, y cobro en mostrador físico $P95 \le 1.0\text{ s}$ sin degradación por ráfagas web.
 2. **Consistencia Transaccional ACID y Cero Sobreventas (AC02):** Toda mutación de existencias opera sobre PostgreSQL 16 con bloqueo pesimista a nivel de fila (`SELECT ... FOR UPDATE`) ordenado ascendentemente por ID (`ORDER BY producto_id ASC`) y la fórmula inviolable:
-   $$\text{Stock Disponible} = \text{stock\_fisico} - \text{stock\_comprometido}$$
+   $$\text{Stock Disponible} = \text{Stock Físico} - \text{Stock Comprometido}$$
 3. **Trazabilidad y No Repudio Inmutable (AC03):** Registro inmutable en `Audit_Log` de toda operación sensible mediante Transactional Outbox, y política de **Arqueo Ciego de Caja** con persistencia estrictamente *append-only* en `caja_arqueo`.
 4. **Prioridad Absoluta al Mostrador Físico:** Segregación de conexiones en PgBouncer mediante dos pools aislados: `pool_pos` (50 conexiones dedicadas de alta prioridad) y `pool_web` (30 conexiones limitadas con backpressure).
 5. **Aislamiento Operacional vs. Analítico:** Segregación física entre la base de datos operacional (`sigic_oltp`) y el Datamart en esquema estrella (`sigic_olap`).
@@ -182,18 +182,36 @@ sequenceDiagram
 
 ---
 
-## 4. Especificación de Topología de Infraestructura
+## 4. Especificación de Topología de Infraestructura Real (Mononodo Docker Compose)
 
-Para garantizar el aislamiento de recursos, la alta disponibilidad y la resiliencia operativa demandada por el comercio ferretero, se establece una **Topología en Estrella Segregada** compuesta por 5 servidores físicos / virtualizados y un volumen de almacenamiento privado:
+Aterrizando la infraestructura a la realidad operativa y económica de una ferretería mediana en Ayacucho (120 a 180 ventas/día, 2 cajas de mostrador LAN y catálogo web sincronizado), se sustituye cualquier sobredimensión de servidores distribuidos por una **Arquitectura Mononodo en Contenedores Docker Compose**, ejecutada sobre un único host de alto rendimiento:
 
-| N.° | Servidor | Función y Rol en la Arquitectura | Sistema Operativo y Software Base | Especificación de Hardware Mínimo | Justificación Técnica de Dimensionamiento |
-| :---: | :--- | :--- | :--- | :--- | :--- |
-| **1** | **Servidor Web / API** | Nodo perimetral expuesto a Internet. Aloja el proxy inverso, el portal web Next.js 14 y la API ASP.NET Core 8 con sus superficies pública e interna. | Ubuntu Server 22.04 LTS; Nginx 1.24+ (TLS 1.3, Rate Limiting, Gzip); Node.js 20 LTS (Runtime Next.js 14); .NET 8 Runtime (Kestrel). | **8 vCPU** (2.5 GHz o superior), **16 GB RAM**, **200 GB SSD** (NVMe recomendado). | Absorbe hasta 200 sesiones web concurrentes, renderizado SSR móvil en Next.js y 20 terminales de mostrador en hora pico sin cuellos de botella ($P95 < 250\text{ ms}$). |
-| **2** | **Servidor de Base de Datos** | Aloja el motor relacional OLTP (`sigic_oltp`) y el intermediario PgBouncer en volúmenes lógicos segregados. | Ubuntu Server 22.04 LTS; PostgreSQL 16; PgBouncer 1.22+ configurado en modo transacción con pools `pool_pos` y `pool_web`. | **12 núcleos** (3.0 GHz o superior), **48 GB RAM**, **Almacenamiento NVMe en RAID 1** para OLTP + WAL continuo. | Memoria dimensionada para retener el conjunto de trabajo de inventario en `shared_buffers` (~25 % de RAM) y absorber ráfagas de escritura y bloqueos pesimistas sin degradar el POS. |
-| **3** | **Servidor de Reportes** | Generación intensiva por lotes de reportes transaccionales pesados, exportaciones a Excel y documentos PDF oficiales. | Ubuntu Server 22.04 LTS; .NET 8 Runtime; motor de renderizado y exportación de reportes (ClosedXML / QuestPDF). | **4 vCPU** (2.5 GHz), **8 GB RAM**, **100 GB SSD**. | El renderizado de documentos extensos y reportes tabulares es intensivo en memoria volátil y ciclos de cómputo; su aislamiento evita degradar el servidor de API. |
-| **4** | **Servidor OLAP (Datamart)** | Ejecución de procesos ETL asíncronos programados (01:00 UTC-5), agregaciones históricas y explotación de tableros de BI. | Ubuntu Server 22.04 LTS; .NET 8 Runtime (Servicio ETL y Worker de BI); PostgreSQL 16 con vistas materializadas indexadas. | **4 vCPU** (2.5 GHz), **16 GB RAM**, **300 GB SSD**. | Las agregaciones analíticas sobre tablas de hechos con 24 meses de transacciones requieren memoria amplia para algoritmos de ordenamiento (*Hash Join* y *Sort*). |
-| **5** | **Servidor de Directorio y Accesos** | Gestión centralizada de identidades en dos ámbitos (Colaboradores Internos con RBAC y Clientes Web Externos); derivación Argon2id y emisión de JWT RS256. | Ubuntu Server 22.04 LTS; ASP.NET Core 8 Identity / Custom Auth Server; librería criptográfica Argon2id. | **4 vCPU** (2.5 GHz), **8 GB RAM**, **80 GB SSD**. | Argon2id es computacionalmente intensivo por diseño para mitigar ataques de fuerza bruta; un servidor dedicado impide que ráfagas de login saturen la API de ventas. |
-| **6** | **Storage Privado de Archivos** | Almacenamiento seguro no público de comprobantes de pago de clientes web ($\le 5\text{ MB}$) y comprobantes electrónicos XML/CDR de SUNAT. | Sistema de archivos cifrado local (LUKS / MinIO S3 privado) con cuotas por usuario y expiración automática. | **Volumen dedicado de 500 GB en RAID 1**. | Salvaguarda la privacidad tributaria y bancaria; ningún archivo es accesible por URL pública directa, requiriendo validación en API Core. |
+### 4.1. Especificación del Host y Distribución de Recursos de Contenedores
+
+* **Especificación del Host Físico / VPS:** **4 vCPU**, **8 GB RAM**, **100 GB SSD NVMe**, Sistema Operativo Ubuntu Server 22.04 LTS con Docker Engine 26+ y Docker Compose v2.
+
+| Contenedor | Servicio y Rol | Imagen Base / Runtime | Límite CPU | Límite RAM | Justificación Técnica de Dimensionamiento |
+| :--- | :--- | :--- | :---: | :---: | :--- |
+| **`sigic-proxy`** | Proxy inverso perimetral, terminación SSL/TLS, compresión Brotli y Rate Limiting. | `nginx:1.25-alpine` | 0.5 vCPU | 256 MB | Ruteo de tráfico HTTPS hacia frontend y backend con consumo mínimo de recursos. |
+| **`sigic-api`** | Backend Monolítico Modular (Clean Architecture, MediatR, CQRS, Dapper y EF Core 8). | `mcr.microsoft.com/dotnet/aspnet:8.0-alpine` | 1.5 vCPU | 2048 MB | Procesa la lógica transaccional de ventas POS, checkout web y trabajadores en segundo plano con $P95 < 250\text{ ms}$. |
+| **`sigic-web`** | Portal E-commerce B2B/B2C con Renderizado del Lado del Servidor (SSR). | `node:20-alpine` (Next.js 14) | 1.0 vCPU | 1024 MB | Renderizado interactivo para móviles y desktop con caché de catálogo. |
+| **`sigic-pgbouncer`** | Connection Pooler transaccional con pools segregados (`pool_pos` y `pool_web`). | `edoburu/pgbouncer:1.22` | 0.5 vCPU | 256 MB | Mantiene 50 conexiones reservadas para cajas físicas y 30 compartidas para la web, evitando contención. |
+| **`sigic-postgres`** | Motor de base de datos relacional ACID (`sigic_oltp` y tablas analíticas). | `postgres:16-alpine` | 1.5 vCPU | 3072 MB | Memoria asignada para `shared_buffers = 1GB` y `work_mem = 32MB`, suficiente para 12,000 SKUs y 180 ventas/día. |
+| **`sigic-storage`** | Custodia privada de comprobantes de pago (<= 5 MB) y XMLs tributarios. | Volumen local cifrado (LUKS / Docker Volume) | 0.2 vCPU | 512 MB | Almacenamiento desacoplado sin acceso web directo para máxima seguridad tributaria. |
+
+---
+
+### 4.2. Presupuesto Comparativo de Despliegue
+
+La solución está diseñada para ser extraordinariamente costo-eficiente y sostenible para el comercio ferretero regional:
+
+| Rubro / Concepto | Entorno Dev / Demo / Evaluación UNSCH | Entorno Producción Regional (Ferretería Ayacucho) | Proveedor Seleccionado y Detalle |
+| :--- | :---: | :---: | :--- |
+| **Cómputo en la Nube (VPS / Host)** | **S/. 0.00 / mes** | **~$16.00 USD / mes**<br>(~S/. 60.00 PEN / mes) | **Dev:** Oracle Cloud Always Free (Instancia Ampere A1 ARM: 4 OCPU, 24 GB RAM, 200 GB Storage).<br>**Prod:** VPS Cloud (Hetzner CPX21 o DigitalOcean Droplet: 4 vCPU, 8 GB RAM, 100 GB SSD). |
+| **Nombre de Dominio Oficial** | **S/. 0.00 / mes**<br>(Subdominio dinámico o IP) | **~S/. 9.17 PEN / mes**<br>(S/. 110.00 PEN / año) | Dominio comercial oficial `.pe` registrado ante NIC.pe / Punto.pe para identidad corporativa local. |
+| **Seguridad Perimetral, CDN y SSL** | **S/. 0.00 / mes** | **S/. 0.00 / mes** | Cloudflare Free Tier (Gestión DNS Anycast, Certificado SSL/TLS Universal, Edge Caching y Mitigación DDoS). |
+| **Costos de Licenciamiento** | **S/. 0.00** | **S/. 0.00** | Stack 100% Open Source (.NET 8 SDK, PostgreSQL 16, PgBouncer, Linux Ubuntu, Next.js, React). |
+| **PRESUPUESTO TOTAL MENSUAL** | **S/. 0.00 / mes** | **< S/. 70.00 PEN / mes**<br>(~$18.50 USD / mes) | **Viabilidad Financiera Plena:** Representa menos del 0.2% del margen bruto mensual de una ferretería mediana en Ayacucho. |
 
 ---
 

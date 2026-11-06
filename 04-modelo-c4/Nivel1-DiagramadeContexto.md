@@ -29,37 +29,57 @@ El **Diagrama de Contexto de Sistema (Nivel 1)** establece la vista panorámica 
 
 ---
 
-## 2. Diagrama de Contexto en Mermaid C4
+## 2. Diagrama de Contexto del Sistema (Flujo Jerárquico de 3 Niveles)
 
 ```mermaid
-C4Context
-    title Diagrama de Contexto del Sistema (C4 Nivel 1) - SIGIC Ferretería v2.2
+flowchart TD
+    %% ========================================================
+    %% NIVEL SUPERIOR: ACTORES DEL SISTEMA (VERDE)
+    %% ========================================================
+    subgraph ACTORES ["1. Nivel Superior: Actores del Negocio Ferretero"]
+        ACT_CLI["<b>Cliente Web</b><br/>(Público, Maestro de Obra, Contratista B2B)"]
+        ACT_CAJ["<b>Cajero Mostrador</b><br/>(Venta rápida LAN sin mouse y arqueo ciego)"]
+        ACT_ALM["<b>Almacenero</b><br/>(Kardex CPP, guías de traslado y recepción)"]
+        ACT_TES["<b>Personal de Tesorería</b><br/>(Validación de vouchers Yape/Plin/Transferencias)"]
+        ACT_ADM["<b>Superadministrador</b><br/>(Configuración, tarifas, almacenes y RBAC)"]
+    end
 
-    Person(clienteWeb, "Cliente Web", "Público general, Maestro de Obra o Contratista B2B. Consulta catálogo, realiza compras en línea y reserva materiales.")
-    Person(cajero, "Cajero Mostrador", "Colaborador en tienda física. Registra ventas rápidas sin mouse, cobra con pagos mixtos y realiza arqueos ciegos.")
-    Person(almacenero, "Almacenero", "Controla recepción de mercadería, guías de traslado inter-almacén y preparación física de pedidos web.")
-    Person(despachador, "Despachador", "Entrega pedidos web en mostrador mediante código de pedido y DNI (RF-POS-011), o coordina salidas en ruta.")
-    Person(tesorero, "Personal de Tesorería", "Audita y valida comprobantes de pago bancario (Yape/Plin/Transferencias) en la consola de Backoffice.")
-    Person(superadmin, "Superadministrador", "Configura artículos, listas de precios, asigna almacenes, gestiona RBAC y audita el sistema.")
+    %% ========================================================
+    %% NIVEL CENTRAL: NÚCLEO TRANSACCIONAL SIGIC (AZUL)
+    %% ========================================================
+    subgraph NUCLEO ["2. Nivel Central: Plataforma Omnicanal"]
+        SIGIC["<b>SIGIC Ferretería v2.2 (Plataforma Comercial Omnicanal)</b><br/>• Monolito Modular en ASP.NET Core 8 Web API (Clean Architecture)<br/>• Persistencia ACID en PostgreSQL 16 con PgBouncer Segregado<br/>• Gobernanza Invariante: Stock Disponible = Stock Físico - Stock Comprometido"]
+    end
 
-    Enterprise_Boundary(b0, "Frontera Operativa - Ferretería SIGIC") {
-        System(sigicSystem, "SIGIC Ferretería", "Plataforma integrada de gestión comercial, inventario multialmacén, control de caja y e-commerce B2B/B2C con transaccionalidad ACID.")
-    }
+    %% ========================================================
+    %% NIVEL INFERIOR: SISTEMAS EXTERNOS (MORADO)
+    %% ========================================================
+    subgraph SISTEMAS_EXTERNOS ["3. Nivel Inferior: Sistemas Externos de Integración"]
+        EXT_PSE["<b>Proveedor PSE / SUNAT</b><br/>(Emisión y firma digital de Boleta/Factura XML)"]
+        EXT_PAY["<b>Pasarelas de Pago</b><br/>(Niubiz / Culqi - Webhooks y TTL 20 min)"]
+        EXT_BAN["<b>Entidades Bancarias</b><br/>(BCP, BBVA, Yape, Plin - Cuentas de recaudo)"]
+    end
 
-    System_Ext(pseOse, "Proveedor PSE / OSE SUNAT", "Emisor y validador tributario homologado. Firma digitalmente los comprobantes (XML) y gestiona la respuesta CDR ante SUNAT.")
-    System_Ext(pasarelaPago, "Pasarela de Pagos (Tarjetas)", "Procesador de cobros con tarjetas de crédito/débito. Procesa la transacción y emite confirmaciones vía webhooks firmados.")
-    System_Ext(bancos, "Entidades Bancarias / Billeteras", "Plataformas externas (BCP, BBVA, Yape, Plin). El cliente realiza transferencias manuales; Tesorería coteja extractos.")
+    %% Relaciones Actores -> Núcleo SIGIC
+    ACT_CLI -->|"Catálogo, compras y reservas con TTL"| SIGIC
+    ACT_CAJ -->|"Facturación LAN Gigabit y arqueo ciego"| SIGIC
+    ACT_ALM -->|"Entradas, traslados y despacho central"| SIGIC
+    ACT_TES -->|"Auditoría de pagos en Backoffice"| SIGIC
+    ACT_ADM -->|"Gestión de catálogo, listas y seguridad"| SIGIC
 
-    Rel(clienteWeb, sigicSystem, "Navega catálogo, compra materiales, reserva stock dinámico y sube vouchers", "HTTPS / JSON")
-    Rel(cajero, sigicSystem, "Registra ventas por código de barras/teclado, cobra y declara arqueos", "HTTPS / LAN")
-    Rel(almacenero, sigicSystem, "Gestiona Kardex CPP, confirma guías de traslado y prepara pedidos", "HTTPS / LAN")
-    Rel(despachador, sigicSystem, "Entrega pedidos web listos para retiro cotejando DNI", "HTTPS / LAN")
-    Rel(tesorero, sigicSystem, "Valida códigos de operación y autoriza comprobantes en Backoffice", "HTTPS / LAN")
-    Rel(superadmin, sigicSystem, "Administra tarifas, inventario, almacenes y usuarios", "HTTPS / LAN")
+    %% Relaciones Núcleo SIGIC -> Sistemas Externos
+    SIGIC -->|"Payload estructurado con IGV 18%"| EXT_PSE
+    SIGIC -->|"Tokenización y confirmación de cobro"| EXT_PAY
+    ACT_TES -.->|"Cotejo de extractos bancarios"| EXT_BAN
 
-    Rel(sigicSystem, pseOse, "Envía payload estándar estructurado (JSON/XML) con IGV al 18 %", "HTTPS / REST API")
-    Rel(sigicSystem, pasarelaPago, "Inicializa sesión de cobro y recibe confirmación asíncrona de pago", "HTTPS / Webhook")
-    Rel(tesorero, bancos, "Verifica abono en cuenta bancaria y extractos financieros", "Portal Web Bancario")
+    %% Paleta Semántica Ordenada: Verde (Actores), Azul (SIGIC), Morado (Externos)
+    classDef actorStyle fill:#064e3b,stroke:#10b981,stroke-width:2px,color:#ffffff;
+    classDef sigicStyle fill:#1e3a8a,stroke:#3b82f6,stroke-width:3px,color:#ffffff;
+    classDef extStyle fill:#4c1d95,stroke:#8b5cf6,stroke-width:2px,color:#ffffff;
+
+    class ACT_CLI,ACT_CAJ,ACT_ALM,ACT_TES,ACT_ADM actorStyle;
+    class SIGIC sigicStyle;
+    class EXT_PSE,EXT_PAY,EXT_BAN extStyle;
 ```
 
 ---

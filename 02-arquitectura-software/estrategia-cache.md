@@ -106,7 +106,7 @@ flowchart TD
 2. **Garantía ACID Estricta:**
    - La consulta de stock en tiempo real y el checkout **omiten al 100% la capa de caché**.
    - Se conectan directamente a PostgreSQL 16 mediante consultas de persistencia Dapper ejecutando:
-     $$\text{Stock Disponible} = \text{stock\_fisico} - \text{stock\_comprometido}$$
+     $$\text{Stock Disponible} = \text{Stock Físico} - \text{Stock Comprometido}$$
    - En el instante del checkout, se aplica bloqueo pesimista de fila (`SELECT ... FOR UPDATE` ordenado por `producto_id ASC`), asegurando consistencia serializada sin intermediarios de memoria volátil.
 
 ---

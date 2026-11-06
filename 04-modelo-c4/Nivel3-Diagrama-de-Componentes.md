@@ -32,83 +32,164 @@ El **Diagrama de Componentes (Nivel 3)** realiza un acercamiento (*zoom-in*) al 
 
 ---
 
-## 2. Diagrama de Componentes en Mermaid C4
+## 2. Diagramas de Componentes en 2 Vistas Especializadas (C4 Nivel 3)
+
+Para erradicar la sobrecarga visual y garantizar la máxima legibilidad técnica evaluada en **IS-488 UNSCH**, la descomposición interna del backend en ASP.NET Core 8 Web API se estructura en **dos vistas arquitectónicas segregadas**:
+
+### 2.1. Vista 3.1: Flujo Crítico Mostrador POS (LAN Gigabit)
+Modela la ruta de ejecución prioritaria de facturación rápida presencial sin ratón, con asignación de conexiones de alta prioridad en PgBouncer y tiempo de respuesta sub-segundo ($P95 < 250\text{ ms}$):
 
 ```mermaid
-C4Component
-    title Diagrama de Componentes (C4 Nivel 3) - Backend ASP.NET Core 8 Web API
+flowchart TD
+    %% ========================================================
+    %% ACTOR Y FRONTEND (VERDE)
+    %% ========================================================
+    subgraph UI_POS ["1. Canal de Mostrador Físico (LAN Gigabit)"]
+        ACT_CAJ["<b>Cajero de Tienda</b><br/>(Operación 100% Teclado F1-F12)"]
+        SPA_POS["<b>SPA POS Mostrador (React 18)</b><br/>Viewport 1024x768 / Lector EAN-13 Láser"]
+    end
 
-    Container_Boundary(bWebApi, "Contenedor: ASP.NET Core 8 Web API") {
-        
-        Component(authMiddleware, "Middleware de Autenticación y RBAC", "ASP.NET Core Middleware", "Valida JWT RS256, distingue audiencias (SIGIC_InternalStaff vs SIGIC_WebClient) y aplica rate-limiting.")
+    %% ========================================================
+    %% CAPA DE SEGURIDAD (MORADO)
+    %% ========================================================
+    subgraph SEC_POS ["2. Perímetro de Seguridad LAN"]
+        MW_AUTH["<b>Middleware Auth POS</b><br/>JWT RS256 (scope: pos_terminal, IP LAN 192.168.1.0/24)"]
+    end
 
-        Boundary(cPresentation, "1. Capa de Presentación (Controllers)") {
-            Component(ctrlPos, "Controlador Venta (VentasPOSController)", "API Controller Interno", "Recibe comandos de facturación rápida, atajos de teclado y cobros mixtos (RF-POS-003, RF-POS-006, AC01).")
-            Component(ctrlDespacho, "DespachoMostradorController", "API Controller Interno", "Pantalla ligera de entrega en mostrador (RF-POS-011) cotejando código y DNI.")
-            Component(ctrlCatalogo, "CatalogoPublicoController", "API Controller Público", "Consultas de productos con filtro estricto: disponible_en_web = true (RF-INV-001, RF-WEB-001).")
-            Component(ctrlCheckout, "CheckoutWebController", "API Controller Público", "Recepción de órdenes de compra con revalidación atómica (RF-WEB-002, RF-WEB-005).")
-        }
+    %% ========================================================
+    %% CAPA PRESENTACIÓN Y APLICACIÓN (AZUL)
+    %% ========================================================
+    subgraph APP_POS ["3. Controladores y Comandos (Presentation & Application)"]
+        CTRL_POS["<b>VentasPOSController</b><br/>POST /api/v1/pos/ventas"]
+        CMD_POS["<b>CrearVentaPOSCommandHandler</b><br/>(MediatR Command Handler)"]
+    end
 
-        Boundary(cApplication, "2. Capa de Aplicación (CQRS / MediatR)") {
-            Component(cmdCrearVenta, "CrearVentaPOSCommandHandler", "MediatR Command Handler", "Orquesta la transacción de venta física, cálculo de IGV y rebaja directa del stock de tienda.")
-            Component(cmdCheckout, "Orquestador Checkout (IniciarCheckoutCommandHandler)", "MediatR Command Handler", "Orquesta la revalidación atómica de precio y adquisición pesimista de stock en Almacén Central (AC02).")
-            Component(qryCatalogo, "GetCatalogoQueryHandler", "MediatR Query Handler", "Resuelve la consulta de catálogo leyendo vistas optimizadas mediante Dapper (AC01).")
-            Component(cmdLiberarReserva, "LiberarReservaVencidaCommandHandler", "MediatR Command Handler", "Procesa la expiración de pedidos y decrementa stock comprometido de forma idempotente.")
-        }
+    %% ========================================================
+    %% CAPA DOMINIO (AMARILLO)
+    %% ========================================================
+    subgraph DOM_POS ["4. Servicios de Dominio Puro (Domain Layer)"]
+        SRV_INV["<b>InventarioDomainService</b><br/>Validar Stock Físico Directo"]
+        SRV_TAR["<b>MotorTarifasDomainService</b><br/>Lista 1: Retail / Lista 2: Maestro Obra"]
+    end
 
-        Boundary(cDomain, "3. Capa de Dominio (Pure Business Logic)") {
-            Component(srvInventario, "InventarioDomainService", "Domain Service", "Aplica fórmula: Disponible = Físico - Comprometido. Ordena IDs deterministamente para evitar deadlocks (AC02).")
-            Component(srvReserva, "Servicio Reserva Stock (ReservaStockService)", "Domain Service", "Calcula TTL de reserva según medio de pago (20 min pasarela / 4 h manual con 1 h comprobante).")
-            Component(srvTarifas, "MotorTarifasDomainService", "Domain Service", "Calcula precios según lista asignada al cliente (Público, Maestro de Obra, Contratista).")
-        }
+    %% ========================================================
+    %% PERSISTENCIA Y POOLS (ROJO)
+    %% ========================================================
+    subgraph DATA_POS ["5. Persistencia Transaccional Prioritaria"]
+        EF_POS["<b>EF Core 8 / Unit of Work</b><br/>Transacción ACID inmediata"]
+        POOL_POS["<b>PgBouncer: sigic_pos_pool:6432</b><br/>(50 Conexiones Dedicadas LAN - Prioridad Alta)"]
+        DB_POS[("<b>PostgreSQL 16 (sigic_oltp)</b><br/>Descuento atómico sobre stock_fisico")]
+    end
 
-        Boundary(cInfrastructure, "4. Capa de Infraestructura (Adapters & Persistence)") {
-            Component(efDbContext, "Repositorio Inventario (SIGICDbContext / InventarioRepository)", "Data Access / Unit of Work", "Gestiona la transacción ACID sobre PostgreSQL con mapeo fluido y bloques SELECT ... FOR UPDATE (AC02).")
-            Component(dapperRepo, "CatalogoDapperRepository", "Micro-ORM Query Repository", "Ejecuta sentencias SQL crudas indexadas con baja latencia para el catálogo web (< 15 ms, AC01).")
-            Component(adapterPse, "PseFacturacionAdapter", "Tributary Adapter", "Construye el payload JSON/XML estructurado de boletas/facturas electrónicas.")
-            Component(adapterPasarela, "CulqiNiubizPaymentAdapter", "Payment Gateway Adapter", "Gestiona tokens de cobro y valida firmas criptográficas de webhooks de pasarela.")
-            Component(adapterStorage, "StoragePrivadoAdapter", "Private Storage Adapter", "Gestiona almacenamiento cifrado de comprobantes de pago (<= 5 MB) y XMLs (AC03).")
-        }
+    %% INTEGRACIÓN EXTERNA
+    EXT_PSE["<b>PseFacturacionAdapter</b><br/>Envío síncrono PSE Boleta/Factura XML"]
 
-        Component(workerReserva, "ReservaExpirationWorker", "IHostedService Background Worker", "Monitorea cada 60 s reservas caducadas y despacha LiberarReservaVencidaCommand.")
-    }
+    %% Conexiones de Flujo
+    ACT_CAJ -->|"Escaneo EAN-13 y teclas rápidas"| SPA_POS
+    SPA_POS -->|"HTTP POST /pos/ventas (LAN)"| MW_AUTH
+    MW_AUTH -->|"Petición autorizada con rol Cajero"| CTRL_POS
+    CTRL_POS -->|"Despacha CrearVentaPOSCommand"| CMD_POS
+    CMD_POS -->|"Aplica precio según lista"| SRV_TAR
+    CMD_POS -->|"Valida y rebaja stock físico"| SRV_INV
+    CMD_POS -->|"Ejecuta persistencia ACID"| EF_POS
+    EF_POS -->|"Conexión directa garantizada"| POOL_POS
+    POOL_POS -->|"UPDATE inventario_stock SET stock_fisico"| DB_POS
+    CMD_POS -.->|"Genera payload fiscal electrónico"| EXT_PSE
 
-    Container(spaPos, "SPA POS Mostrador", "React 18")
-    Container(portalWeb, "Portal E-commerce", "Next.js 14")
-    ContainerDb(pgBouncer, "PgBouncer Pooler", "Transaction Pooling")
-    ContainerDb(storagePriv, "Storage Privado de Archivos", "Vouchers & Facturas XML")
+    %% Paleta Semántica: Verde (UI), Azul (API/App), Amarillo (Domain), Rojo (Data), Morado (Seguridad)
+    classDef verdeUI fill:#064e3b,stroke:#10b981,stroke-width:2px,color:#ffffff;
+    classDef azulAPI fill:#1e3a8a,stroke:#3b82f6,stroke-width:2px,color:#ffffff;
+    classDef amarilloDOM fill:#78350f,stroke:#f59e0b,stroke-width:2px,color:#ffffff;
+    classDef rojoDATA fill:#7f1d1d,stroke:#ef4444,stroke-width:2px,color:#ffffff;
+    classDef moradoSEC fill:#4c1d95,stroke:#8b5cf6,stroke-width:2px,color:#ffffff;
 
-    Rel(spaPos, authMiddleware, "Peticiones POS / Despacho", "HTTPS")
-    Rel(portalWeb, authMiddleware, "Peticiones Catálogo / Checkout", "HTTPS")
+    class ACT_CAJ,SPA_POS verdeUI;
+    class CTRL_POS,CMD_POS azulAPI;
+    class SRV_INV,SRV_TAR amarilloDOM;
+    class EF_POS,POOL_POS,DB_POS rojoDATA;
+    class MW_AUTH,EXT_PSE moradoSEC;
+```
 
-    Rel(authMiddleware, ctrlPos, "Rutea petición autorizada", "En memoria")
-    Rel(authMiddleware, ctrlDespacho, "Rutea petición autorizada", "En memoria")
-    Rel(authMiddleware, ctrlCatalogo, "Rutea petición pública", "En memoria")
-    Rel(authMiddleware, ctrlCheckout, "Rutea petición pública", "En memoria")
+---
 
-    Rel(ctrlPos, cmdCrearVenta, "Despacha comando", "MediatR")
-    Rel(ctrlDespacho, cmdCrearVenta, "Despacha confirmación de entrega", "MediatR")
-    Rel(ctrlCheckout, cmdCheckout, "Despacha comando", "MediatR")
-    Rel(ctrlCatalogo, qryCatalogo, "Despacha consulta", "MediatR")
-    Rel(workerReserva, cmdLiberarReserva, "Invoca comando periódicamente", "MediatR")
+### 2.2. Vista 3.2: Flujo E-commerce y Pedidos Web (WAN)
+Modela el flujo de compras digitales, orquestación del checkout determinista anti-deadlock, retención temporal de existencias con TTL dinámico y liberación asíncrona mediante worker en segundo plano:
 
-    Rel(cmdCrearVenta, srvInventario, "Valida y descuenta inventario", "Llamada tipada C#")
-    Rel(cmdCheckout, srvInventario, "Verifica stock disponible con bloqueo", "Llamada tipada C#")
-    Rel(cmdCheckout, srvReserva, "Asigna TTL dinámico", "Llamada tipada C#")
-    Rel(cmdCheckout, srvTarifas, "Revalida precio vigente", "Llamada tipada C#")
+```mermaid
+flowchart TD
+    %% ========================================================
+    %% ACTOR Y FRONTEND WEB (VERDE)
+    %% ========================================================
+    subgraph UI_WEB ["1. Canal Digital E-commerce (Internet WAN)"]
+        ACT_WEB["<b>Cliente Web Externo</b><br/>(Navegador Móvil / Desktop)"]
+        PORTAL_WEB["<b>Portal Web E-commerce (Next.js 14)</b><br/>App Router SSR / Filtro 404 estricto"]
+    end
 
-    Rel(cmdCrearVenta, efDbContext, "Persiste venta y descuenta stock físico", "EF Core / Unit of Work")
-    Rel(cmdCheckout, efDbContext, "Persiste orden e incrementa stock comprometido", "EF Core / Unit of Work")
-    Rel(cmdCheckout, adapterStorage, "Custodia archivo de voucher adjunto", "Llamada tipada C#")
-    Rel(cmdLiberarReserva, efDbContext, "Libera stock comprometido", "EF Core / Unit of Work")
-    Rel(qryCatalogo, dapperRepo, "Consulta catálogo en caché/vista", "Dapper")
+    %% ========================================================
+    %% SEGURIDAD Y PERÍMETRO (MORADO)
+    %% ========================================================
+    subgraph SEC_WEB ["2. Perímetro Perimetral y Protección"]
+        WAF_WEB["<b>WAF & Rate Limiting</b><br/>Cloudflare / Nginx (60 req/min/IP)"]
+        MW_WEB["<b>Middleware Auth Web</b><br/>JWT RS256 (scope: web_customer)"]
+        WORKER_EXP["<b>ReservaExpirationWorker</b><br/>IHostedService (Barrido cada 60s)"]
+    end
 
-    Rel(cmdCrearVenta, adapterPse, "Solicita generación de payload tributario", "Interfaz C#")
-    Rel(cmdCheckout, adapterPasarela, "Inicializa cobro en pasarela", "Interfaz C#")
+    %% ========================================================
+    %% CAPA PRESENTACIÓN Y APLICACIÓN (AZUL)
+    %% ========================================================
+    subgraph APP_WEB ["3. Controladores y Orquestadores (Application)"]
+        CTRL_CHECK["<b>CheckoutWebController</b><br/>POST /api/v1/public/checkout"]
+        CMD_CHECK["<b>IniciarCheckoutCommandHandler</b><br/>Orquestador MediatR Anti-Deadlock"]
+        CMD_LIB["<b>LiberarReservaVencidaCommandHandler</b><br/>(Liberación Idempotente)"]
+    end
 
-    Rel(efDbContext, pgBouncer, "Ejecuta transacciones ACID (pool_pos / pool_web)", "TCP 6432")
-    Rel(dapperRepo, pgBouncer, "Ejecuta lecturas sin bloqueo", "TCP 6432")
-    Rel(adapterStorage, storagePriv, "Escribe archivos en volumen privado", "I/O File System")
+    %% ========================================================
+    %% CAPA DOMINIO (AMARILLO)
+    %% ========================================================
+    subgraph DOM_WEB ["4. Servicios de Dominio Puro (Domain Layer)"]
+        SRV_INV_WEB["<b>InventarioDomainService</b><br/>• Orden determinista: OrderBy(p => p.ProductoId)<br/>• Stock Disponible = Stock Físico - Stock Comprometido"]
+        SRV_RES["<b>ReservaStockService</b><br/>TTL Dinámico: 20 min tarjeta / 240 min manual"]
+    end
+
+    %% ========================================================
+    %% PERSISTENCIA Y STORAGE (ROJO)
+    %% ========================================================
+    subgraph DATA_WEB ["5. Persistencia y Almacenamiento Segregado"]
+        EF_WEB["<b>EF Core 8 / DbContext</b><br/>Transacción pesimista con FOR UPDATE"]
+        POOL_WEB["<b>PgBouncer: sigic_web_pool:6432</b><br/>(30 Conexiones Compartidas - Backpressure)"]
+        DB_WEB[("<b>PostgreSQL 16 (sigic_oltp)</b><br/>reserva_stock_pedido & stock_comprometido")]
+        STORAGE_PRIV[("<b>Storage Privado de Archivos</b><br/>Vouchers de pago <= 5 MB cifrados")]
+    end
+
+    %% Conexiones de Flujo Web
+    ACT_WEB -->|"Navega catálogo y confirma compra"| PORTAL_WEB
+    PORTAL_WEB -->|"HTTPS / WAN"| WAF_WEB
+    WAF_WEB -->|"Inspección perimetral"| MW_WEB
+    MW_WEB -->|"Petición web autorizada"| CTRL_CHECK
+    CTRL_CHECK -->|"Despacha IniciarCheckoutCommand"| CMD_CHECK
+    CMD_CHECK -->|"1. Ordena IDs y evalúa Disponible"| SRV_INV_WEB
+    CMD_CHECK -->|"2. Asigna TTL según pasarela/voucher"| SRV_RES
+    CMD_CHECK -->|"3. Ejecuta SELECT ... FOR UPDATE"| EF_WEB
+    EF_WEB -->|"Ruteado con control de contención"| POOL_WEB
+    POOL_WEB -->|"Incrementa stock_comprometido e inserta pedido"| DB_WEB
+    CMD_CHECK -.->|"Guarda comprobante JPG/PDF cifrado"| STORAGE_PRIV
+
+    %% Flujo Asíncrono de Expiración
+    WORKER_EXP -->|"Detecta pedidos expirados (NOW > expira_en)"| CMD_LIB
+    CMD_LIB -->|"Libera stock_comprometido de forma idempotente"| EF_WEB
+
+    %% Paleta Semántica: Verde (UI), Azul (API/App), Amarillo (Domain), Rojo (Data), Morado (Seguridad)
+    classDef verdeUI fill:#064e3b,stroke:#10b981,stroke-width:2px,color:#ffffff;
+    classDef azulAPI fill:#1e3a8a,stroke:#3b82f6,stroke-width:2px,color:#ffffff;
+    classDef amarilloDOM fill:#78350f,stroke:#f59e0b,stroke-width:2px,color:#ffffff;
+    classDef rojoDATA fill:#7f1d1d,stroke:#ef4444,stroke-width:2px,color:#ffffff;
+    classDef moradoSEC fill:#4c1d95,stroke:#8b5cf6,stroke-width:2px,color:#ffffff;
+
+    class ACT_WEB,PORTAL_WEB verdeUI;
+    class CTRL_CHECK,CMD_CHECK,CMD_LIB azulAPI;
+    class SRV_INV_WEB,SRV_RES amarilloDOM;
+    class EF_WEB,POOL_WEB,DB_WEB,STORAGE_PRIV rojoDATA;
+    class WAF_WEB,MW_WEB,WORKER_EXP moradoSEC;
 ```
 
 ---
@@ -125,7 +206,7 @@ La siguiente tabla sintetiza la descomposición técnica del contenedor backend 
 | **`CheckoutWebController`** | Recepción de órdenes de compra del portal web con revalidación atómica (`RF-WEB-002`, `RF-WEB-005`). | `POST /api/v1/public/checkout`<br>`POST /api/v1/public/pedidos/{id}/comprobante` | Invoca orquestador transaccional en `sigic_web_pool` con TTL dinámico y control de cuota. |
 | **`IniciarCheckoutCommandHandler`** | Orquestador MediatR de checkout transaccional. Elimina condiciones de carrera entre la web y mostrador (`AC02`). | `Handle(IniciarCheckoutCommand, CancellationToken)` | Transacción ACID corta: ordena IDs en memoria (`OrderBy(p => p.ProductoId)`), ejecuta `SELECT ... FOR UPDATE` y actualiza `stock_comprometido`. |
 | **`CrearVentaPOSCommandHandler`** | Orquestador MediatR de facturación presencial inmediata. Descuenta inventario físico y dispara comprobante electrónico. | `Handle(CrearVentaPOSCommand, CancellationToken)` | Transacción inmediata: rebaja directa sobre `stock_fisico`, emisión síncrona a PSE SUNAT y registro en turno de caja. |
-| **`InventarioDomainService`** | Servicio de dominio puro. Gobierna la regla cardinal de disponibilidad y el algoritmo anti-deadlock. | `ValidarDisponible(stockFisico, stockComp, cant)`<br>`OrdenarParaBloqueo(items)`<br>`CalcularCostoPonderado(exist, ent)` | Invariante 1 (`RNF-CON-003`): $\text{Stock Disponible} = \text{stock\_fisico} - \text{stock\_comprometido}$. Cero acceso a I/O de base de datos. |
+| **`InventarioDomainService`** | Servicio de dominio puro. Gobierna la regla cardinal de disponibilidad y el algoritmo anti-deadlock. | `ValidarDisponible(stockFisico, stockComp, cant)`<br>`OrdenarParaBloqueo(items)`<br>`CalcularCostoPonderado(exist, ent)` | Invariante 1 (`RNF-CON-003`): $\text{Stock Disponible} = \text{Stock Físico} - \text{Stock Comprometido}$. Cero acceso a I/O de base de datos. |
 | **`ReservaStockService`** | Gobernanza de tiempos de caducidad (TTL) de reservas de inventario web según modalidad de pago. | `CalcularTtl(MedioPago)`<br>`AsignarVentanaComprobante()` | Tarjeta/Pasarela: TTL 20 min exacto. Pagos manuales (Yape/Plin/Transferencia): TTL 4 h con ventana de 60 min para comprobante. |
 | **`InventarioRepository` / `SIGICDbContext`** | Adaptador de persistencia relacional sobre PostgreSQL 16 con aislamiento `Read Committed`. | `ObtenerParaBloqueoAsync(ids, almacenId)`<br>`ActualizarComprometidoAsync(reserva)` | Bloqueo pesimista de fila (`FOR UPDATE`). Conectado mediante PgBouncer segregado (`sigic_pos_pool` / `sigic_web_pool`). |
 | **`CatalogoDapperRepository`** | Micro-ORM de alta velocidad para lecturas de catálogo sin bloqueo ni overhead de tracking (`AC01`). | `GetCatalogoPaginadoAsync(filtros)`<br>`GetProductoPublicoPorIdAsync(id)` | Consultas SQL indexadas sobre vistas materializadas con latencia de ejecución sub-15ms. |

@@ -66,9 +66,9 @@ flowchart TD
 
 | Invariante | Código RNF/RF | Regla Técnica Matemática / Operativa | Consecuencia de Violación |
 | :--- | :--- | :--- | :--- |
-| **Gobernanza de Stock** | `RNF-CON-003` | $\text{Stock Disponible} = \text{stock\_fisico} - \text{stock\_comprometido}$ | Sobreventa en mostrador o portal web cuando conviven reservas web activas con ventas físicas. |
+| **Gobernanza de Stock** | `RNF-CON-003` | $\text{Stock Disponible} = \text{Stock Físico} - \text{Stock Comprometido}$ | Sobreventa en mostrador o portal web cuando conviven reservas web activas con ventas físicas. |
 | **Segregación de Catálogo** | `RF-INV-001` | Si `disponible_en_web == false` $\rightarrow$ Endpoint público retorna `HTTP 404 Not Found` absoluto. | Exposición accidental y pedidos no despachables de ítems exclusivos de mostrador (pernería fraccionada, cortes de cables/mangueras). |
-| **Antideadlock en Checkout** | `RF-WEB-005` | $\forall \text{ items } [I_1, I_2, \dots, I_k] \rightarrow \text{Ordenar por } producto\_id \text{ ASC}$ antes de adquirir bloqueos en BD. | Bloqueo mutuo (*deadlock*) en PostgreSQL entre cajero facturando ítems A y B y pedido web simultáneo reservando B y A. |
+| **Antideadlock en Checkout** | `RF-WEB-005` | $\forall \text{ items } [I_1, I_2, \dots, I_k] \rightarrow \text{Ordenar por } ProductoId \text{ ASC}$ antes de adquirir bloqueos en BD. | Bloqueo mutuo (*deadlock*) en PostgreSQL entre cajero facturando ítems A y B y pedido web simultáneo reservando B y A. |
 | **Aislamiento de Conexiones** | `RNF-CON-001` | Segregación física en PgBouncer: `pool_pos` vs `pool_web`. | Inanición del mostrador POS por ráfagas de tráfico web o rastreadores de búsqueda. |
 | **TTL de Reservas Web** | `RF-WEB-002` | Pasarela: 20 min exactos. Manual: 240 min totales, con 60 min máximos para adjuntar constancia de pago. | Retención indefinida de inventario que paraliza las ventas físicas en tienda. |
 | **Centralización Logística** | `RF-INV-003` | Web reserva prioritariamente en Almacén Central. Si retiro es en tienda $\rightarrow$ Guía Interna automática. | Desabastecimiento del stock de exhibición en tiendas físicas para atender órdenes e-commerce. |
@@ -220,7 +220,7 @@ export interface ResolucionPagoWebPayload {
      - `Esc`: Cancelar operación / Retornar foco a `F1`.
 3. **Control de Stock Concurrente y Transacciones Inmediatas (`RNF-CON-003`):**
    - Consulta de disponibilidad en tiempo real con latencia $\le 1$ s.
-   - Bloqueo de venta si la cantidad solicitada excede $\text{stock\_fisico} - \text{stock\_comprometido}$.
+   - Bloqueo de venta si la cantidad solicitada excede $\text{Stock Físico} - \text{Stock Comprometido}$.
 4. **Gestión de Pagos Mixtos y Arqueo Ciego (`RF-POS-006`, `RF-CAJ-002`):**
    - Pagos combinados (Efectivo + Yape/Plin + Tarjeta POS físico).
    - Captura obligatoria de código de operación de 4 a 12 dígitos, validando no duplicidad en el mismo día.

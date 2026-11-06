@@ -89,7 +89,7 @@ El desarrollo de **SIGIC Ferretería v2.2** no solo obedece a requerimientos fun
 - **La Violación Clásica en Ferreterías:** Duplicar la validación de stock disponible, el cálculo del IGV al 18 % y la verificación de precios mayoristas en dos lugares: una vez en el código del POS de mostrador y otra vez en el backend del e-commerce.
 - **Solución en SIGIC v2.2:**
   - Ambos canales (la SPA React 18 del mostrador y el portal Next.js 14) son clientes desacoplados que consumen el **mismo núcleo transaccional en ASP.NET Core 8 Web API**.
-  - La fórmula matemática $\text{Stock Disponible} = \text{stock\_fisico} - \text{stock\_comprometido}$ y el cálculo del IGV residen **exclusivamente en la capa de Dominio**. Ningún frontend calcula importes fiscales oficiales.
+  - La fórmula matemática $\text{Stock Disponible} = \text{Stock Físico} - \text{Stock Comprometido}$ y el cálculo del IGV residen **exclusivamente en la capa de Dominio**. Ningún frontend calcula importes fiscales oficiales.
 
 ### 3.2. KISS (Keep It Simple, Stupid — Mantenlo simple)
 - **Decisión Arquitectónica:** En lugar de desplegar una arquitectura de microservicios distribuidos con orquestación Kubernetes, coordinadores de transacciones distribuidas (Sagas / 2PC) y colas Kafka (lo cual introduciría complejidad innecesaria para una ferretería en Huamanga), se optó por un **Monolito Modular con PostgreSQL 16 y PgBouncer**.

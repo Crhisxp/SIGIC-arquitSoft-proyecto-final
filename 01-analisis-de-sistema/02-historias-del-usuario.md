@@ -111,7 +111,7 @@ El diseño de estas historias responde directamente a la realidad del retail fer
 - **Reglas de Negocio Asociadas:**
   - El catálogo web puede operar sobre una capa de lectura en caché con hasta 30 segundos de desfase.
   - Al presionar "Pagar / Confirmar Pedido", la API pública invoca obligatoriamente una transacción ACID en PostgreSQL con bloqueo pesimista de fila (`SELECT ... FOR UPDATE`) sobre las tablas maestras, ordenando deterministamente por `producto_id ASC` para erradicar deadlocks.
-  - Se evalúa: $\text{Stock Disponible} = \text{stock\_fisico} - \text{stock\_comprometido}$. Si la cantidad solicitada excede el disponible, la transacción se aborta con `HTTP 409 Conflict`.
+  - Se evalúa: $\text{Stock Disponible} = \text{Stock Físico} - \text{Stock Comprometido}$. Si la cantidad solicitada excede el disponible, la transacción se aborta con `HTTP 409 Conflict`.
 - **Criterios de Aceptación (Given-When-Then):**
   - **Escenario 1: Confirmación de pedido con stock suficiente en Almacén Central.**
     - **Dado** que el Almacén Central cuenta con 50 bolsas de Cemento Portland disponibles y el precio es S/ 28.50,

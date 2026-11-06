@@ -146,14 +146,14 @@ Implementa el patrón **CQRS** (*Command Query Responsibility Segregation*) medi
 Encapsula la lógica de negocio ferretero libre de dependencias a frameworks externos:
 - **`InventarioDomainService`:**
   - Ejecuta la regla cardinal de disponibilidad de inventario (`AC02`):
-    $$\text{Stock Disponible} = \text{stock\_fisico} - \text{stock\_comprometido}$$
+    $$\text{Stock Disponible} = \text{Stock Físico} - \text{Stock Comprometido}$$
   - Aplica la fórmula de valorización de existencias por **Costo Promedio Ponderado (CPP)** tras recepciones de mercadería:
     $$\text{CPP}_{\text{nuevo}} = \frac{(\text{Stock Actual} \times \text{CPP Actual}) + (\text{Cantidad Comprada} \times \text{Costo Unitario})}{ \text{Stock Actual} + \text{Cantidad Comprada} }$$
   - Gobierna el ordenamiento de bloqueos de fila (`ORDER BY producto_id ASC`) para eliminar bloqueos mutuos (*Deadlocks*).
 - **`ReservaDinamicaService`:**
   - Determina y asigna la caducidad (TTL) de las reservas web según el medio de pago (`RF-WEB-002`):
     - **Pasarela de Tarjetas:** $TTL = 20\text{ minutos}$ exactos.
-    - **Pagos Manuales (Yape/Plin/Transferencia):** $TTL_{\text{máximo}} = 240\text{ minutos}$ (4 horas), con ventana de carga de constancia de $60\text{ minutos}$ (1 hora).
+    - **Pagos Manuales (Yape/Plin/Transferencia):** $TTL_{\text{max}} = 240\text{ minutos}$ (4 horas), con ventana de carga de constancia de $60\text{ minutos}$ (1 hora).
   - Gestiona la transición a `Stock Comprometido` y la liberación atómica en caso de expiración o rechazo.
 
 ---
@@ -306,7 +306,7 @@ El núcleo de dominio en C# y las sentencias SQL ejecutan lógicas de negocio es
 | Dimensión de Negocio | Canal Mostrador POS (`LAN`) | Canal Portal Web (`Internet`) |
 | :--- | :--- | :--- |
 | **Visibilidad de Catálogo** | **Acceso Total:** Puede consultar y facturar el 100% de los 12,000 SKUs de la ferretería, incluyendo pernería a granel, cortes de manguera y productos exclusivos de tienda física (`disponible_en_web = false`). | **Filtrado Estricto a Nivel SQL:** Las consultas de catálogo aplican invariablemente el predicado `WHERE disponible_en_web = true`. Si un usuario intenta consultar por ID o añadir al carrito un producto exclusivo de mostrador, la API retorna **`HTTP 404 Not Found` absoluto**. |
-| **Cálculo de Disponibilidad** | $\text{Stock Disponible} = \text{stock\_fisico} - \text{stock\_comprometido}$. Si hay existencias físicas en el almacén de mostrador, permite cobro inmediato. | $\text{Stock Disponible} = \text{stock\_fisico} - \text{stock\_comprometido}$ evaluado prioritariamente sobre el **Almacén Central** (`RF-INV-003`). |
+| **Cálculo de Disponibilidad** | $\text{Stock Disponible} = \text{Stock Físico} - \text{Stock Comprometido}$. Si hay existencias físicas en el almacén de mostrador, permite cobro inmediato. | $\text{Stock Disponible} = \text{Stock Físico} - \text{Stock Comprometido}$ evaluado prioritariamente sobre el **Almacén Central** (`RF-INV-003`). |
 | **Proceso de Cobro y Despacho** | **Cobro Inmediato:** El cliente paga en ventanilla (efectivo, tarjeta física o Yape presencial). La transacción descuenta directamente `stock_fisico`, emite ticket ESC/POS y entrega la mercadería en mano de inmediato. | **Reserva Transaccional con TTL Dinámico:** No descuenta stock físico hasta la confirmación de pago. En su lugar, incrementa `stock_comprometido` y crea un registro en `reserva_stock_pedido` con TTL exacto:<br>• Pasarela (tarjeta): **20 minutos**.<br>• Pago Manual (Yape/Plin/Transferencia): **hasta 240 minutos (4 h)** con plazo máximo de **60 minutos** para adjuntar voucher (`RF-WEB-002`). |
 | **Modalidad Retiro en Tienda** | El cajero/despachador recepciona y entrega pedidos mediante la pantalla ligera `RF-POS-011` cotejando código alfanumérico y DNI, sin acceso a saldos bancarios ni comprobantes. | Dispara la creación automática de una **Guía Interna de Traslado** desde el Almacén Central hacia el mostrador de destino, asegurando que el stock de exhibición en tienda no sea consumido por pedidos digitales. |
 
