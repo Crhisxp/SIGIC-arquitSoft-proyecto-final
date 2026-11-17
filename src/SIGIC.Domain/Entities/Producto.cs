@@ -186,4 +186,20 @@ public class Producto
     /// Valida que una tarifa propuesta cumpla el umbral de seguridad sobre el costo.
     /// </summary>
     public bool ValidarMargenSeguridad(decimal precioPropuesto) => precioPropuesto >= CostoUnitario;
+
+    /// <summary>
+    /// Aplica un ajuste extraordinario de inventario (RF-INV-007, RNF-CON-003).
+    /// Garantiza que el stock físico resultante no sea negativo ni inferior al stock comprometido.
+    /// </summary>
+    public void AplicarAjusteFisico(decimal delta)
+    {
+        decimal resultante = StockFisico + delta;
+        if (resultante < 0)
+            throw new ArgumentOutOfRangeException(nameof(delta), "El ajuste físico no puede resultar en stock físico negativo.");
+
+        if (resultante < StockComprometido)
+            throw new InvalidOperationException($"El ajuste físico resultante ({resultante}) no puede ser menor al stock comprometido ({StockComprometido}).");
+
+        StockFisico = resultante;
+    }
 }

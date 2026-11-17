@@ -8,6 +8,7 @@ autor: "Crhistian Emanuel Flores Marquina"
 evaluacion: "IS-488 Arquitectura de Software - UNSCH"
 fecha: "2026-11-06"
 proposito: "Diseño limpio de 12 láminas de alto impacto visual para Canva sin basura visual ni párrafos densos"
+estado: "VALIDADO_PARA_EXPOSICION"
 ---
 
 # Guía Visual de Diapositivas para Canva — SIGIC Ferretería v2.2

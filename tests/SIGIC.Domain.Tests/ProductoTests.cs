@@ -226,4 +226,28 @@ public class ProductoTests
         var exStock = new StockInsuficienteException("Mensaje directo");
         Assert.Equal("Mensaje directo", exStock.Message);
     }
+
+    [Fact]
+    [Trait("Category", "SDD")]
+    public void AplicarAjusteFisico_RespetaInvarianteStockComprometido()
+    {
+        var producto = CrearProductoPrueba(stockFisico: 50m);
+        producto.ReservarStock(20m); // Comprometido = 20, Disponible = 30
+
+        // Ajuste positivo
+        producto.AplicarAjusteFisico(10m);
+        Assert.Equal(60m, producto.StockFisico);
+        Assert.Equal(40m, producto.StockDisponible);
+
+        // Ajuste negativo permitido hasta el stock comprometido
+        producto.AplicarAjusteFisico(-30m);
+        Assert.Equal(30m, producto.StockFisico);
+        Assert.Equal(10m, producto.StockDisponible);
+
+        // Ajuste negativo que dejaría stock físico menor a comprometido (20) -> excepción
+        Assert.Throws<InvalidOperationException>(() => producto.AplicarAjusteFisico(-15m));
+
+        // Ajuste que resultaría en stock negativo
+        Assert.Throws<ArgumentOutOfRangeException>(() => producto.AplicarAjusteFisico(-100m));
+    }
 }

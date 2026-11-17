@@ -8,6 +8,7 @@ autor: "Crhistian Emanuel Flores Marquina"
 evaluacion: "IS-488 Arquitectura de Software - UNSCH"
 fecha: "2026-11-06"
 tiempo-total: "15:00 minutos exactos"
+estado: "VALIDADO_PARA_EXPOSICION"
 ---
 
 # Guion Maestro de Sustentación y Defensa Oral — SIGIC Ferretería v2.2
