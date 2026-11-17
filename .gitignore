@@ -23,14 +23,17 @@ Thumbs.db
 .vscode/
 .idea/
 
-# Herramientas y archivos de configuración MCP / Agentes
-mcp-server/
-DESIGN.md
-GEMINI.md
-.agents/
-.gemini/
+# Dependencias y artefactos de compilación de MCP Server
+mcp-server/node_modules/
+mcp-server/build/
+mcp-server/dist/
 
-# Artefactos de pruebas de .NET
+# Artefactos de pruebas y cobertura de .NET
 TestResults/
+coverage/
 bin/
 obj/
+
+# Obsidian y herramientas locales / temporales
+.obsidian/
+.agy_last_run.tmp

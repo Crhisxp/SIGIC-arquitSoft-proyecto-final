@@ -81,13 +81,13 @@ La documentación técnica del proyecto se encuentra organizada bajo la siguient
 ```
 
 ### Enlaces Rápidos de Navegación:
-- [01. Clasificación de Actores del Sistema](file:///home/crhistian/Projects/SIGIC-arquitSoft-proyecto-final/analisis-de-sistema/01-actores.md)
-- [02. Historias de Usuario Críticas (Given-When-Then)](file:///home/crhistian/Projects/SIGIC-arquitSoft-proyecto-final/analisis-de-sistema/02-historias-del-usuario.md)
-- [03. Matriz Exhaustiva de Requisitos Funcionales](file:///home/crhistian/Projects/SIGIC-arquitSoft-proyecto-final/analisis-de-sistema/03-requisitos-funcionales.md)
-- [04. Atributos de Calidad y Requerimientos No Funcionales](file:///home/crhistian/Projects/SIGIC-arquitSoft-proyecto-final/analisis-de-sistema/04-atributos-de-calidad.md)
-- [05. Restricciones del Sistema y Fronteras Operativas](file:///home/crhistian/Projects/SIGIC-arquitSoft-proyecto-final/analisis-de-sistema/05-restricciones.md)
-- [06. Drivers Arquitectónicos Rectores](file:///home/crhistian/Projects/SIGIC-arquitSoft-proyecto-final/analisis-de-sistema/06-driver-arquitectonicos.md)
-- [07. Arquitectura Inicial y Topología de Infraestructura](file:///home/crhistian/Projects/SIGIC-arquitSoft-proyecto-final/arquitectura/arquitectura-inicial.md)
+- [01. Clasificación de Actores del Sistema](01-analisis-de-sistema/01-actores.md)
+- `02. Historias de Usuario Críticas (Given-When-Then)` (`01-analisis-de-sistema/02-historias-del-usuario.md`)
+- `03. Matriz Exhaustiva de Requisitos Funcionales` (`01-analisis-de-sistema/03-requisitos-funcionales.md`)
+- `04. Atributos de Calidad y Requerimientos No Funcionales` (`01-analisis-de-sistema/04-atributos-de-calidad.md`)
+- [05. Restricciones del Sistema y Fronteras Operativas](01-analisis-de-sistema/05-restricciones.md)
+- `06. Drivers Arquitectónicos Rectores` (`01-analisis-de-sistema/06-driver-arquitectonicos.md`)
+- `07. Arquitectura Inicial y Topología de Infraestructura` (`02-arquitectura-software/arquitectura-inicial.md`)
 
 ---
 *SIGIC Ferretería – Documento Técnico de Arquitectura de Sistemas – Ayacucho, 2026.*

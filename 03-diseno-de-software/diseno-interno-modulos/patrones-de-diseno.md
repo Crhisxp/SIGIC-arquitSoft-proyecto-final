@@ -195,3 +195,8 @@ sequenceDiagram
 
 ### 5.3. Patrón Transactional Outbox para Auditoría Inmutable (AC03)
 - Todas las operaciones sensibles (`RNF-SEG-004`) y las mutaciones de arqueo ciego se insertan en la tabla `Audit_Log` dentro de la **misma transacción relacional** que muta el estado de negocio. Esto elimina de raíz la posibilidad de discrepancias entre los datos operacionales y la bitácora de auditoría.
+---
+
+## Trazabilidad y Continuidad SDD
+
+Los patrones estructurales se articulan en el [diseno-interno-de-modulos.md](diseno-interno-de-modulos.md).

@@ -318,3 +318,8 @@ El cálculo de Kardex mensual valorizado bajo el método de Costo Promedio Ponde
 - **Trade-offs / Mitigaciones:**
   - *Riesgo:* Los reportes gerenciales tienen un desfase temporal de hasta 24 horas (datos consolidados al cierre del día anterior).
   - *Mitigación:* Se provee en la capa transaccional un reporte ligero y limitado de balance de caja del turno actual en tiempo real (`RF-POS-009`, `RF-CAJ-001`), reservando el Datamart para la reportería histórica y estratégica.
+---
+
+## Trazabilidad y Continuidad SDD
+
+Las decisiones arquitectónicas (ADR) orientan la definición del [estilo-arquitectonico.md](../02-arquitectura-software/estilo-arquitectonico.md).

@@ -106,3 +106,8 @@ flowchart TD
 | **Proveedor PSE / OSE (Tributario SUNAT)** | API REST / JSON | Captura datos fiscales (RUC/DNI), calcula el IGV al 18 % y genera el payload normalizado (`RF-POS-008`). | Firma digital con certificado `.pfx`, envío de XML a SUNAT y recepción de Constancias de Recepción (CDR). |
 | **Pasarela de Pagos (Tarjetas)** | SDK / Webhook HTTPS | Inicializa la transacción con TTL de 20 minutos (`RF-WEB-002`) y procesa el webhook firmado de confirmación. | Captura de datos sensibles de tarjetas (cumplimiento PCI-DSS), procesamiento bancario y tokenización. |
 | **Entidades Bancarias Locales** | Conciliación Asíncrona | Captura manual obligatoria del Código de Operación bancaria y archivo de voucher ($\le 5\text{ MB}$) (`RF-POS-006`, `RF-WEB-003`). | No existen webhooks ni APIs bancarias directas para microempresas ferreteras; la acreditación es auditada por Tesorería. |
+---
+
+## Trazabilidad y Continuidad SDD
+
+El diagrama de contexto desciende hacia el desglose de subsistemas en [Nivel2-DiagramadeContenedores.md](Nivel2-DiagramadeContenedores.md).

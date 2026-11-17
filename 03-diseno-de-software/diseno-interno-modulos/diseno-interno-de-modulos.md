@@ -22,28 +22,31 @@ fecha: "2026-10-30"
 
 ## 1. Mapa de Contextos Delimitados (Context Map)
 
-El sistema **SIGIC Ferretería v2.2** se estructura internamente en cinco **Contextos Delimitados (Bounded Contexts)** independientes, desplegados dentro del mismo proceso en ASP.NET Core 8 Web API pero con encapsulamiento estricto de modelo de dominio y esquemas de persistencia:
+El sistema **SIGIC Ferretería v2.2** se estructura internamente en seis **Contextos Delimitados (Bounded Contexts)** independientes, desplegados dentro del mismo proceso en ASP.NET Core 8 Web API pero con encapsulamiento estricto de modelo de dominio y esquemas de persistencia:
 
 ```mermaid
 flowchart TD
     subgraph CoreDomain ["Núcleo Transaccional Central"]
         CTX_INV["1. Bounded Context: Inventario y Almacenes\n(Kardex CPP, Stock Físico/Comprometido, Guías)"]
-        CTX_POS["2. Bounded Context: Ventas Mostrador POS\n(Facturación Rápida, Pagos Mixtos, Despacho RF-POS-011)"]
+        CTX_POS["2. Bounded Context: Ventas Mostrador POS\n(Facturación Rápida, 100% Teclado y Ratón, F1-F12)"]
         CTX_WEB["3. Bounded Context: E-commerce y Pedidos\n(Catálogo, Carrito, TTL Dinámico, Checkout Atómico)"]
     end
 
     subgraph SupportingDomain ["Dominios de Soporte"]
         CTX_CAJ["4. Bounded Context: Caja y Tesorería\n(Turnos, Arqueo Ciego Append-Only, Consola Vouchers)"]
-        CTX_PRE_SEC["5. Bounded Context: Tarifas y Seguridad\n(Listas Mayoristas, Autenticación RS256, RBAC)"]
+        CTX_PDP["5. Bounded Context: Detalles del Producto (PDP), Mediciones y Descuentos\n(Ficha Técnica, Conversión Unidades RF-INV-005, Escalas B2B, Descuentos)"]
+        CTX_SEG["6. Bounded Context: Seguridad y Auditoría\n(Autenticación RS256, Hash Argon2id, RBAC, Bitácora Inmutable)"]
     end
 
     CTX_WEB -->|Consulta Stock & Reserva TTL| CTX_INV
     CTX_POS -->|Descuenta Stock Inmediato| CTX_INV
     CTX_POS -->|Registra Movimientos de Cobro| CTX_CAJ
     CTX_WEB -->|Valida Comprobantes Yape/Plin| CTX_CAJ
-    CTX_WEB -->|Aplica Listas según Perfil| CTX_PRE_SEC
-    CTX_POS -->|Aplica Listas Mostrador| CTX_PRE_SEC
+    CTX_WEB -->|Aplica Listas y Ficha PDP| CTX_PDP
+    CTX_POS -->|Aplica Listas y Descuentos| CTX_PDP
     CTX_POS -->|Entrega Pedidos Retiro en Tienda| CTX_WEB
+    CTX_POS -.->|Autoriza Cajero/Terminal| CTX_SEG
+    CTX_WEB -.->|Autentica Cliente Web| CTX_SEG
 ```
 
 ### 1.1. Tabla Resumen de Bounded Contexts y Arquitectura Modular
@@ -53,10 +56,11 @@ Para facilitar la evaluación docente de **IS-488 UNSCH** y resolver la legibili
 | Componente / Agregado / Clase | Responsabilidad en la Ferretería | Interfaz de Entrada / Métodos Clave | Persistencia y Regla de Concurrencia |
 | :--- | :--- | :--- | :--- |
 | **`Módulo de Inventario y Almacenes`**<br>(`SIGIC.Modules.Inventory`) | Control centralizado de existencias físicas y comprometidas de materiales (cemento, fierro, tuberías), cálculo de Kardex CPP y emisión de guías de traslado inter-almacén (`RF-INV-001`, `RF-INV-003`). | `CalcularStockDisponible()`<br>`RegistrarEntradaMercaderia()`<br>`EmitirGuiaTraslado()`<br>`POST /api/v1/productos/importar-masivo` | Transacciones ACID en PostgreSQL 16 con nivel de aislamiento `Read Committed`. Gobernado por la fórmula $\text{Stock Disponible} = \text{Stock Físico} - \text{Stock Comprometido}$. Bloqueo pesimista ordenado (`ORDER BY producto_id ASC`). |
-| **`Módulo de Ventas Mostrador POS`**<br>(`SIGIC.Modules.SalesPOS`) | Facturación presencial de alta velocidad en LAN sin mouse para cajeros de tienda. Cobro mixto y despacho ligero en mostrador de compras online (`RF-POS-003`, `RF-POS-011`). | `POST /api/v1/internal/pos/ventas`<br>`POST /api/v1/pos/despacho/{codigo}/entregar`<br>`Atajos F1 a F12 y lector EAN-13` | Conexión directa y prioritaria a `sigic_pos_pool:6432`. Descuento atómico sobre `stock_fisico`, emisión síncrona a PSE y comando inmediato a impresora térmica ESC/POS en $< 1.0\text{ s}$. |
+| **`Módulo de Ventas Mostrador POS`**<br>(`SIGIC.Modules.SalesPOS`) | Facturación presencial de alta velocidad en LAN con operación híbrida 100% por teclado y 100% por ratón. Cobro mixto (`F9`), tickets en espera (`F11`) y despacho ligero en mostrador de compras online (`RF-POS-003`, `RF-POS-011`). | `POST /api/v1/internal/pos/ventas`<br>`POST /api/v1/pos/despacho/{codigo}/entregar`<br>`Atajos F1 a F12 y lector EAN-13` | Conexión directa y prioritaria a `sigic_pos_pool:6432`. Descuento atómico sobre `stock_fisico`, emisión síncrona a PSE y comando inmediato a impresora térmica ESC/POS en $< 1.0\text{ s}$. |
 | **`Módulo de E-commerce y Pedidos Web`**<br>(`SIGIC.Modules.OrdersWeb`) | Catálogo asíncrono para clientes B2B/B2C, carrito de compras y checkout transaccional con retención temporal de existencias (`RF-WEB-001`, `RF-WEB-002`, `RF-WEB-005`). | `POST /api/v1/public/checkout`<br>`POST /api/v1/public/pedidos/{id}/comprobante`<br>`GET /api/v1/public/catalogo` | Ruteado a `sigic_web_pool:6432`. Revalidación atómica pesimista de precio y stock con `SELECT ... FOR UPDATE`. Incrementa `stock_comprometido` y asigna TTL dinámico (20 min tarjeta / 240 min manual). |
 | **`Módulo de Caja y Tesorería`**<br>(`SIGIC.Modules.CashManagement`) | Control de aperturas y cierres de turno, Arqueo Ciego inmutable y auditoría de comprobantes bancarios en la consola de Backoffice (`RF-CAJ-002`, `RF-WEB-003`, `AC03`). | `AperturaTurno()`<br>`RegistrarArqueoCiego(desglose)`<br>`AprobarPagoTesoreria(voucherId)` | Persistencia estrictamente **Append-Only** en tabla `caja_arqueo` con permisos SQL `REVOKE UPDATE, DELETE`. Lanza `PostgresException 42501 permission denied` ante cualquier alteración retroactiva. |
-| **`Módulo de Tarifas y Seguridad`**<br>(`SIGIC.Modules.PricingSecurity`) | Gobernanza de tarifas comerciales (Público, Maestro de Obra, Contratista B2B), autenticación criptográfica dual y control RBAC (`RF-PRE-001`, `RNF-SEG-001`). | `ObtenerPrecioPorPerfil(sku, perfil)`<br>`ValidarMargenSeguridad(precio)`<br>`POST /api/v1/auth/login` | Firma de tokens JWT asimétricos con algoritmo **RS256** (RSA 2048 bits). Cifrado de contraseñas bajo **Argon2id**. Validación estricta de claims (`scope: pos_terminal` vs `scope: web_customer`). |
+| **`Módulo de Detalles del Producto (PDP), Mediciones y Descuentos`**<br>(`SIGIC.Modules.ProductDetailsPricing`) | Ficha técnica y atributos PDP para el portal web, calculadora de mediciones y factores de conversión a unidad base (`RF-INV-005`), gobernanza de tarifas multicanal (Público, Maestro, Contratista B2B) y descuentos comerciales (`RF-PRE-001`, `RF-PRE-002`) blindados por `MargenInvalidoException`. | `ObtenerFichaTecnicaPDP(sku)`<br>`ConvertirUnidadMedida(sku, cant, um)`<br>`CalcularTarifaPorPerfil(sku, perfil)`<br>`ValidarMargenSeguridad(precio, costo)` | Consultas optimizadas con Dapper/EF Core. Validación de margen comercial: prohibido vender bajo el costo unitario. Desacoplado de la persistencia de existencias de Inventario. |
+| **`Módulo de Seguridad y Auditoría`**<br>(`SIGIC.Modules.Security`) | Identidad y gobernanza de acceso, autenticación criptográfica dual, firma de tokens JWT asimétricos RS256, hashing Argon2id, control RBAC y registro inmutable en bitácora (`RNF-SEG-001`, `RNF-SEG-004`). | `POST /api/v1/auth/login`<br>`ValidarTokenRS256(token)`<br>`RegistrarAuditoria(evento)` | Firma de tokens JWT asimétricos con algoritmo **RS256** (RSA 2048 bits). Cifrado de contraseñas bajo **Argon2id**. Validación estricta de claims (`scope: pos_terminal` vs `scope: web_customer`). Bitácora append-only `Audit_Log`. |
 
 ---
 
@@ -78,15 +82,15 @@ Para facilitar la evaluación docente de **IS-488 UNSCH** y resolver la legibili
 ---
 
 ### 2.2. Módulo 2: Ventas y Mostrador POS (`SIGIC.Modules.SalesPOS`)
-- **Propósito:** Facturación de alta velocidad en mostrador presencial, orientada a constructores y maestros de obra con operación exclusiva por teclado y escáner láser (`RF-POS-003`, `AC01`).
+- **Propósito:** Facturación presencial de alta velocidad en mostrador presencial en LAN Gigabit, orientada a constructores y maestros de obra con operación híbrida 100% por teclado y 100% por ratón (`RF-POS-003`, `AC01`).
 - **Entidades y Agregados:**
   - `Venta` / `VentaPOS` (Root Entity): Correlativo interno, fecha UTC, cliente (DNI/RUC o cliente general), almacén emisor, tipo de comprobante (ticket interno, boleta o factura electrónica).
   - `DetalleVenta` / `VentaItem`: Artículo, unidad de medida, cantidad, precio unitario aplicado, subtotal e IGV al 18 %.
   - `PagoPOS`: Medio de pago (efectivo, tarjeta, transferencia, Yape/Plin), monto y código de operación bancaria manual único por día.
   - `EntregaDespachoPOS`: Registro de entrega física en mostrador para pedidos web `Listo para Retiro` (`RF-POS-011`).
 - **Reglas de Negocio Clave:**
-  - **Operación sin Ratón:** Foco en grilla, navegación con flechas y teclas rápidas fijas (`F2` Búsqueda, `F4` Cantidad, `F8` Cliente, `F9` Pago, `F12` Confirmar).
-  - **Frontera de Despacho Web (`RF-POS-011`):** La pantalla de entrega solo valida pedidos en estado `Listo para Retiro` cotejando código y DNI. No tiene acceso a comprobantes ni a saldos bancarios.
+  - **Operación Híbrida Teclado y Ratón (`RF-POS-003`):** Navegación en grilla con flechas y atajos deterministas (`F1` Escáner, `F2` Búsqueda, `F3` Cliente, `F4` Cantidad, `F5` Stock, `F6` Despacho Web, `F7` Sustitutos, `F8` Eliminar, `F9` Totalizar / Pago Mixto, `F10` Boleta, `F11` Encolar/Recuperar Ticket en Espera, `F12` Factura). Soporte completo mediante ratón con botones de al menos 44×44 px con badge visible del atajo y auto-refocus inmediato al input EAN-13 tras cada clic de acción, preservando EAN-13 como texto (incluidos ceros iniciales). Foco visible y restitución al escáner al cerrar modales.
+  - **Frontera de Despacho Web (`RF-POS-011`):** La pantalla de entrega (`F6`) solo valida pedidos en estado `Listo para Retiro` cotejando código y DNI. No tiene acceso a comprobantes ni a saldos bancarios.
 
 ---
 
@@ -110,13 +114,30 @@ Para facilitar la evaluación docente de **IS-488 UNSCH** y resolver la legibili
 
 ---
 
-### 2.5. Módulo 5: Tarifas y Seguridad (`SIGIC.Modules.PricingSecurity`)
-- **Propósito:** Administración de listas de precios mayoristas, autenticación criptográfica y control de acceso basado en roles (RBAC).
+### 2.5. Módulo 5: Detalles del Producto (PDP), Mediciones y Descuentos (`SIGIC.Modules.ProductDetailsPricing`)
+- **Propósito:** Gobernanza de fichas técnicas para el portal web (PDP), calculadora de mediciones y factores de conversión de unidades de medida a unidad base (`RF-INV-005`), gobernanza de tarifas multicanal (Público, Maestro de Obra, Contratista B2B) y reglas de descuento por volumen (`RF-PRE-001`, `RF-PRE-002`) blindadas por `MargenInvalidoException`.
 - **Entidades y Agregados:**
-  - `ListaPrecio`: Definición de listas (1: Público General, 2: Maestro de Obra, 3: Contratista/Mayorista).
-  - `PrecioArticulo`: Precio fijado por artículo, lista y unidad de medida, con vigencia temporal.
-  - `UsuarioColaborador`: Credenciales internas en Argon2id, asignación de roles RBAC (`Cajero`, `Almacenero`, `Despachador`, `Administrador`).
-  - `ClienteWeb`: Identidad de clientes externos, perfil de compras y consentimiento de datos.
+  - `FichaTecnicaPDP`: Atributos técnicos, fichas descargables, especificaciones dimensionales y compatibilidad ferretera.
+  - `ConversionUnidadMedida`: Factores de conversión con precisión de 4 decimales (unidad, docena, bolsa, millar, metro, varilla) hacia la unidad base administrada por Inventario (`RF-INV-005`).
+  - `ListaPrecio`: Definición de listas segmentadas (Lista 1: Retail, Lista 2: Maestro de Obra, Lista 3: Contratista B2B).
+  - `PrecioArticulo`: Precio fijado por SKU, lista y unidad de medida, con vigencia temporal.
+  - `ReglaDescuentoVolumen`: Escalas de bonificación y matrices de descuento aplicables en POS y Web.
+- **Reglas de Negocio Clave:**
+  - **Protección Inquebrantable del Margen (`MargenInvalidoException`):** Todo precio calculado tras aplicar tarifas o descuentos debe cumplir estrictamente `precioVenta >= costoUnitario`. Si una operación intenta fijar un precio inferior al costo, el dominio lanza invariablemente `MargenInvalidoException`. La intervención del Superadmin solo autoriza homologaciones de perfil o liquidaciones dentro del margen de seguridad comercial, sin constituir jamás un bypass de esta excepción.
+  - **Separación de Responsabilidades:** Inventario custodia las existencias físicas, Kardex y movimientos en unidad base; el módulo de PDP y Descuentos provee el cálculo de tarifas, conversiones y atributos descriptivos consumidos mediante contratos públicos tipados, sin acceso cruzado directo a tablas ni dependencias de infraestructura desde Domain.
+
+---
+
+### 2.6. Módulo 6: Seguridad y Auditoría (`SIGIC.Modules.Security`)
+- **Propósito:** Identidad corporativa y de clientes externos, autenticación criptográfica dual, autorización basada en roles (RBAC) y bitácora inmutable de operaciones del sistema (`RNF-SEG-001`, `RNF-SEG-004`).
+- **Entidades y Agregados:**
+  - `UsuarioColaborador`: Credenciales internas en Argon2id, asignación de roles RBAC (`ROLE_CAJERO`, `ROLE_ALMACENERO`, `ROLE_DESPACHADOR`, `ROLE_SUPERADMIN`).
+  - `ClienteWebAuth`: Credenciales de clientes web externos, consentimiento de datos y tokens de sesión.
+  - `PermisoRol`: Matriz de permisos granulares por módulo y acción.
+  - `AuditoriaEvento` / `AuditLog`: Registro inmutable con IP, usuario, marca de tiempo UTC y payload de operaciones críticas.
+- **Reglas de Negocio Clave:**
+  - **Dualidad de Tokens RS256:** Firma asimétrica con clave privada RSA 2048 bits. Claims diferenciados: terminales POS de mostrador en LAN Gigabit portan `scope: pos_terminal` e IP restringida a `192.168.1.0/24`; clientes de portal web portan `scope: web_customer`.
+  - **Inmutabilidad de Auditoría:** Toda mutación sensible (cierre de caja, modificación de lista, despacho) emite un evento persistido de forma estrictamente *append-only* en `Audit_Log`.
 
 ---
 
@@ -245,4 +266,8 @@ La inyección de dependencias en ASP.NET Core 8 entrega fábricas de conexión t
 2. **Canal Portal Web:**
    - **Catálogo:** Filtrado mandatorio en base de datos (`WHERE disponible_en_web = true`), respondiendo `HTTP 404 Not Found` ante intentos de consulta o compra de ítems restringidos.
    - **Reservas Temporales (TTL):** No descuenta stock físico inmediatamente; en su lugar, incrementa `stock_comprometido` y asigna un TTL estricto: **20 minutos** para pasarelas de tarjeta o **240 minutos (4 h)** para pagos diferidos (Yape/Plin/Transferencia) con **60 minutos** para subir el voucher, liberándose automáticamente si expira (`RF-WEB-002`).
+---
 
+## Trazabilidad y Continuidad SDD
+
+El diseño interno de los módulos se vincula con la especificación visual en [DESIGN.md](../../DESIGN.md), las realizaciones de dominio en [producto.md](../../docs/implementacion/producto.md) y [arqueo-caja.md](../../docs/implementacion/arqueo-caja.md), y se somete a validación de concurrencia en [03-pruebas-carga.md](../../05-pruebas-y-calidad/03-pruebas-carga.md).

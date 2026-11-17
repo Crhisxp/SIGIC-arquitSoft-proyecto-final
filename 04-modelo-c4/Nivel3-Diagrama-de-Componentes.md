@@ -68,8 +68,8 @@ flowchart TD
     %% CAPA DOMINIO (AMARILLO)
     %% ========================================================
     subgraph DOM_POS ["4. Servicios de Dominio Puro (Domain Layer)"]
-        SRV_INV["<b>InventarioDomainService</b><br/>Validar Stock Físico Directo"]
-        SRV_TAR["<b>MotorTarifasDomainService</b><br/>Lista 1: Retail / Lista 2: Maestro Obra"]
+        SRV_INV["<b>InventarioDomainService</b><br/>Stock Disponible = Stock Físico - Stock Comprometido"]
+        SRV_TAR["<b>MotorTarifasDomainService</b><br/>(Módulo 5: ProductDetailsPricing)<br/>Listas 1/2/3, Descuentos y Margen Seguro"]
     end
 
     %% ========================================================
@@ -90,7 +90,7 @@ flowchart TD
     MW_AUTH -->|"Petición autorizada con rol Cajero"| CTRL_POS
     CTRL_POS -->|"Despacha CrearVentaPOSCommand"| CMD_POS
     CMD_POS -->|"Aplica precio según lista"| SRV_TAR
-    CMD_POS -->|"Valida y rebaja stock físico"| SRV_INV
+    CMD_POS -->|"Valida Stock Disponible y rebaja stock físico"| SRV_INV
     CMD_POS -->|"Ejecuta persistencia ACID"| EF_POS
     EF_POS -->|"Conexión directa garantizada"| POOL_POS
     POOL_POS -->|"UPDATE inventario_stock SET stock_fisico"| DB_POS
@@ -149,6 +149,7 @@ flowchart TD
     subgraph DOM_WEB ["4. Servicios de Dominio Puro (Domain Layer)"]
         SRV_INV_WEB["<b>InventarioDomainService</b><br/>• Orden determinista: OrderBy(p => p.ProductoId)<br/>• Stock Disponible = Stock Físico - Stock Comprometido"]
         SRV_RES["<b>ReservaStockService</b><br/>TTL Dinámico: 20 min tarjeta / 240 min manual"]
+        SRV_TAR_WEB["<b>MotorTarifasDomainService</b><br/>(Módulo 5: ProductDetailsPricing)<br/>Revalidación de Precios, Ficha PDP y Margen"]
     end
 
     %% ========================================================
@@ -167,6 +168,7 @@ flowchart TD
     WAF_WEB -->|"Inspección perimetral"| MW_WEB
     MW_WEB -->|"Petición web autorizada"| CTRL_CHECK
     CTRL_CHECK -->|"Despacha IniciarCheckoutCommand"| CMD_CHECK
+    CMD_CHECK -->|"Revalida precios vigentes de lista"| SRV_TAR_WEB
     CMD_CHECK -->|"1. Ordena IDs y evalúa Disponible"| SRV_INV_WEB
     CMD_CHECK -->|"2. Asigna TTL según pasarela/voucher"| SRV_RES
     CMD_CHECK -->|"3. Ejecuta SELECT ... FOR UPDATE"| EF_WEB
@@ -187,7 +189,7 @@ flowchart TD
 
     class ACT_WEB,PORTAL_WEB verdeUI;
     class CTRL_CHECK,CMD_CHECK,CMD_LIB azulAPI;
-    class SRV_INV_WEB,SRV_RES amarilloDOM;
+    class SRV_INV_WEB,SRV_RES,SRV_TAR_WEB amarilloDOM;
     class EF_WEB,POOL_WEB,DB_WEB,STORAGE_PRIV rojoDATA;
     class WAF_WEB,MW_WEB,WORKER_EXP moradoSEC;
 ```
@@ -200,15 +202,21 @@ La siguiente tabla sintetiza la descomposición técnica del contenedor backend 
 
 | Nombre del Componente / Clase | Responsabilidad en el Negocio de la Ferretería | Interfaz de Entrada / Métodos Clave | Persistencia / Regla de Concurrencia Asociada |
 | :--- | :--- | :--- | :--- |
+| **`MotorTarifasDomainService`** | Servicio de dominio del **Módulo de Detalles del Producto (PDP), Mediciones y Descuentos** (`SIGIC.Modules.ProductDetailsPricing`). Gobierna listas de precios (Público, Maestro, Contratista B2B), descuentos y factores de conversión (`RF-INV-005`), blindando el precio frente al costo unitario mediante `MargenInvalidoException`. | `ObtenerPrecioPorPerfil(sku, perfil)`<br>`ConvertirMedida(cant, um)`<br>`ValidarMargenSeguridad(precio, costo)` | Dominio puro en memoria. Protección de margen comercial: `precioVenta >= costoUnitario` (lanza `MargenInvalidoException` ante violaciones). |
 | **`VentasPOSController`** | Entrada REST para terminales de mostrador en tienda física. Procesa facturación de cemento, fierro y herramientas con teclado y escáner láser (`RF-POS-003`). | `POST /api/v1/pos/ventas`<br>`POST /api/v1/pos/cajas/arqueo`<br>`GET /api/v1/pos/productos/buscar` | Ruteado prioritario a `sigic_pos_pool`. Ejecución síncrona de baja latencia ($P95 < 250\text{ ms}$). |
 | **`DespachoMostradorController`** | Pantalla ligera de entrega para retiro en tienda física de compras originadas en el portal web (`RF-POS-011`). | `POST /api/v1/pos/despacho/{codigo}/entregar`<br>`GET /api/v1/pos/despacho/buscar` | Valida código de retiro y DNI receptor. Actualiza estado del pedido y rebaja física desde Almacén de Despacho. |
 | **`CatalogoPublicoController`** | API pública de consulta de catálogo para clientes web. Protege el stock interno de la ferretería (`RF-INV-001`, `RF-WEB-001`). | `GET /api/v1/public/catalogo`<br>`GET /api/v1/public/productos/{id}` | Ruteado a `sigic_web_pool`. Filtro estricto `disponible_en_web = true` (retorna HTTP 404 estricto si es exclusivo de mostrador). |
 | **`CheckoutWebController`** | Recepción de órdenes de compra del portal web con revalidación atómica (`RF-WEB-002`, `RF-WEB-005`). | `POST /api/v1/public/checkout`<br>`POST /api/v1/public/pedidos/{id}/comprobante` | Invoca orquestador transaccional en `sigic_web_pool` con TTL dinámico y control de cuota. |
 | **`IniciarCheckoutCommandHandler`** | Orquestador MediatR de checkout transaccional. Elimina condiciones de carrera entre la web y mostrador (`AC02`). | `Handle(IniciarCheckoutCommand, CancellationToken)` | Transacción ACID corta: ordena IDs en memoria (`OrderBy(p => p.ProductoId)`), ejecuta `SELECT ... FOR UPDATE` y actualiza `stock_comprometido`. |
-| **`CrearVentaPOSCommandHandler`** | Orquestador MediatR de facturación presencial inmediata. Descuenta inventario físico y dispara comprobante electrónico. | `Handle(CrearVentaPOSCommand, CancellationToken)` | Transacción inmediata: rebaja directa sobre `stock_fisico`, emisión síncrona a PSE SUNAT y registro en turno de caja. |
+| **`CrearVentaPOSCommandHandler`** | Orquestador MediatR de facturación presencial inmediata. Descuenta inventario físico tras revalidar stock disponible y dispara comprobante electrónico. | `Handle(CrearVentaPOSCommand, CancellationToken)` | Transacción inmediata: revalida $\text{Stock Disponible} = \text{Stock Físico} - \text{Stock Comprometido} \ge \text{Cantidad}$, rebaja directa sobre `stock_fisico`, emisión síncrona a PSE SUNAT y registro en turno de caja. |
 | **`InventarioDomainService`** | Servicio de dominio puro. Gobierna la regla cardinal de disponibilidad y el algoritmo anti-deadlock. | `ValidarDisponible(stockFisico, stockComp, cant)`<br>`OrdenarParaBloqueo(items)`<br>`CalcularCostoPonderado(exist, ent)` | Invariante 1 (`RNF-CON-003`): $\text{Stock Disponible} = \text{Stock Físico} - \text{Stock Comprometido}$. Cero acceso a I/O de base de datos. |
 | **`ReservaStockService`** | Gobernanza de tiempos de caducidad (TTL) de reservas de inventario web según modalidad de pago. | `CalcularTtl(MedioPago)`<br>`AsignarVentanaComprobante()` | Tarjeta/Pasarela: TTL 20 min exacto. Pagos manuales (Yape/Plin/Transferencia): TTL 4 h con ventana de 60 min para comprobante. |
 | **`InventarioRepository` / `SIGICDbContext`** | Adaptador de persistencia relacional sobre PostgreSQL 16 con aislamiento `Read Committed`. | `ObtenerParaBloqueoAsync(ids, almacenId)`<br>`ActualizarComprometidoAsync(reserva)` | Bloqueo pesimista de fila (`FOR UPDATE`). Conectado mediante PgBouncer segregado (`sigic_pos_pool` / `sigic_web_pool`). |
 | **`CatalogoDapperRepository`** | Micro-ORM de alta velocidad para lecturas de catálogo sin bloqueo ni overhead de tracking (`AC01`). | `GetCatalogoPaginadoAsync(filtros)`<br>`GetProductoPublicoPorIdAsync(id)` | Consultas SQL indexadas sobre vistas materializadas con latencia de ejecución sub-15ms. |
 | **`StoragePrivadoAdapter`** | Custodia aislada de archivos de voucher de pago y archivos XML tributarios SUNAT (`AC03`). | `GuardarComprobanteAsync(stream, ext)`<br>`ObtenerVoucherProtegidoAsync(id)` | Almacenamiento local en volumen cifrado `/var/sigic/storage/` sin acceso web directo. Tamaño máx 5MB, SHA-256. |
 | **`ReservaExpirationWorker`** | Background Worker (`IHostedService`) que se ejecuta cada 60 segundos para sanear reservas abandonadas. | `ExecuteAsync(CancellationToken)` | Identifica reservas con `FechaExpiracionUtc < Now` y ejecuta comando de liberación idempotente de `stock_comprometido`. |
+---
+
+## Trazabilidad y Continuidad SDD
+
+Los componentes de software se concretan a nivel de clases y contratos en [Nivel4-DiagramadeCodigo.md](Nivel4-DiagramadeCodigo.md).

@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "sigic-sdd-guardian": {
+      "command": "node",
+      "args": [
+        "./mcp-server/build/server.js"
+      ],
+      "env": {
+        "NODE_ENV": "production",
+        "SIGIC_ARCHITECTURE_STYLE": "MODULAR_LAYERED_MONOLITH",
+        "SIGIC_SPEC_VERSION": "2.2"
+      }
+    }
+  }
+}

@@ -135,3 +135,8 @@ public void ReservarStock(decimal cantidadSolicitada, TimeSpan ttl)
   // Bien: El agregado encapsula y protege su máquina de estados
   guia.ConfirmarRecepcionFisica(usuarioReceptorId, DateTime.UtcNow);
   ```
+---
+
+## Trazabilidad y Continuidad SDD
+
+Los principios de diseño se implementan mediante patrones en [patrones-de-diseno.md](patrones-de-diseno.md) y se respaldan en el proyecto base en [soporte-dominio.md](../../docs/implementacion/soporte-dominio.md).

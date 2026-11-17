@@ -97,3 +97,8 @@ Para asegurar la gobernanza, escalabilidad y mantenibilidad a largo plazo de la 
 1. **Infraestructura de Red en Sucursales:** Cada tienda física cuenta con conexión LAN cableada (Fast Ethernet o Gigabit) para las terminales de mostrador, asegurando latencias sub-milisegundo hacia el servidor de aplicaciones y base de datos local/corporativa.
 2. **Homologación de Clientes B2B:** La asignación de tarifas preferenciales a Maestros de Obra (Lista 2) y Contratistas (Lista 3) es un proceso administrativo humano; el sistema nunca auto-promueve el perfil tarifario de un cliente web sin la aprobación explícita del Superadmin.
 3. **Migración Inicial de Datos:** La carga de datos maestros al inicio del proyecto asume que el cliente proveerá hojas de cálculo consolidadas con la estructura requerida para familias, marcas y artículos; el sistema no asume la corrección automática de inventarios físicos desfasados previos al arranque.
+---
+
+## Trazabilidad y Continuidad SDD
+
+Las fronteras y restricciones operativas condicionan los atributos de calidad definidos en [04-atributos-de-calidad.md](04-atributos-de-calidad.md).

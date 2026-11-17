@@ -1,0 +1,9 @@
+[mcp_servers.sigic-sdd-guardian]
+command = "node"
+args = ["./mcp-server/build/server.js"]
+cwd = "/home/crhistian/Projects/SIGIC-arquitSoft-proyecto-final"
+
+[mcp_servers.sigic-sdd-guardian.env]
+NODE_ENV = "production"
+SIGIC_ARCHITECTURE_STYLE = "MODULAR_LAYERED_MONOLITH"
+SIGIC_SPEC_VERSION = "2.2"

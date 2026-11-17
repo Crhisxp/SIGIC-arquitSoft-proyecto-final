@@ -18,7 +18,7 @@ estado: "VALIDADO_PARA_EXPOSICION"
 > **Asignatura:** IS-488 Arquitectura de Software (UNSCH)  
 > **Criterio Oficial de Evaluación:** **Criterio 6 — Pruebas End-to-End (E2E)**  
 > **Herramienta Automatizada:** Playwright (Microsoft) sobre Chromium Headless  
-> **Suite de Prueba:** [`tests/e2e/checkout-omnicanal.spec.ts`](file:///home/crhistian/Projects/SIGIC-arquitSoft-proyecto-final/tests/e2e/checkout-omnicanal.spec.ts)
+> **Suite de Prueba:** [tests/e2e/checkout-omnicanal.spec.ts](../tests/e2e/checkout-omnicanal.spec.ts)
 
 ---
 
@@ -63,7 +63,7 @@ flowchart LR
 
 ## 3. Matriz de Escenarios de Prueba Automatizados
 
-La suite implementada en [`tests/e2e/checkout-omnicanal.spec.ts`](file:///home/crhistian/Projects/SIGIC-arquitSoft-proyecto-final/tests/e2e/checkout-omnicanal.spec.ts) cubre los dos flujos operativos críticos del negocio:
+La suite implementada en [tests/e2e/checkout-omnicanal.spec.ts](../tests/e2e/checkout-omnicanal.spec.ts) cubre los dos flujos operativos críticos del negocio:
 
 | ID Escenario | Canal Principal | Objetivo de Verificación | Comportamiento Esperado | Criterio de Éxito |
 | :---: | :--- | :--- | :--- | :--- |

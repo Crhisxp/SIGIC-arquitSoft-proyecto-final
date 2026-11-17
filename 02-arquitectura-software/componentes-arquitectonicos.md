@@ -309,4 +309,8 @@ El núcleo de dominio en C# y las sentencias SQL ejecutan lógicas de negocio es
 | **Cálculo de Disponibilidad** | $\text{Stock Disponible} = \text{Stock Físico} - \text{Stock Comprometido}$. Si hay existencias físicas en el almacén de mostrador, permite cobro inmediato. | $\text{Stock Disponible} = \text{Stock Físico} - \text{Stock Comprometido}$ evaluado prioritariamente sobre el **Almacén Central** (`RF-INV-003`). |
 | **Proceso de Cobro y Despacho** | **Cobro Inmediato:** El cliente paga en ventanilla (efectivo, tarjeta física o Yape presencial). La transacción descuenta directamente `stock_fisico`, emite ticket ESC/POS y entrega la mercadería en mano de inmediato. | **Reserva Transaccional con TTL Dinámico:** No descuenta stock físico hasta la confirmación de pago. En su lugar, incrementa `stock_comprometido` y crea un registro en `reserva_stock_pedido` con TTL exacto:<br>• Pasarela (tarjeta): **20 minutos**.<br>• Pago Manual (Yape/Plin/Transferencia): **hasta 240 minutos (4 h)** con plazo máximo de **60 minutos** para adjuntar voucher (`RF-WEB-002`). |
 | **Modalidad Retiro en Tienda** | El cajero/despachador recepciona y entrega pedidos mediante la pantalla ligera `RF-POS-011` cotejando código alfanumérico y DNI, sin acceso a saldos bancarios ni comprobantes. | Dispara la creación automática de una **Guía Interna de Traslado** desde el Almacén Central hacia el mostrador de destino, asegurando que el stock de exhibición en tienda no sea consumido por pedidos digitales. |
+---
 
+## Trazabilidad y Continuidad SDD
+
+La descomposición modular de componentes se detalla formalmente en [Nivel3-Diagrama-de-Componentes.md](../04-modelo-c4/Nivel3-Diagrama-de-Componentes.md).

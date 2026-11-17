@@ -114,3 +114,8 @@ La integridad y confidencialidad del tráfico omnicanal se garantiza mediante un
      ```
    - Forzado de HTTPS automático: Cualquier intento de conexión por HTTP puerto 80 es redirigido permanentemente (`HTTP 301`) hacia el puerto seguro 443.
 3. **Restricción de Protocolos Legados:** Desactivación explícita de TLS 1.0 y TLS 1.1, mitigando vulnerabilidades criptográficas obsoletas (POODLE, BEAST).
+---
+
+## Trazabilidad y Continuidad SDD
+
+La infraestructura de red y distribución WAN se coordina con la [estrategia-cache.md](estrategia-cache.md).

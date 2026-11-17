@@ -20,18 +20,28 @@ fecha: "2026-10-30"
 
 ---
 
-## 1. Convención de Codificación
+## 1. Convención de Codificación y Mapa de Bounded Contexts
+
+El sistema backend de SIGIC Ferretería v2.2 se organiza rigurosamente en **seis Bounded Contexts independientes**, cada uno con su propio espacio de nombres y límites transaccionales:
+1. **Inventario y Almacenes:** `SIGIC.Modules.Inventory` (Catálogo, existencias multialmacén, guías y kardex CPP).
+2. **Ventas Mostrador POS:** `SIGIC.Modules.SalesPOS` (Facturación de alta velocidad en LAN, operación híbrida teclado/ratón, despacho F6).
+3. **E-commerce y Pedidos Web:** `SIGIC.Modules.OrdersWeb` (Catálogo público asíncrono, checkout atómico con bloqueo pesimista y TTL).
+4. **Caja y Tesorería:** `SIGIC.Modules.CashManagement` (Aperturas, arqueo ciego inmutable append-only y auditoría de comprobantes).
+5. **Módulo de Detalles del Producto (PDP), Mediciones y Descuentos:** `SIGIC.Modules.ProductDetailsPricing` (Ficha técnica PDP, conversiones de unidad RF-INV-005, tarifas por perfil y reglas de descuento protegidas por `MargenInvalidoException`).
+6. **Seguridad y Auditoría:** `SIGIC.Modules.Security` (Autenticación criptográfica dual, JWT RS256, autorización RBAC y bitácora inmutable en `Audit_Log`).
+
+> **Delimitación de Arquitectura:** El área de Informes y Reportería Gerencial / Analítica (`REP`) no constituye un Bounded Context transaccional independiente ni un módulo OLTP autónomo; corresponde a un mecanismo transversal de consulta y agregación analítica ejecutado de forma asíncrona sobre el Datamart segregado (`sigic_olap`).
 
 La convención para la identificación de requerimientos sigue el estándar:
 $$\text{TIPO}-\text{ÁREA}-\text{NNN}$$
 - **TIPO:** `RF` (Requerimiento Funcional).
 - **ÁREA:** 
-  - `INV`: Gestión de Catálogo e Inventario Multialmacén (Actor: Superadmin / Almacenero).
-  - `POS`: Captura de Operaciones y Ventas en Mostrador (Actor: Cajero / Despachador).
-  - `PRE`: Configuración de Tarifas, Precios y Descuentos (Actor: Superadmin).
-  - `CAJ`: Administración y Control de Caja y Turnos (Actor: Cajero / Superadmin).
-  - `REP`: Informes y Reportería Gerencial / Analítica (Actor: Superadmin).
-  - `WEB`: Portal Web de Compras y Pedidos en Línea B2B/B2C (Actor: Cliente Web / Superadmin).
+  - `INV`: Gestión de Catálogo e Inventario Multialmacén (`SIGIC.Modules.Inventory`) (Actor: Superadmin / Almacenero).
+  - `POS`: Captura de Operaciones y Ventas en Mostrador (`SIGIC.Modules.SalesPOS`) (Actor: Cajero / Despachador).
+  - `PRE`: Detalles del Producto (PDP), Mediciones y Descuentos (`SIGIC.Modules.ProductDetailsPricing`) (Actor: Superadmin).
+  - `CAJ`: Administración y Control de Caja y Tesorería (`SIGIC.Modules.CashManagement`) (Actor: Cajero / Superadmin / Tesorería).
+  - `REP`: Informes y Reportería Gerencial / Analítica (Mecanismo Transversal Analítico en Datamart OLAP) (Actor: Superadmin).
+  - `WEB`: Portal Web de Compras y Pedidos en Línea B2B/B2C (`SIGIC.Modules.OrdersWeb`) (Actor: Cliente Web / Superadmin).
 
 ---
 
@@ -124,7 +134,7 @@ sequenceDiagram
 | :--- | :--- | :--- | :--- |
 | **RF-POS-001** | Visualización del stock disponible por almacén en el momento en que el cajero registra la venta. | El stock disponible es el saldo físico menos el stock comprometido (reservas de pedidos web vigentes y guías de salida en tránsito) en ese almacén ($\text{Disp} = \text{Fís} - \text{Comp}$). | Consulta de stock $\le 1$ s (p95) en UI y latencia API local $\le 250$ ms. Discrepancia con el saldo real de la base de datos = 0. |
 | **RF-POS-002** | Captura y actualización de datos del cliente (DNI, RUC, razón social) o venta a "cliente general". | DNI de 8 dígitos; RUC de 11 dígitos validado con dígito verificador (módulo 11). La venta a cliente general se permite solo con documento interno o boleta bajo el umbral normativo vigente. | Formato inválido rechazado en el 100 % de los casos. Registro de cliente en $\le 15$ s. |
-| **RF-POS-003** | Controles ágiles para navegar entre ítems, editar cantidades y cambiar precio según la lista asignada. | Cambiar el precio fuera de la lista asignada exige permiso de Superadmin y queda auditado. Operación completa por teclado `F1`–`F12` y escáner láser sin ratón. | Operación completa por teclado y escáner, sin mouse. Toda modificación de precio genera registro de auditoría. Tiempo de captura $\le 1$ s por ítem. |
+| **RF-POS-003** | Controles ágiles para navegar entre ítems, editar cantidades y cambiar precio según la lista asignada. | Cambiar el precio fuera de la lista asignada exige permiso de Superadmin y queda auditado. Operación completa e híbrida: 100% por teclado (`F1`–`F12`, con `F9` Totalizar / Pago Mixto y `F11` Encolar/Recuperar Ticket en Espera) y 100% por ratón (botones $\ge 44 \times 44\text{ px}$ con badge visible del atajo y preservación de ceros iniciales como texto). Secuencia inequívoca de foco: durante el escaneo y acciones de grilla, el foco retorna automáticamente al input EAN-13 en $\le 50$ ms; al abrir cualquier modal o diálogo (`F2`, `F3`, `F9`, `F12`), el foco se transfiere de inmediato al primer campo de entrada editable permitiendo edición o captura inmediata por teclado; y al cerrar el modal (`Escape` o confirmación), se restituye incondicionalmente el foco al escáner EAN-13 en $\le 50$ ms. | Operación completa por teclado o por ratón de manera intercambiable, sin pérdida de agilidad. Toda modificación de precio genera registro de auditoría. Tiempo de captura $\le 1$ s por ítem. Auto-refocus a input EAN-13 tras interacción de ratón en $\le 50$ ms. Foco en modales sin colisión de captura. |
 | **RF-POS-004** | Validación previa al cierre de la venta: cobertura total del pago y existencias suficientes. | No se cierra una venta si $\sum \text{pagos} \ne \text{total}$, o si algún ítem excede el stock del almacén. | 0 ventas cerradas con descuadre. 0 ventas con stock resultante negativo. |
 | **RF-POS-005** | Ventas en espera para atender a otro cliente sin perder lo digitado. | Una venta en espera retiene su contenido hasta por 2 horas y no descuenta kardex ni reserva stock definitivo; al vencer, se descarta con registro. | Recuperación de una venta en espera en $\le 2$ s. Cero movimientos de kardex generados por ventas en espera. |
 | **RF-POS-006** | Registro de pagos mixtos: efectivo, billeteras digitales (Yape/Plin), transferencia y tarjeta. | Todo pago digital exige captura manual del código de operación (único por medio y fecha). No se asume integración bancaria automática. | 100 % de pagos digitales con código de operación. Códigos duplicados rechazados. Suma de pagos = total al céntimo. |
@@ -136,12 +146,12 @@ sequenceDiagram
 
 ---
 
-## 4. Configuración de Tarifas y Precios (Superadmin)
+## 4. Detalles del Producto (PDP), Mediciones y Descuentos (Superadmin)
 
 | Código | Descripción funcional | Regla de negocio | Métrica y criterio de aceptación |
 | :--- | :--- | :--- | :--- |
-| **RF-PRE-001** | Diseño y actualización de listas de precios con descuentos por volumen, promociones y venta mayorista. | Un precio vigente por artículo, lista y unidad de medida en cada instante; las promociones tienen fecha de inicio y fin. Administrado por Superadmin. | Sin solapamientos de vigencia. Actualización masiva de 1 000 precios en $\le 60$ s. |
-| **RF-PRE-002** | Segmentación de listas: precio público (Lista 1), maestro de obra (Lista 2) y contratista B2B (Lista 3), compartidas por los canales POS y web. | Cada cliente tiene una lista asignada; el precio no puede ser menor al costo salvo autorización expresa del Superadmin. El perfil de precios de un cliente web lo homologa el Superadmin, nunca el propio cliente. | 100 % de ventas por debajo del costo requieren autorización registrada. |
+| **RF-PRE-001** | Diseño y actualización de listas de precios con descuentos por volumen, promociones y venta mayorista. | Un precio vigente por artículo, lista y unidad de medida en cada instante; las promociones tienen fecha de inicio y fin. Administrado por Superadmin dentro del módulo de PDP, mediciones y descuentos (`SIGIC.Modules.ProductDetailsPricing`). Factores de conversión de unidades vinculados a unidad base conforme a `RF-INV-005`. | Sin solapamientos de vigencia. Actualización masiva de 1 000 precios en $\le 60$ s. Conversiones de unidad con precisión de 4 decimales. |
+| **RF-PRE-002** | Segmentación de listas: precio público (Lista 1), maestro de obra (Lista 2) y contratista B2B (Lista 3), compartidas por los canales POS y web. | Cada cliente tiene una lista asignada (Lista 1: Retail, Lista 2: Maestro de Obra, Lista 3: Contratista B2B). Prohibición estricta de venta bajo el costo: el precio de venta nunca puede ser menor al costo unitario (`precioVenta >= costoUnitario`). Cualquier intento transaccional o tarifario que vulnere esta regla dispara la excepción inquebrantable de dominio `MargenInvalidoException`. La autorización expresa de Superadmin aplica únicamente para asignación u homologación de perfiles de listas/descuentos o liquidación comercial dentro del margen permitido, pero nunca constituye un bypass de `MargenInvalidoException`. Distíngase esta prohibición de la regla específica de importación `RF-INV-008` (donde la carga masiva rechaza por streaming cualquier fila con margen no positivo mediante `HTTP 422 Unprocessable Entity` sin persistir nada en base de datos). El perfil de precios de un cliente web lo homologa el Superadmin, nunca el propio cliente. | 0 % de ventas o tarifas registradas por debajo del costo unitario. 100 % de intentos infractores rechazados con `MargenInvalidoException` en el núcleo de dominio. 100 % de homologaciones de perfiles de clientes web auditadas con usuario y fecha. |
 
 ---
 
@@ -180,3 +190,8 @@ El portal web es el segundo canal de captura comercial del sistema. Consume el m
 | **RF-WEB-003** | Pasarela y registro de pago web. Subida de constancia de pago con código de operación (Yape, Plin, transferencia BCP/BBVA) o pago con tarjeta mediante la pasarela en línea de un proveedor certificado. | Tesorería / Superadmin valida el código de operación en la consola de Backoffice antes de autorizar el despacho físico. SIGIC no almacena datos de tarjeta; la confirmación de la pasarela se recibe por webhook firmado e idempotente. | 100 % de pagos manuales con código y constancia (JPG, PNG o PDF de hasta 5 MB). Validación de tesorería registrada con usuario y fecha; 0 despachos sin pago validado. Confirmación de pasarela procesada en $\le 10$ s. |
 | **RF-WEB-004** | Trazabilidad y estado del pedido. El cliente consulta el estado en tiempo real: `Pendiente de Validación` $\rightarrow$ `En Preparación en Depósito` $\rightarrow$ `Listo para Retiro` / `En Ruta` $\rightarrow$ `Entregado`. | Las transiciones siguen ese orden estricto y las ejecuta solo personal autorizado (Superadmin/Tesorería valida el pago, Almacenero prepara, Despachador marca Listo, En Ruta o Entregado). Al validarse el pago, el Stock Comprometido se convierte en salida definitiva del kardex. | Cambio de estado visible al cliente en $\le 5$ s. 100 % de transiciones con usuario y marca de tiempo. 0 pedidos en `Entregado` sin pago validado. |
 | **RF-WEB-005** | Sincronización asíncrona de inventario y revalidación atómica en checkout. El catálogo web consulta la disponibilidad física consolidada sin bloquear las transacciones del punto de venta en mostrador; la confirmación del pedido nunca confía en esa proyección. | El disponible mostrado en el catálogo ($\text{físico} - \text{comprometido}$) proviene de un modelo de lectura actualizado de forma asíncrona (desfase $\le 30$ s). Al presionar "Confirmar Pedido / Reservar", el núcleo transaccional ejecuta una revalidación atómica dentro de una única transacción ACID sobre PostgreSQL 16: (a) relee el precio vigente de la lista asignada al cliente (`RF-PRE-001`), descartando el precio en caché; y (b) revalida el stock disponible real con bloqueo pesimista de fila (`SELECT … FOR UPDATE` ordenado por `producto_id ASC` seguido de `UPDATE` condicionado `WHERE (stock_fisico - stock_comprometido) >= :cantidad`, conforme a `RNF-CON-003`). Si el precio cambió, el checkout se detiene y solicita confirmación; si el stock no alcanza, se rechaza con `HTTP 409 Conflict`. | Desfase máximo en catálogo $\le 30$ s. 100 % de los checkouts revalidan precio y stock atómicamente contra el núcleo transaccional. Revalidación atómica de checkout $\le 300$ ms (p95). Degradación del cobro en POS $\le 10$ % con 200 sesiones web concurrentes. Cero deadlocks. |
+---
+
+## Trazabilidad y Continuidad SDD
+
+La matriz de requisitos funcionales fundamenta las fuerzas y prioridades técnicas en [06-driver-arquitectonicos.md](06-driver-arquitectonicos.md).

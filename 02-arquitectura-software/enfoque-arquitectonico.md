@@ -328,3 +328,8 @@ La aplicación rigurosa de **Clean Architecture** en **SIGIC Ferretería v2.2** 
 2. **Protección del Negocio frente al Cambio Tecnológico:** Las reglas complejas de Kardex valorizado, factores de conversión y márgenes comerciales quedan blindadas en el dominio, facilitando migraciones tecnológicas futuras sin riesgo de regresión en las reglas operativas.
 3. **Cero Acoplamiento con Entornos Inestables:** Las dependencias hacia entes externos (SUNAT, pasarelas bancarias locales) se mantienen estrictamente confinadas en adaptadores periféricos descartables o sustituibles.
 4. **Seguridad Operativa y Segregación:** Controladores internos y públicos estrictamente separados a nivel de ruta y token criptográfico, previniendo escalada de privilegios.
+---
+
+## Trazabilidad y Continuidad SDD
+
+El enfoque y visión arquitectónica se materializan en [componentes-arquitectonicos.md](componentes-arquitectonicos.md).

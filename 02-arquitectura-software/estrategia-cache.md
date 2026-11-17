@@ -182,3 +182,8 @@ public class CatalogoCacheService : ICatalogoCacheService
     }
 }
 ```
+---
+
+## Trazabilidad y Continuidad SDD
+
+La política de almacenamiento en caché se integra en los contenedores del sistema en [Nivel2-DiagramadeContenedores.md](../04-modelo-c4/Nivel2-DiagramadeContenedores.md).

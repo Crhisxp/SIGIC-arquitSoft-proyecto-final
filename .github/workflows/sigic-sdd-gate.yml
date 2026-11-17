@@ -1,0 +1,366 @@
+name: SIGIC SDD Gate
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+permissions:
+  contents: read
+
+jobs:
+  sdd-gate:
+    name: SDD Governance, Concurrency & Quality Gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Execute Domain Unit & Concurrency Tests
+        run: |
+          dotnet test tests/SIGIC.Domain.Tests/SIGIC.Domain.Tests.csproj --configuration Release --collect:"XPlat Code Coverage" --results-directory ./TestResults --logger "trx;LogFileName=domain_gate.trx"
+
+      - name: Verify Documentation Wikilinks Absence
+        shell: bash
+        run: |
+          python3 -c "import sys, textwrap; exec(textwrap.dedent(sys.stdin.read()))" << 'EOF'
+          import os
+          import re
+          import sys
+
+          repo_root = os.path.abspath(".")
+          exclude_dirs = set([".git", "node_modules", "bin", "obj", ".obsidian", "TestResults", "build", ".system_generated"])
+          violations = []
+
+          for root, dirs, files in os.walk(repo_root):
+              dirs[:] = [d for d in dirs if d not in exclude_dirs]
+              for f in files:
+                  if f.endswith(".md"):
+                      path = os.path.join(root, f)
+                      with open(path, "r", encoding="utf-8") as fh:
+                          c = fh.read()
+                      c_no_blocks = re.sub(r'```.*?```', '', c, flags=re.DOTALL)
+                      c_no_inline = re.sub(r'`[^`]*`', '', c_no_blocks)
+                      matches = re.findall(r'\[\[(.*?)\]\]', c_no_inline)
+                      if matches:
+                          rel = os.path.relpath(path, repo_root)
+                          violations.append((rel, matches))
+
+          if violations:
+              print(f"❌ ERROR: Detectados wikilinks no permitidos en {len(violations)} archivos:", file=sys.stderr)
+              for p, m in violations:
+                  print(f"  - {p}: {m}", file=sys.stderr)
+              sys.exit(1)
+          else:
+              print("✅ AUDITORÍA SUPERADA: Cero wikilinks detectados en documentación propia.")
+          EOF
+
+      - name: Verify Canonical SDD DAG Topology (79 Nodes, 96 Edges, 0 Cycles, Exact Set Equality)
+        shell: bash
+        run: |
+          python3 -c "import sys, textwrap; exec(textwrap.dedent(sys.stdin.read()))" << 'EOF'
+          import os
+          import re
+          import sys
+          import json
+
+          repo_root = os.path.abspath(".")
+
+          # Topología congelada canónica (79 nodos, 96 aristas dirigidas únicas)
+          EXPECTED_NODES = [
+            ".agents/skills/sigic-clean-arch-auditor/SKILL.md",
+            ".agents/skills/sigic-ecommerce-b2b/SKILL.md",
+            ".agents/skills/sigic-frontend-polish/SKILL.md",
+            ".agents/skills/sigic-pos-industrial-ui/SKILL.md",
+            ".agents/skills/sigic-sdd-guardian/SKILL.md",
+            "01-analisis-de-sistema/01-actores.md",
+            "01-analisis-de-sistema/02-historias-del-usuario.md",
+            "01-analisis-de-sistema/03-requisitos-funcionales.md",
+            "01-analisis-de-sistema/04-atributos-de-calidad.md",
+            "01-analisis-de-sistema/05-restricciones.md",
+            "01-analisis-de-sistema/06-driver-arquitectonicos.md",
+            "01-analisis-de-sistema/07-decisiones-arquitectonicas.md",
+            "01-analisis-de-sistema/08-escenarios-atributos-calidad.md",
+            "02-arquitectura-software/arquitectura-inicial.md",
+            "02-arquitectura-software/componentes-arquitectonicos.md",
+            "02-arquitectura-software/enfoque-arquitectonico.md",
+            "02-arquitectura-software/estilo-arquitectonico.md",
+            "02-arquitectura-software/estrategia-cache.md",
+            "02-arquitectura-software/infraestructura-red-dns-cdn.md",
+            "03-diseno-de-software/diseno-interno-modulos/diseno-interno-de-modulos.md",
+            "03-diseno-de-software/diseno-interno-modulos/patrones-de-diseno.md",
+            "03-diseno-de-software/diseno-interno-modulos/principios-de-diseno.md",
+            "04-modelo-c4/Nivel1-DiagramadeContexto.md",
+            "04-modelo-c4/Nivel2-DiagramadeContenedores.md",
+            "04-modelo-c4/Nivel3-Diagrama-de-Componentes.md",
+            "04-modelo-c4/Nivel4-DiagramadeCodigo.md",
+            "05-pruebas-y-calidad/01-pruebas-unitarias.md",
+            "05-pruebas-y-calidad/02-pruebas-e2e.md",
+            "05-pruebas-y-calidad/03-pruebas-carga.md",
+            "AGENTS.md",
+            "DESIGN.md",
+            "ESTADO-ORQUESTACION.md",
+            "GEMINI.md",
+            "HISTORIAL-CAMBIOS-OBSERVACIONES.md",
+            "PLAN-MIGRACION-SIGIC.md",
+            "README.md",
+            "docs/agentes/indice.md",
+            "docs/agentes/skills-sdd.md",
+            "docs/agentes/skills-ui.md",
+            "docs/implementacion/arqueo-caja.md",
+            "docs/implementacion/producto.md",
+            "docs/implementacion/soporte-dominio.md",
+            "docs/mcp/arquitectura.md",
+            "docs/mcp/cadena-sdd.md",
+            "docs/mcp/calidad.md",
+            "docs/mcp/compatibilidad.md",
+            "docs/mcp/dominio.md",
+            "docs/mcp/gobernanza.md",
+            "docs/mcp/indice.md",
+            "docs/mcp/obsidian.md",
+            "docs/mcp/runtime.md",
+            "docs/mcp/soporte.md",
+            "mcp-server/src/core/sandbox.ts",
+            "mcp-server/src/core/yaml-frontmatter.ts",
+            "mcp-server/src/server.ts",
+            "mcp-server/src/tools/domain/index.ts",
+            "mcp-server/src/tools/domain/inventoryTools.ts",
+            "mcp-server/src/tools/domain/posTools.ts",
+            "mcp-server/src/tools/governance/architecture-drift-auditor.ts",
+            "mcp-server/src/tools/governance/index.ts",
+            "mcp-server/src/tools/governance/obsidian-vault-sync.ts",
+            "mcp-server/src/tools/governance/quality-gate-enforcer.ts",
+            "mcp-server/src/tools/governance/sdd-chain-validator.ts",
+            "mcp-server/src/tools/index.ts",
+            "mcp-server/src/tools/inventoryTools.ts",
+            "mcp-server/src/tools/posTools.ts",
+            "mcp-server/src/tools/types.ts",
+            "scripts/agy_runner.fish",
+            "src/SIGIC.Domain/Entities/ArqueoCaja.cs",
+            "src/SIGIC.Domain/Entities/Producto.cs",
+            "src/SIGIC.Domain/Exceptions/MargenInvalidoException.cs",
+            "src/SIGIC.Domain/Exceptions/StockInsuficienteException.cs",
+            "src/SIGIC.Domain/SIGIC.Domain.csproj",
+            "tests/SIGIC.Domain.Tests/ArqueoCajaTests.cs",
+            "tests/SIGIC.Domain.Tests/GlobalUsings.cs",
+            "tests/SIGIC.Domain.Tests/ProductoTests.cs",
+            "tests/SIGIC.Domain.Tests/SIGIC.Domain.Tests.csproj",
+            "tests/e2e/checkout-omnicanal.spec.ts",
+            "tests/k6/checkout-stress-test.js"
+          ]
+
+          EXPECTED_EDGES = [
+            [".agents/skills/sigic-clean-arch-auditor/SKILL.md", "02-arquitectura-software/estilo-arquitectonico.md"],
+            [".agents/skills/sigic-clean-arch-auditor/SKILL.md", "docs/mcp/indice.md"],
+            [".agents/skills/sigic-ecommerce-b2b/SKILL.md", "01-analisis-de-sistema/03-requisitos-funcionales.md"],
+            [".agents/skills/sigic-ecommerce-b2b/SKILL.md", "DESIGN.md"],
+            [".agents/skills/sigic-ecommerce-b2b/SKILL.md", "docs/mcp/indice.md"],
+            [".agents/skills/sigic-frontend-polish/SKILL.md", "DESIGN.md"],
+            [".agents/skills/sigic-frontend-polish/SKILL.md", "docs/mcp/indice.md"],
+            [".agents/skills/sigic-pos-industrial-ui/SKILL.md", "01-analisis-de-sistema/02-historias-del-usuario.md"],
+            [".agents/skills/sigic-pos-industrial-ui/SKILL.md", "DESIGN.md"],
+            [".agents/skills/sigic-pos-industrial-ui/SKILL.md", "docs/mcp/indice.md"],
+            [".agents/skills/sigic-sdd-guardian/SKILL.md", "01-analisis-de-sistema/03-requisitos-funcionales.md"],
+            [".agents/skills/sigic-sdd-guardian/SKILL.md", "01-analisis-de-sistema/04-atributos-de-calidad.md"],
+            [".agents/skills/sigic-sdd-guardian/SKILL.md", "docs/mcp/indice.md"],
+            ["01-analisis-de-sistema/01-actores.md", "01-analisis-de-sistema/02-historias-del-usuario.md"],
+            ["01-analisis-de-sistema/02-historias-del-usuario.md", "01-analisis-de-sistema/03-requisitos-funcionales.md"],
+            ["01-analisis-de-sistema/03-requisitos-funcionales.md", "01-analisis-de-sistema/06-driver-arquitectonicos.md"],
+            ["01-analisis-de-sistema/04-atributos-de-calidad.md", "01-analisis-de-sistema/06-driver-arquitectonicos.md"],
+            ["01-analisis-de-sistema/05-restricciones.md", "01-analisis-de-sistema/04-atributos-de-calidad.md"],
+            ["01-analisis-de-sistema/06-driver-arquitectonicos.md", "01-analisis-de-sistema/08-escenarios-atributos-calidad.md"],
+            ["01-analisis-de-sistema/07-decisiones-arquitectonicas.md", "02-arquitectura-software/estilo-arquitectonico.md"],
+            ["01-analisis-de-sistema/08-escenarios-atributos-calidad.md", "01-analisis-de-sistema/07-decisiones-arquitectonicas.md"],
+            ["02-arquitectura-software/arquitectura-inicial.md", "02-arquitectura-software/infraestructura-red-dns-cdn.md"],
+            ["02-arquitectura-software/arquitectura-inicial.md", "04-modelo-c4/Nivel1-DiagramadeContexto.md"],
+            ["02-arquitectura-software/componentes-arquitectonicos.md", "04-modelo-c4/Nivel3-Diagrama-de-Componentes.md"],
+            ["02-arquitectura-software/enfoque-arquitectonico.md", "02-arquitectura-software/componentes-arquitectonicos.md"],
+            ["02-arquitectura-software/estilo-arquitectonico.md", "02-arquitectura-software/arquitectura-inicial.md"],
+            ["02-arquitectura-software/estilo-arquitectonico.md", "02-arquitectura-software/enfoque-arquitectonico.md"],
+            ["02-arquitectura-software/estrategia-cache.md", "04-modelo-c4/Nivel2-DiagramadeContenedores.md"],
+            ["02-arquitectura-software/infraestructura-red-dns-cdn.md", "02-arquitectura-software/estrategia-cache.md"],
+            ["03-diseno-de-software/diseno-interno-modulos/diseno-interno-de-modulos.md", "05-pruebas-y-calidad/03-pruebas-carga.md"],
+            ["03-diseno-de-software/diseno-interno-modulos/diseno-interno-de-modulos.md", "DESIGN.md"],
+            ["03-diseno-de-software/diseno-interno-modulos/diseno-interno-de-modulos.md", "docs/implementacion/arqueo-caja.md"],
+            ["03-diseno-de-software/diseno-interno-modulos/diseno-interno-de-modulos.md", "docs/implementacion/producto.md"],
+            ["03-diseno-de-software/diseno-interno-modulos/patrones-de-diseno.md", "03-diseno-de-software/diseno-interno-modulos/diseno-interno-de-modulos.md"],
+            ["03-diseno-de-software/diseno-interno-modulos/principios-de-diseno.md", "03-diseno-de-software/diseno-interno-modulos/patrones-de-diseno.md"],
+            ["03-diseno-de-software/diseno-interno-modulos/principios-de-diseno.md", "docs/implementacion/soporte-dominio.md"],
+            ["04-modelo-c4/Nivel1-DiagramadeContexto.md", "04-modelo-c4/Nivel2-DiagramadeContenedores.md"],
+            ["04-modelo-c4/Nivel2-DiagramadeContenedores.md", "04-modelo-c4/Nivel3-Diagrama-de-Componentes.md"],
+            ["04-modelo-c4/Nivel3-Diagrama-de-Componentes.md", "04-modelo-c4/Nivel4-DiagramadeCodigo.md"],
+            ["04-modelo-c4/Nivel4-DiagramadeCodigo.md", "03-diseno-de-software/diseno-interno-modulos/principios-de-diseno.md"],
+            ["05-pruebas-y-calidad/01-pruebas-unitarias.md", "tests/SIGIC.Domain.Tests/ArqueoCajaTests.cs"],
+            ["05-pruebas-y-calidad/01-pruebas-unitarias.md", "tests/SIGIC.Domain.Tests/GlobalUsings.cs"],
+            ["05-pruebas-y-calidad/01-pruebas-unitarias.md", "tests/SIGIC.Domain.Tests/ProductoTests.cs"],
+            ["05-pruebas-y-calidad/01-pruebas-unitarias.md", "tests/SIGIC.Domain.Tests/SIGIC.Domain.Tests.csproj"],
+            ["05-pruebas-y-calidad/02-pruebas-e2e.md", "tests/e2e/checkout-omnicanal.spec.ts"],
+            ["05-pruebas-y-calidad/03-pruebas-carga.md", "tests/k6/checkout-stress-test.js"],
+            ["AGENTS.md", "ESTADO-ORQUESTACION.md"],
+            ["AGENTS.md", "GEMINI.md"],
+            ["AGENTS.md", "README.md"],
+            ["AGENTS.md", "docs/agentes/indice.md"],
+            ["DESIGN.md", "05-pruebas-y-calidad/02-pruebas-e2e.md"],
+            ["ESTADO-ORQUESTACION.md", "PLAN-MIGRACION-SIGIC.md"],
+            ["ESTADO-ORQUESTACION.md", "scripts/agy_runner.fish"],
+            ["PLAN-MIGRACION-SIGIC.md", "HISTORIAL-CAMBIOS-OBSERVACIONES.md"],
+            ["README.md", "01-analisis-de-sistema/01-actores.md"],
+            ["README.md", "01-analisis-de-sistema/05-restricciones.md"],
+            ["docs/agentes/indice.md", "docs/agentes/skills-sdd.md"],
+            ["docs/agentes/indice.md", "docs/agentes/skills-ui.md"],
+            ["docs/agentes/skills-sdd.md", ".agents/skills/sigic-clean-arch-auditor/SKILL.md"],
+            ["docs/agentes/skills-sdd.md", ".agents/skills/sigic-sdd-guardian/SKILL.md"],
+            ["docs/agentes/skills-sdd.md", "docs/mcp/indice.md"],
+            ["docs/agentes/skills-ui.md", ".agents/skills/sigic-ecommerce-b2b/SKILL.md"],
+            ["docs/agentes/skills-ui.md", ".agents/skills/sigic-frontend-polish/SKILL.md"],
+            ["docs/agentes/skills-ui.md", ".agents/skills/sigic-pos-industrial-ui/SKILL.md"],
+            ["docs/agentes/skills-ui.md", "docs/mcp/indice.md"],
+            ["docs/implementacion/arqueo-caja.md", "05-pruebas-y-calidad/01-pruebas-unitarias.md"],
+            ["docs/implementacion/arqueo-caja.md", "src/SIGIC.Domain/Entities/ArqueoCaja.cs"],
+            ["docs/implementacion/producto.md", "05-pruebas-y-calidad/01-pruebas-unitarias.md"],
+            ["docs/implementacion/producto.md", "src/SIGIC.Domain/Entities/Producto.cs"],
+            ["docs/implementacion/soporte-dominio.md", "src/SIGIC.Domain/Exceptions/MargenInvalidoException.cs"],
+            ["docs/implementacion/soporte-dominio.md", "src/SIGIC.Domain/Exceptions/StockInsuficienteException.cs"],
+            ["docs/implementacion/soporte-dominio.md", "src/SIGIC.Domain/SIGIC.Domain.csproj"],
+            ["docs/mcp/arquitectura.md", "mcp-server/src/tools/governance/architecture-drift-auditor.ts"],
+            ["docs/mcp/cadena-sdd.md", "mcp-server/src/tools/governance/index.ts"],
+            ["docs/mcp/cadena-sdd.md", "mcp-server/src/tools/governance/sdd-chain-validator.ts"],
+            ["docs/mcp/calidad.md", "mcp-server/src/tools/governance/quality-gate-enforcer.ts"],
+            ["docs/mcp/compatibilidad.md", "mcp-server/src/tools/inventoryTools.ts"],
+            ["docs/mcp/compatibilidad.md", "mcp-server/src/tools/posTools.ts"],
+            ["docs/mcp/dominio.md", "mcp-server/src/tools/domain/index.ts"],
+            ["docs/mcp/dominio.md", "mcp-server/src/tools/domain/inventoryTools.ts"],
+            ["docs/mcp/dominio.md", "mcp-server/src/tools/domain/posTools.ts"],
+            ["docs/mcp/gobernanza.md", "docs/mcp/arquitectura.md"],
+            ["docs/mcp/gobernanza.md", "docs/mcp/cadena-sdd.md"],
+            ["docs/mcp/gobernanza.md", "docs/mcp/calidad.md"],
+            ["docs/mcp/gobernanza.md", "docs/mcp/obsidian.md"],
+            ["docs/mcp/indice.md", "docs/mcp/dominio.md"],
+            ["docs/mcp/indice.md", "docs/mcp/gobernanza.md"],
+            ["docs/mcp/indice.md", "docs/mcp/runtime.md"],
+            ["docs/mcp/indice.md", "docs/mcp/soporte.md"],
+            ["docs/mcp/obsidian.md", "mcp-server/src/tools/governance/obsidian-vault-sync.ts"],
+            ["docs/mcp/runtime.md", "docs/mcp/compatibilidad.md"],
+            ["docs/mcp/runtime.md", "mcp-server/src/server.ts"],
+            ["docs/mcp/runtime.md", "mcp-server/src/tools/index.ts"],
+            ["docs/mcp/soporte.md", "mcp-server/src/core/sandbox.ts"],
+            ["docs/mcp/soporte.md", "mcp-server/src/core/yaml-frontmatter.ts"],
+            ["docs/mcp/soporte.md", "mcp-server/src/tools/types.ts"]
+          ]
+
+          def extract_links(fp):
+              with open(fp, "r", encoding="utf-8") as f:
+                  content = f.read()
+              no_blocks = re.sub(r'```.*?```', '', content, flags=re.DOTALL)
+              no_inline = re.sub(r'`[^`]*`', '', no_blocks)
+              pattern = re.compile(r'\[([^\]]*)\]\(([^)]+)\)')
+              file_dir = os.path.dirname(fp)
+              links = []
+              for m in pattern.finditer(no_inline):
+                  target = m.group(2).strip()
+                  if target.startswith('#') or target.startswith('http://') or target.startswith('https://') or target.startswith('mailto:'):
+                      continue
+                  target_no_anchor = target.split('#')[0].strip()
+                  if not target_no_anchor:
+                      continue
+                  resolved = os.path.normpath(os.path.join(file_dir, target_no_anchor))
+                  rel = os.path.relpath(resolved, repo_root)
+                  if rel not in links:
+                      links.append(rel)
+              return links
+
+          visited = set(["AGENTS.md"])
+          queue = ["AGENTS.md"]
+          adj = {}
+          edges = []
+          broken = []
+          excess = []
+
+          while queue:
+              curr = queue.pop(0)
+              curr_path = os.path.join(repo_root, curr)
+              if not os.path.exists(curr_path):
+                  broken.append(curr)
+                  continue
+              if curr.endswith('.md'):
+                  targets = extract_links(curr_path)
+                  adj[curr] = targets
+                  if len(targets) > 4:
+                      excess.append((curr, len(targets)))
+                  for t in targets:
+                      edge = (curr, t)
+                      if edge not in edges:
+                          edges.append(edge)
+                      t_path = os.path.join(repo_root, t)
+                      if not os.path.exists(t_path):
+                          broken.append((curr, t))
+                      if t not in visited:
+                          visited.add(t)
+                          queue.append(t)
+              else:
+                  adj[curr] = []
+
+          # Cycle check
+          WHITE, GRAY, BLACK = 0, 1, 2
+          state = {n: WHITE for n in visited}
+          has_cycle = False
+          cycle_path = []
+
+          def dfs(n, path):
+              global has_cycle, cycle_path
+              state[n] = GRAY
+              for nxt in adj.get(n, []):
+                  if nxt not in state:
+                      continue
+                  if state[nxt] == GRAY:
+                      has_cycle = True
+                      cycle_path = path + [nxt]
+                      return
+                  elif state[nxt] == WHITE:
+                      dfs(nxt, path + [nxt])
+                      if has_cycle:
+                          return
+              state[n] = BLACK
+
+          dfs("AGENTS.md", ["AGENTS.md"])
+
+          errors = []
+          if len(visited) != 79:
+              errors.append(f"Cantidad de nodos incorrecta: esperados 79, obtenidos {len(visited)}")
+          if len(edges) != 96:
+              errors.append(f"Cantidad de aristas incorrecta: esperadas 96, obtenidas {len(edges)}")
+          if has_cycle:
+              errors.append(f"Ciclo detectado en el grafo documental: {' -> '.join(cycle_path)}")
+          if excess:
+              errors.append(f"Nodos con más de 4 destinos salientes: {excess}")
+          if broken:
+              errors.append(f"Enlaces rotos o destinos inexistentes: {broken}")
+
+          exp_nodes_set = set(EXPECTED_NODES)
+          exp_edges_set = set(tuple(e) for e in EXPECTED_EDGES)
+          actual_edges_set = set(edges)
+
+          if visited != exp_nodes_set:
+              errors.append(f"Conjunto de nodos difiere. Faltantes: {exp_nodes_set - visited}, Extras: {visited - exp_nodes_set}")
+          if actual_edges_set != exp_edges_set:
+              errors.append(f"Conjunto de aristas difiere. Faltantes: {exp_edges_set - actual_edges_set}, Extras: {actual_edges_set - exp_edges_set}")
+
+          if errors:
+              print("❌ ERROR: Violación de la topología canónica SDD:", file=sys.stderr)
+              for e in errors:
+                  print("  - " + e, file=sys.stderr)
+              sys.exit(1)
+          else:
+              print("✅ AUDITORÍA SUPERADA: DAG canónico íntegro (79 nodos, 96 aristas, 0 ciclos, max 4 salientes, conjuntos idénticos).")
+          EOF

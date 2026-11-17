@@ -228,3 +228,8 @@ Para garantizar el cumplimiento de los tiempos de respuesta definidos en los req
 ### 5.2. Terminal de Cliente Externo (Portal Web)
 - **Dispositivos Soportados:** Teléfonos inteligentes (iOS / Android) y computadoras personales / laptops.
 - **Conectividad Mínima de Prueba:** Enlace móvil 4G comercial estándar en Huamanga, logrando renderizado interactivo completo de listados en menos de 1.5 segundos ($LCP \le 1.5\text{ s}$).
+---
+
+## Trazabilidad y Continuidad SDD
+
+La topología inicial se despliega en la topología de red en [infraestructura-red-dns-cdn.md](infraestructura-red-dns-cdn.md) y se formaliza en el modelo estructural en [Nivel1-DiagramadeContexto.md](../04-modelo-c4/Nivel1-DiagramadeContexto.md).

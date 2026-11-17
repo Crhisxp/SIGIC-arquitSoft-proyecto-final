@@ -167,3 +167,8 @@ flowchart TD
 | **Almacenero** | Interno (Colaborador) | JWT RS256 (`Audience: SIGIC_InternalStaff`, Rol: `Almacenero`) | SPA Gestión Interna (React 18) | Recepción de Compras contra OC, Kardex CPP, Guías Internas de Traslado (`RF-INV-003`), Picking de Órdenes Web en Almacén Central. |
 | **Despachador Mostrador** | Interno (Colaborador) | JWT RS256 (`Audience: SIGIC_InternalStaff`, Rol: `Despachador`) | Vista Despacho F6 (React 18) | Entrega Ágil de Pedidos Web `Listo para Retiro` cotejando DNI (`RF-POS-011`), Marcación de Despacho en Ruta. Cero acceso a vouchers. |
 | **Cliente Web (B2C/Pro/B2B)** | Externo (Cliente) | JWT Web (`Audience: SIGIC_WebClient`) | Portal E-Commerce (Next.js 14 SSR) | Catálogo Filtrado (`disponible_en_web = true`), Precios Dinámicos según Perfil, Checkout Atómico con Bloqueo de Fila, Carga de Vouchers, Trazabilidad. |
+---
+
+## Trazabilidad y Continuidad SDD
+
+Los roles y perfiles descritos fundamentan las historias de usuario operativas en [02-historias-del-usuario.md](02-historias-del-usuario.md).

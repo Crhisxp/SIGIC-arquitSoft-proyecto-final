@@ -98,3 +98,8 @@ flowchart LR
     
     DA07["DA-07: Aislamiento Carga Analítica y Arqueos (AC03)"] --> ADR08["ADR-008: Esquema Estrella y ETL Nocturno"]
 ```
+---
+
+## Trazabilidad y Continuidad SDD
+
+Los drivers rectores se evalúan mediante escenarios formales de calidad en [08-escenarios-atributos-calidad.md](08-escenarios-atributos-calidad.md).

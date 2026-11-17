@@ -140,3 +140,8 @@ La siguiente tabla técnica desglosa la responsabilidad de negocio, contratos de
 | **`BD Transaccional (PostgreSQL OLTP)`** | Persistencia central ACID de inventario físico y comprometido, ventas, órdenes web, correlativos tributarios y kardex CPP. | PostgreSQL 16 Relacional (`sigic_oltp`). Protocolo PostgreSQL TCP 5432. | Nivel de aislamiento `Read Committed` con bloqueos pesimistas de fila deterministas (`ORDER BY producto_id ASC` + `FOR UPDATE`). Tabla `caja_arqueo` estrictamente *Append-Only* (`REVOKE UPDATE, DELETE`). |
 | **`Datamart Analítico (PostgreSQL OLAP)`** | Consolidación histórica de ventas, mermas y kardex mensual valorizado para tableros gerenciales de BI, sin ralentizar las cajas en tienda. | PostgreSQL 16 Dimensional (`sigic_olap`). Esquema estrella (*Star Schema* con `Fact_Ventas` y `Fact_Kardex`). Puerto TCP 5433. | Alimentado asíncronamente vía proceso ETL nocturno (01:00 UTC-5). Consultas analíticas de solo lectura que operan sin consumir recursos de CPU/RAM de la base transaccional. |
 | **`Storage Privado de Archivos`** | Custodia aislada y segura de constancias de transferencia bancaria / vouchers Yape/Plin ($\le 5\text{ MB}$) y comprobantes electrónicos XML/CDR de SUNAT (`RF-WEB-003`, `AC03`). | Sistema de archivos cifrado local (LUKS / MinIO S3 API). Acceso mediado exclusivamente por adaptador C# `StoragePrivadoAdapter`. | Almacenamiento desacoplado sin URL pública directa. Validación criptográfica de hash SHA-256 y cuotas estrictas de archivo para prevenir saturación de disco. |
+---
+
+## Trazabilidad y Continuidad SDD
+
+La arquitectura de contenedores profundiza en la estructura interna de la API en [Nivel3-Diagrama-de-Componentes.md](Nivel3-Diagrama-de-Componentes.md).

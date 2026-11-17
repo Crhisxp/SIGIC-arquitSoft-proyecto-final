@@ -1,0 +1,29 @@
+{
+  "name": "sigic-sdd-mcp-server",
+  "version": "2.2.0",
+  "description": "Servidor MCP de gobernanza SDD para SIGIC Ferretería v2.2 (Inventario, Reservas Web y Ergonomía POS)",
+  "type": "module",
+  "main": "build/server.js",
+  "bin": {
+    "sigic-sdd-mcp": "./build/server.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "start": "node build/server.js",
+    "dev": "ts-node --esm src/server.ts",
+    "inspector": "npx @modelcontextprotocol/inspector node build/server.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.12",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.4"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

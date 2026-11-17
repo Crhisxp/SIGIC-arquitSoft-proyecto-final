@@ -69,7 +69,13 @@ Para salvaguardar la integridad del sistema, prevenir el acoplamiento caótico y
 - Todo acceso a infraestructura periférica (acceso a base de datos relacional, pasarela de pago web, servicios del Proveedor de Servicios Electrónicos SUNAT - PSE/OSE, storage privado) debe realizarse a través de interfaces y abstracciones (puertos) inyectadas mediante el contenedor de Inversión de Control de ASP.NET Core (`IServiceCollection`).
 
 ### Regla 2: Límites Lógicos Modulares Estrictos y Encapsulamiento de Datos
-- Cada módulo funcional (`Inventario`, `VentasPOS`, `PedidosWeb`, `Precios`, `Caja`, `Seguridad`) posee un *Bounded Context* rigurosamente demarcado.
+- Cada módulo funcional (`Inventario`, `VentasPOS`, `PedidosWeb`, `Caja`, `DetallesProductoDescuentos` / `ProductDetailsPricing`, `Seguridad`) posee un *Bounded Context* rigurosamente demarcado:
+  1. **Inventario y Almacenes** (`SIGIC.Modules.Inventory`)
+  2. **Ventas Mostrador POS** (`SIGIC.Modules.SalesPOS`)
+  3. **E-commerce y Pedidos Web** (`SIGIC.Modules.OrdersWeb`)
+  4. **Caja y Tesorería** (`SIGIC.Modules.CashManagement`)
+  5. **Módulo de Detalles del Producto (PDP), Mediciones y Descuentos** (`SIGIC.Modules.ProductDetailsPricing`)
+  6. **Seguridad y Auditoría** (`SIGIC.Modules.Security`)
 - **Prohibición de acceso cruzado directo a tablas:** Queda terminantemente prohibido que el código de un módulo (por ejemplo, `PedidosWeb`) ejecute consultas SQL directas o instancie entidades del `DbContext` pertenecientes a otro módulo (por ejemplo, `Caja` o `Kardex`).
 - La interacción inter-módulo se efectúa exclusivamente mediante:
   1. **Servicios de Aplicación o Contratos de Interfaz Pública:** Métodos tipados expuestos intencionalmente por el módulo receptor (ej. `IInventarioReservaService`).
@@ -133,10 +139,10 @@ graph TD
         %% Módulos Funcionales Lógicos (Bounded Contexts)
         subgraph MODULOS ["Lógica de Negocio y Aplicación por Módulos (MediatR CQRS)"]
             MOD_INV["Módulo Catálogo e Inventario<br/>- Control Kardex Ponderado (CPP)<br/>- Fórmulas Disponible/Comprometido<br/>- Bloqueo Pesimista (FOR UPDATE)"]
-            MOD_POS["Módulo POS y Caja<br/>- Emisión Rápida de Comprobantes<br/>- Apertura y Arqueo Ciego de Caja<br/>- Despacho Inmediato en Tienda"]
+            MOD_POS["Módulo Ventas Mostrador POS<br/>- Facturación Rápida en LAN<br/>- Atajos F1-F12 y 100% Ratón<br/>- Despacho Inmediato en Tienda"]
             MOD_WEB["Módulo PedidosWeb y Reservas<br/>- Reserva Dinámica con TTL (20m / 4h)<br/>- Tracking de Estados de Retiro<br/>- Worker de Liberación Automática"]
-            MOD_PRC["Módulo Precios y Descuentos<br/>- Escalas: Minorista / Maestro / B2B<br/>- Conversión de Unidades (Bulto/Kg)<br/>- Matriz de Promociones Vigentes"]
-            MOD_PAG["Módulo Backoffice Pagos<br/>- Validación de Vouchers Yape/Plin<br/>- Conciliación de Transferencias<br/>- Notificación de Estado de Pago"]
+            MOD_CAJ["Módulo Caja y Tesorería<br/>- Apertura y Arqueo Ciego Append-Only<br/>- Validación Vouchers Yape/Plin<br/>- Liquidación de Diferencias en Servidor"]
+            MOD_PDP["Módulo de Detalles del Producto (PDP), Mediciones y Descuentos<br/>- Ficha Técnica y Atributos E-commerce<br/>- Mediciones y Conversión de Unidades (Bulto/Kg)<br/>- Escalas B2B y Matriz de Descuentos"]
             MOD_SEG["Módulo Seguridad y Auditoría<br/>- Emisión JWT Asimétrico (RS256)<br/>- Políticas RBAC por Rol<br/>- Bitácora Inmutable de Operaciones"]
         end
 
@@ -197,24 +203,25 @@ graph TD
     CTRL_POS --> MOD_POS
     CTRL_POS --> MOD_INV
     CTRL_WEB --> MOD_WEB
-    CTRL_WEB --> MOD_PRC
-    CTRL_ADM --> MOD_PAG
+    CTRL_WEB --> MOD_PDP
+    CTRL_ADM --> MOD_CAJ
     CTRL_ADM --> MOD_INV
     MID_AUTH -.->|Autoriza vía| MOD_SEG
 
     %% Interacción entre Módulos Internos
-    MOD_POS -->|Consulta Tarifas| MOD_PRC
+    MOD_POS -->|Consulta Tarifas y Descuentos| MOD_PDP
     MOD_POS -->|Descuenta Stock ACID| MOD_INV
-    MOD_WEB -->|Aplica Precios Especiales| MOD_PRC
+    MOD_POS -->|Registra Movimientos de Cobro| MOD_CAJ
+    MOD_WEB -->|Consulta Ficha y Precios| MOD_PDP
     MOD_WEB -->|Genera Reserva Temporal| MOD_INV
-    MOD_PAG -->|Confirma Pago y Reserva| MOD_WEB
+    MOD_CAJ -->|Valida Voucher y Confirma Pago| MOD_WEB
 
     %% Módulos a Capa de Acceso a Datos (EF Core 8)
     MOD_INV --> EF_CORE
     MOD_POS --> EF_CORE
     MOD_WEB --> EF_CORE
-    MOD_PRC --> EF_CORE
-    MOD_PAG --> EF_CORE
+    MOD_CAJ --> EF_CORE
+    MOD_PDP --> EF_CORE
     MOD_SEG --> EF_CORE
     MOD_WEB --> STORAGE_PRIV
 
@@ -249,3 +256,8 @@ graph TD
 | **Aislamiento OLTP / OLAP** | El cálculo analítico pesado de Kardex valorizado no compite por recursos de CPU/RAM con las ventas en curso. | `ADR-008`, `DA-07` | **AC01** |
 | **Arqueo Ciego de Caja Append-Only** | Prevención de fraude e inmutabilidad estricta sin exposición de saldos teóricos al cajero. | `ADR-002`, `DA-03`, `RF-CAJ-002` | **AC03** |
 | **Storage Privado de Vouchers y XML** | Custodia cifrada de constancias bancarias ($\le 5\text{ MB}$) y documentos fiscales sin exposición pública directa. | `ADR-002`, `RF-WEB-003`, `RNF-SEG-004` | **AC03** |
+---
+
+## Trazabilidad y Continuidad SDD
+
+El estilo monolítico modular se desarrolla en [enfoque-arquitectonico.md](enfoque-arquitectonico.md) y en la [arquitectura-inicial.md](arquitectura-inicial.md).
