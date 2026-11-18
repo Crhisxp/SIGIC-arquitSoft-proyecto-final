@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-sigic-canvas: #08090a;
+  --color-sigic-surface-1: #0f1011;
+  --color-sigic-surface-2: #161718;
+  --color-sigic-border: #23252a;
+  --color-sigic-accent: #e4f222;
+  --color-sigic-text-primary: #f7f8f8;
+  --color-sigic-text-secondary: #8a8f98;
+}
+
+body {
+  background-color: #08090a;
+  color: #f7f8f8;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  min-height: 100vh;
+}
+
+.sigic-tabular {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+*:focus-visible {
+  outline: 2px solid #e4f222 !important;
+  outline-offset: 1px !important;
+}

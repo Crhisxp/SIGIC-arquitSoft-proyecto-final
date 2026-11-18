@@ -17,6 +17,7 @@ Este documento es la **bitácora viva de coordinación y trazabilidad** entre **
 | **Fase 3C** | **Capa Infrastructure, Persistencia PostgreSQL 16, PgBouncer y Seguridad:** Implementación de adaptadores reales para los 6 módulos, EF Core 8 y Dapper sobre PostgreSQL 16 con PgBouncer, Argon2id, JWT RS256, worker de expiración de reservas, tablas append-only inmutables y pruebas de integración y concurrencia. | **COMPLETADA** | Gemini Flash |
 | **Fase 3D** | **Capa SIGIC.WebApi (REST API ASP.NET Core 8 para los 6 Bounded Contexts):** Controladores RESTful para Auth, Catálogo Público/PDP, Pedidos Web, Ventas POS, Caja y Tesorería, Inventario/Kardex. Middlewares de Excepciones Globales y UserContext, TDD con WebApplicationFactory y Postgres 16 real, 33 pruebas de integración pasadas (192 pruebas totales en SIGIC.sln), $\le 300$ líneas por archivo y 0 violaciones de capas. | **COMPLETADA** | Gemini Flash |
 | **Fase 3E** | **Frontend POS Industrial (`src/SIGIC.POS` con React 18, TypeScript, Vite y Tailwind CSS):** Viewport estricto $1024 \times 768$ sin scroll horizontal (`overflow-x-hidden`), operación 100% teclado y 100% ratón (atajos globales `F1`–`F12`, focus traps en modales, auto-refoco al escáner EAN-13 $\le 50\text{ ms}$), pagos mixtos con código digital obligatorio y cálculo de vueltos, arqueo ciego inmutable sin saldo teórico (`RF-CAJ-002`), despacho web en tienda (`RF-POS-011`), 17 pruebas Vitest+RTL pasadas al 100%, build limpio y $\le 300$ líneas físicas por archivo. | **COMPLETADA** | Gemini Flash |
+| **Fase 3F** | **Portal E-Commerce B2B/B2C (`src/SIGIC.Web` con Next.js 14 App Router):** Catálogo público con disponibilidad asíncrona, exclusión web HTTP 404 estricta, PDP con calculadora interactiva de conversiones y tarifas por rol, checkout transaccional atómico ordenado (Havender) con TTL 20/240 min y ventana de 60 min para voucher $\le 5\text{ MB}$, vista de seguimiento con Guía Interna de Traslado, 6 pruebas Vitest+RTL pasadas al 100%, build de producción limpio y $\le 300$ líneas por archivo. | **COMPLETADA** | Gemini Flash |
 | **Fase 4** | **Certificación de Calidad y Pruebas Continuas:** Ejecución de suites xUnit ($\ge 95\%$ cobertura), pruebas E2E Playwright y k6. | **PENDIENTE** | Codex + Gemini Flash |
 
 ---
@@ -454,4 +455,59 @@ Este documento es la **bitácora viva de coordinación y trazabilidad** entre **
   6. Topología DAG intacta (79 nodos, 96 aristas, 0 ciclos, 0 wikilinks).
 
 ### ✅ Ejecución Exitosa - 2026-11-18 03:24:34 (Intento 1)
+- **Estado:** Finalizado con código 0 sin errores de cuota.
+
+---
+
+## 9. Detalle de Entregas — Fase 3F: Portal E-Commerce B2B/B2C (Completada)
+
+* **Fecha de Culminación:** 2026-11-18
+* **Hitos Alcanzados:**
+  1. **Creación de `src/SIGIC.Web` (Next.js 14 App Router + TypeScript + Tailwind CSS):**
+     - Portal e-commerce B2B/B2C modular consumiendo exclusivamente los endpoints públicos y web de `SIGIC.WebApi`:
+       - `/api/v1/public/catalogo/*`
+       - `/api/v1/auth/login-web` y `/api/v1/auth/register-web`
+       - `/api/v1/web/pedidos/*` (`/reservar`, `/{id}`, `/{id}/voucher`)
+     - Cero fallbacks locales: errores HTTP reales (409 Conflict, 401, 403, 404) son propagados a la UI mediante `ApiError`.
+  2. **Catálogo Público y Exclusión Web (`RF-WEB-001`, `RF-INV-001`):**
+     - Disponibilidad en vivo calculada como $\text{Stock Disponible} = \text{Stock Físico} - \text{Stock Comprometido}$.
+     - Exclusión total de productos presenciales (`disponible_en_web == false`), respondiendo con HTTP 404 Not Found estricto.
+  3. **Product Detail Page (PDP) con Conversiones y Tarifas por Rol (`RF-INV-005`, `RF-PRE-002`):**
+     - Calculadora de conversiones ferreteras bidireccional (`UND`, `Caja: 50`, `Rollo: 100`, `Saco: 42.5`, `Ciento: 100`) a 4 decimales.
+     - Multitarifa dinámica según el rol autenticado: `PublicoGeneral` (base), `MaestroObra` (factor 0.94) y `ContratistaB2B` (factor 0.88).
+  4. **Checkout Transaccional con Orden Havender y TTL Gobernado (`RF-WEB-005`, `RF-WEB-002`):**
+     - Ordenamiento determinista en memoria por `producto_id` ascendente antes de la reserva en base de datos.
+     - TTL exacto de 20 minutos para pasarela de tarjeta (`PASARELA`).
+     - TTL total de hasta 240 minutos (4 horas) para pago manual (`MANUAL`) con ventana estricta de 60 minutos para cargar el voucher.
+     - Modalidad de entrega: `RetiroEnTienda` (con Guía Interna de Traslado `RF-INV-003`) y `DespachoDomicilio`.
+  5. **Seguimiento de Pedidos y Carga de Vouchers (`RF-WEB-002`):**
+     - Vista `/pedidos/[id]` con temporizador de cuenta regresiva sincronizado con el servidor.
+     - Subida de comprobante multipart validada contra tamaño $\le 5\text{ MB}$ y tipos MIME (`image/jpeg`, `image/png`, `application/pdf`).
+     - Trazabilidad de Guía Interna de Traslado vinculada.
+  6. **Suites de Pruebas Automatizadas y Build:**
+     - Vitest + RTL: 6/6 pruebas aprobadas al 100% en `pdpConversiones.test.tsx` y `checkoutReservas.test.tsx`.
+     - `npm run build` en `src/SIGIC.Web`: Optimización estática y dinámica completada exitosamente (6/6 rutas compiladas).
+     - Backend .NET 8: 196/196 pruebas aprobadas al 100% en `SIGIC.sln`.
+     - Límite de líneas físicas: 100% de archivos en `src/` $\le 300$ líneas.
+  7. **Certificación MCP y Gobernanza:**
+     - `validar_reserva_web_sdd`: ✅ **CUMPLIMIENTO_VERIFICADO** (20 min pasarela / 240 min manual con 60 min voucher).
+     - `architecture_drift_auditor`: ✅ **ARQUITECTURA LIMPIA** (0 violaciones de capas).
+     - `sdd_chain_validator`: ✅ **CADENA SDD SALUDABLE Y SIN BLOQUEOS** (44 documentos validados).
+     - `quality_gate_enforcer`: ✅ **GO — Quality Gate Aprobado** (0 violaciones de tamaño).
+     - Topología DAG canónica: 79 nodos, 96 aristas, 0 ciclos, 0 wikilinks.
+
+### ✅ Ejecución Exitosa - 2026-11-18 04:02:23 (Intento 1)
+- **Estado:** Finalizado con código 0 sin errores de cuota.
+
+### ✅ Ejecución Exitosa - 2026-11-18 11:35:00 (Aprobación Definitiva Fase 3F — 3 Contratos)
+- **Estado:** Finalizado con código 0 sin errores de cuota.
+- **Hitos Certificados:**
+  1. Cero fallbacks locales en PDP: Eliminación del bloque `catch` que simulaba tarifas; propagación del error real HTTP del servidor y bloqueo de botón "Agregar al Carrito" ("Precio No Disponible").
+  2. Alineación de `metodoPago` en Checkout: Envío de `"PasarelaTarjeta"` para pago online (20 min) o selección manual explícita (`"Yape"`, `"Plin"`, `"TransferenciaBancaria"`) para pago diferido (240 min).
+  3. Alineación de DTO en Seguimiento: Mapeo exacto de `metodoPago`, flujo manual condicionado a `metodoPago !== "PasarelaTarjeta"` y total calculado con `(pedido.total ?? itemsSum).toFixed(2)` sin fallos por ausencia de total en raíz.
+  4. Suites de Pruebas: Vitest Web 8/8 pruebas aprobadas al 100%, Vitest POS 26/26 pruebas aprobadas al 100%, .NET 8 196/196 pruebas aprobadas al 100%.
+  5. 100% de archivos en `src/` $\le 300$ líneas físicas (máx. 287 en POS, 267 en Web).
+  6. Topología DAG canónica: 79 nodos, 96 aristas, 0 ciclos, 0 wikilinks.
+
+### ✅ Ejecución Exitosa - 2026-11-18 11:37:16 (Intento 1)
 - **Estado:** Finalizado con código 0 sin errores de cuota.
