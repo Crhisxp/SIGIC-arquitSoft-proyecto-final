@@ -1,3 +1,5 @@
+using SIGIC.Application.Inventory.Commands;
+
 namespace SIGIC.Application.Inventory.Ports;
 
 /// <summary>
@@ -15,4 +17,9 @@ public interface IKardexPort
         string documentoReferencia,
         DateTime fechaUtc,
         CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<KardexMovimientoDto>> ObtenerMovimientosAsync(
+        Guid productoId,
+        Guid? almacenId = null,
+        CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<KardexMovimientoDto>>(Array.Empty<KardexMovimientoDto>());
 }

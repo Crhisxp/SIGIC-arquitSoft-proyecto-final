@@ -438,3 +438,56 @@ estado: "ACTIVO_EN_PROCESO"
      - Cobertura Core consolidada calculada desde los XML de Cobertura vigentes: 96.32% (Domain: 95.77% $\ge 95\%$, Application: 96.45% $\ge 95\%$, Infrastructure: 76.61%).
      - Certificación MCP aprobada: `quality_gate_enforcer` (GO), `architecture_drift_auditor` (0 violaciones), `sdd_chain_validator` (cadena saludable), `auditar_especificacion_stock_sdd` (CUMPLIMIENTO_VERIFICADO POS/WEB), `validar_reserva_web_sdd` (CUMPLIMIENTO_VERIFICADO), `validar_ergonomia_pos_sdd` (CUMPLIMIENTO_VERIFICADO).
      - DAG canónico intacto: 79 nodos, 96 aristas, 0 ciclos, 0 wikilinks.
+
+---
+
+### [CHG-031] — Fase 3D: Implementación de la Capa WebApi (ASP.NET Core 8 REST API para los 6 Bounded Contexts)
+- **Fecha y Hora:** 2026-11-18 00:40:00-05:00
+- **Responsables:** Gemini Flash (gemini-3.8-flash-high vía CLI agy)
+- **Implementación Arquitectónica y Clean Architecture:**
+  - Creación del proyecto `src/SIGIC.WebApi` (`net8.0`, ASP.NET Core 8 Web API) referenciando únicamente `SIGIC.Application` y `SIGIC.Infrastructure`.
+  - Creación del proyecto de pruebas `tests/SIGIC.WebApi.Tests` (`net8.0`, xUnit + `Microsoft.AspNetCore.Mvc.Testing` + PostgreSQL 16).
+  - Adición de ambos proyectos a `SIGIC.sln`.
+- **Controladores RESTful para los 6 Bounded Contexts:**
+  1. *Seguridad y Autenticación (`AuthController`):* `/api/v1/auth/login-staff`, `/api/v1/auth/login-web`, `/api/v1/auth/register-web` con emisión y validación de tokens JWT RS256 de 15 minutos, segregación de audiencias (`SIGIC_InternalStaff` vs `SIGIC_WebClient`) y bloqueo preventivo de cuenta por 15 minutos tras 5 intentos fallidos (`RNF-SEG-001`, `RNF-SEG-002`, `RNF-SEG-005`).
+  2. *Catálogo Público y PDP (`CatalogoPublicoController`):* `/api/v1/public/catalogo/productos`, `/api/v1/public/catalogo/productos/{id}`, `/api/v1/public/catalogo/calcular-precio` con exclusión estricta de productos no web devolviendo HTTP 404 absoluto (`RF-INV-001`, `RF-PRE-002`, `RF-WEB-005`).
+  3. *Pedidos Web (`PedidosWebController`):* `/api/v1/web/pedidos/reservar` con orden Havender anti-deadlock (`ORDER BY producto_id ASC`) y asignación prioritaria en Almacén Central (`RF-INV-003`, `RF-WEB-005`), `/api/v1/web/pedidos/{id}/voucher` con subida de archivo multipart ($\le 5\text{ MB}$, validación de extensiones JPG/PNG/PDF), y consulta de estado (`RF-WEB-002`).
+  4. *Ventas Mostrador POS (`VentasPOSController`):* `/api/v1/pos/ventas` con soporte de pagos mixtos (efectivo y digital), verificación de turno aperturado y unicidad de operación digital diaria (`RF-POS-001`, `RF-POS-006`).
+  5. *Caja y Tesorería (`CajaController`):* `/api/v1/caja/turnos/apertura`, `/api/v1/caja/turnos/cierre` con Arqueo Ciego inmutable append-only (cero exposición de `saldoTeorico` o diferencias al cajero en el DTO de respuesta, `RF-CAJ-002`), y validación de vouchers con rol Tesorería (`RF-WEB-002`).
+  6. *Inventario y Kardex (`InventarioController`):* `/api/v1/inventario/ajustes` restringido a Superadmin (`RF-INV-007`), `/api/v1/inventario/kardex/{productoId}` (`RF-INV-003`), `/api/v1/inventario/guias-traslado/{guiaId}` y `/api/v1/inventario/stock` con cálculo invariable de stock disponible (`Stock Disponible = Físico - Comprometido`, `RNF-CON-003`).
+- **Middlewares de Pipeline:**
+  - `GlobalExceptionMiddleware`: Mapeo determinista de excepciones de dominio y aplicación a códigos de estado HTTP (409 Conflict, 400 Bad Request, 403 Forbidden, 404 Not Found) y respuesta 500 limpia sin filtración de detalles sensibles ni trazas de pila.
+  - `UserContextMiddleware`: Autenticación por token Bearer RS256, resolución de audiencia según ruta (`WAN-WEB` vs `LAN-POS`) y configuración del contexto ambiental en `CurrentUserContextAccessor`.
+- **Verificación TDD y Métricas:**
+  - 28 pruebas de integración pasadas al 100% en `SIGIC.WebApi.Tests` ejecutadas contra PostgreSQL 16 real intermediado por colección xUnit (`WebApiTestCollection`).
+  - Total de pruebas en la solución `SIGIC.sln`: 187 pruebas ejecutadas, 187 aprobadas (100% GREEN, 0 fallos, 0 omitidas).
+  - 96 archivos de código analizados en `src/`, 0 archivos sobredimensionados (100% $\le 300$ líneas físicas).
+- **Certificación MCP y Topología SDD:**
+  - `quality_gate_enforcer`: ✅ **GO — Quality Gate Aprobado** (Core 96.84% $\ge 95\%$, 0 fallos en áreas críticas).
+  - `architecture_drift_auditor`: ✅ **ARQUITECTURA LIMPIA** (0 violaciones de capas).
+  - `sdd_chain_validator`: ✅ **CADENA SDD SALUDABLE Y SIN BLOQUEOS** (44 especificaciones validadas).
+  - `auditar_especificacion_stock_sdd`: ✅ **CUMPLIMIENTO_VERIFICADO** (POS y WEB con fórmula y Havender).
+  - `validar_reserva_web_sdd`: ✅ **CUMPLIMIENTO_VERIFICADO** (Pasarela 20 min / Manual 240 min con ventana de 60 min).
+  - `validar_ergonomia_pos_sdd`: ✅ **CUMPLIMIENTO_VERIFICADO** (Hotkeys F1-F12 y resolución 1024x768).
+  - Topología DAG canónica: 79 nodos, 96 aristas, 0 ciclos, 0 wikilinks.
+
+---
+
+### [CHG-032] — Fase 3D: Parche Quirúrgico de Seguridad y Segregación Estricta de Audiencias (RNF-SEG-002, RNF-SEG-005, RF-INV-001)
+- **Fecha y Hora:** 2026-11-18 01:02:00-05:00
+- **Responsables:** Gemini Flash (gemini-3.8-flash-high vía CLI agy)
+- **Subsanaciones y Fortalecimiento de Seguridad:**
+  1. *Segregación Inviolable de Audiencias en Pipeline HTTP (`UserContextMiddleware.cs`):*
+     - Erradicación de fallbacks automáticos entre audiencias.
+     - Rutas operativas internas (`/api/v1/pos/*`, `/api/v1/caja/*`, `/api/v1/inventario/*`) exigen estrictamente token Bearer válido con audiencia `SIGIC_InternalStaff` y scope interno. Acceso anónimo responde inmediatamente `HTTP 401 Unauthorized`. Token con audiencia `SIGIC_WebClient` responde inmediatamente `HTTP 403 Forbidden` (audiencia cruzada no autorizada).
+     - Rutas de checkout cliente (`/api/v1/web/*`) exigen token Bearer con audiencia `SIGIC_WebClient`. Token con audiencia `SIGIC_InternalStaff` responde `HTTP 403 Forbidden`.
+     - Únicamente `/api/v1/public/catalogo/*` y `/api/v1/auth/*` admiten invocación anónima.
+  2. *Defensa en Profundidad en Controladores:*
+     - Inyección de `ICurrentUserContext` y validación de `UserId` y `TerminalScope` en `InventarioController` (incluyendo `/stock`, `/kardex`, `/guias-traslado`), `CajaController`, `VentasPOSController` y `PedidosWebController`.
+  3. *Nueva Suite de Pruebas de Integración `SecurityAudienceSegregationTests`:*
+     - 5 pruebas que verifican: rechazo de acceso anónimo con 401, rechazo de cliente web en rutas internas con 403, rechazo de token interno en canal web con 403, consulta autorizada de stock con 200 OK y acceso anónimo a catálogo público y auth.
+  4. *Métricas y Certificación MCP:*
+     - 192/192 pruebas aprobadas al 100% en `SIGIC.sln` (18 Domain, 87 Application, 54 Infrastructure, 33 WebApi).
+     - Cobertura Core 96.84% $\ge 95\%$, 96 archivos en `src/` $\le 300$ líneas físicas.
+     - Certificación MCP aprobada: `quality_gate_enforcer` (GO), `architecture_drift_auditor` (0 violaciones), `sdd_chain_validator` (cadena saludable), `auditar_especificacion_stock_sdd` (CUMPLIMIENTO_VERIFICADO), `validar_reserva_web_sdd` (CUMPLIMIENTO_VERIFICADO), `validar_ergonomia_pos_sdd` (CUMPLIMIENTO_VERIFICADO).
+     - DAG canónico intacto: 79 nodos, 96 aristas, 0 ciclos, 0 wikilinks.

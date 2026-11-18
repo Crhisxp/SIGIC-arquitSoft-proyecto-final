@@ -19,3 +19,12 @@ public record PDPResultDto(
     bool AplicaDescuentoVolumen,
     decimal FactorConversion = 1.0000m,
     decimal PrecioUnitarioComercial = 0m);
+
+public record ProductoCatalogoDto(
+    Guid Id,
+    string CodigoSku,
+    string NombreComercial,
+    string UnidadBase,
+    decimal PrecioVenta,
+    decimal StockDisponible,
+    bool DisponibleEnWeb);

@@ -2,6 +2,7 @@ using Dapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Npgsql;
+using SIGIC.Application.Inventory.Commands;
 using SIGIC.Application.Inventory.Ports;
 using SIGIC.Domain.Entities;
 using SIGIC.Domain.Exceptions;
@@ -183,6 +184,42 @@ public class PostgresInventoryStockPort : IInventoryStockPort
                 cantRequerida,
                 disponibleActual);
         }
+    }
+
+    public async Task<IReadOnlyList<StockAlmacenDetalleDto>> ObtenerListadoStockAsync(
+        Guid? almacenId = null,
+        Guid? productoId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var conn = _dbContext.Database.GetDbConnection();
+        var tx = _dbContext.Database.CurrentTransaction?.GetDbTransaction();
+
+        const string sql = """
+            SELECT s.producto_id, p.codigo_sku, p.nombre_comercial,
+                   s.almacen_id, a.nombre AS nombre_almacen,
+                   s.stock_fisico, s.stock_comprometido
+            FROM stock_almacen s
+            INNER JOIN productos p ON p.id = s.producto_id
+            INNER JOIN almacenes a ON a.id = s.almacen_id
+            WHERE (@almacenId IS NULL OR s.almacen_id = @almacenId)
+              AND (@productoId IS NULL OR s.producto_id = @productoId)
+            ORDER BY p.nombre_comercial ASC, a.nombre ASC;
+            """;
+
+        var cmd = new CommandDefinition(sql, new { almacenId, productoId }, tx, cancellationToken: cancellationToken);
+        var rows = await conn.QueryAsync<dynamic>(cmd);
+
+        var result = new List<StockAlmacenDetalleDto>();
+        foreach (var r in rows)
+        {
+            decimal f = Convert.ToDecimal(r.stock_fisico);
+            decimal c = Convert.ToDecimal(r.stock_comprometido);
+            decimal disp = f - c;
+            result.Add(new StockAlmacenDetalleDto(
+                (Guid)r.producto_id, (string)r.codigo_sku, (string)r.nombre_comercial,
+                (Guid)r.almacen_id, (string)r.nombre_almacen, f, c, disp));
+        }
+        return result;
     }
 
     private class StockAlmacenDto

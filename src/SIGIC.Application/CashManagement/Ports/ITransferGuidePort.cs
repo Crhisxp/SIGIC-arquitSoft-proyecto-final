@@ -1,3 +1,5 @@
+using SIGIC.Application.CashManagement.Commands;
+
 namespace SIGIC.Application.CashManagement.Ports;
 
 /// <summary>
@@ -11,4 +13,8 @@ public interface ITransferGuidePort
         Guid tiendaDestinoId,
         IReadOnlyList<(Guid ProductoId, decimal Cantidad)> items,
         CancellationToken cancellationToken = default);
+
+    Task<GuiaTrasladoDetalleDto?> ObtenerGuiaPorIdAsync(
+        Guid guiaId,
+        CancellationToken cancellationToken = default) => Task.FromResult<GuiaTrasladoDetalleDto?>(null);
 }

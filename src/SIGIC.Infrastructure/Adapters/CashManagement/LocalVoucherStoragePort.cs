@@ -54,6 +54,58 @@ public class LocalVoucherStoragePort : IVoucherStoragePort
             row.FechaSubidaUtc);
     }
 
+    public async Task<VoucherMetadataDto> GuardarVoucherAsync(
+        Guid pedidoWebId,
+        Stream contenidoArchivo,
+        string nombreArchivo,
+        string contentType,
+        CancellationToken cancellationToken = default)
+    {
+        var conn = _dbContext.Database.GetDbConnection();
+        var tx = _dbContext.Database.CurrentTransaction?.GetDbTransaction();
+
+        using var ms = new MemoryStream();
+        await contenidoArchivo.CopyToAsync(ms, cancellationToken);
+        byte[] bytes = ms.ToArray();
+
+        using var sha = System.Security.Cryptography.SHA256.Create();
+        byte[] hashBytes = sha.ComputeHash(bytes);
+        string hashSha256 = Convert.ToHexString(hashBytes).ToLowerInvariant();
+
+        string ext = Path.GetExtension(nombreArchivo).ToLowerInvariant();
+        DateTime now = DateTime.UtcNow;
+        long tamanoBytes = bytes.Length;
+
+        const string sqlVoucher = """
+            INSERT INTO comprobantes_voucher (
+                id, pedido_web_id, nombre_archivo, formato, hash_sha256, tamano_bytes, fecha_subida_utc
+            ) VALUES (
+                gen_random_uuid(), @pedidoWebId, @nombreArchivo, @ext, @hashSha256, @tamanoBytes, @now
+            )
+            ON CONFLICT (pedido_web_id) DO UPDATE
+            SET nombre_archivo = EXCLUDED.nombre_archivo,
+                formato = EXCLUDED.formato,
+                hash_sha256 = EXCLUDED.hash_sha256,
+                tamano_bytes = EXCLUDED.tamano_bytes,
+                fecha_subida_utc = EXCLUDED.fecha_subida_utc;
+
+            UPDATE pedidos_web
+            SET fecha_subida_voucher_utc = @now,
+                estado = CASE WHEN estado = 'PendientePago' THEN 'PendienteValidacion' ELSE estado END
+            WHERE id = @pedidoWebId;
+            """;
+
+        var cmd = new CommandDefinition(
+            sqlVoucher,
+            new { pedidoWebId, nombreArchivo, ext, hashSha256, tamanoBytes, now },
+            tx,
+            cancellationToken: cancellationToken);
+
+        await conn.ExecuteAsync(cmd);
+
+        return new VoucherMetadataDto(nombreArchivo, contentType, tamanoBytes, now);
+    }
+
     private class VoucherRow
     {
         public string NombreArchivo { get; set; } = string.Empty;

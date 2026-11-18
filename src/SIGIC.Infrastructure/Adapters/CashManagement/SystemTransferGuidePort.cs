@@ -1,6 +1,7 @@
 using Dapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using SIGIC.Application.CashManagement.Commands;
 using SIGIC.Application.CashManagement.Ports;
 using SIGIC.Application.OrdersWeb.Ports;
 using SIGIC.Infrastructure.Persistence;
@@ -89,5 +90,38 @@ public class SystemTransferGuidePort : ITransferGuidePort
         await _webOrderRepository.AsignarGuiaRemisionAsync(pedidoWebId, numeroGuia, cancellationToken);
 
         return numeroGuia;
+    }
+
+    public async Task<GuiaTrasladoDetalleDto?> ObtenerGuiaPorIdAsync(
+        Guid guiaId,
+        CancellationToken cancellationToken = default)
+    {
+        var conn = _dbContext.Database.GetDbConnection();
+        var tx = _dbContext.Database.CurrentTransaction?.GetDbTransaction();
+
+        const string sqlGuia = """
+            SELECT id, numero_guia, pedido_web_id, almacen_origen_id, tienda_destino_id, estado, fecha_emision_utc
+            FROM guias_traslado_interno
+            WHERE id = @guiaId;
+            """;
+
+        var cmdGuia = new CommandDefinition(sqlGuia, new { guiaId }, tx, cancellationToken: cancellationToken);
+        var guia = await conn.QuerySingleOrDefaultAsync<dynamic>(cmdGuia);
+        if (guia == null) return null;
+
+        const string sqlItems = """
+            SELECT producto_id, cantidad
+            FROM guias_traslado_items
+            WHERE guia_traslado_id = @guiaId;
+            """;
+
+        var cmdItems = new CommandDefinition(sqlItems, new { guiaId }, tx, cancellationToken: cancellationToken);
+        var itemsRows = await conn.QueryAsync<dynamic>(cmdItems);
+        var items = itemsRows.Select(i => new GuiaTrasladoItemDto((Guid)i.producto_id, Convert.ToDecimal(i.cantidad))).ToList();
+
+        return new GuiaTrasladoDetalleDto(
+            (Guid)guia.id, (string)guia.numero_guia, (Guid)guia.pedido_web_id,
+            (Guid)guia.almacen_origen_id, (Guid)guia.tienda_destino_id, (string)guia.estado,
+            (DateTime)guia.fecha_emision_utc, items);
     }
 }

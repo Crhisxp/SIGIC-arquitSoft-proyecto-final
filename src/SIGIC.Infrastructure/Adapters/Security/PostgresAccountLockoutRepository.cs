@@ -109,6 +109,28 @@ public class PostgresAccountLockoutRepository : IAccountLockoutRepository
         await conn.ExecuteAsync(cmd);
     }
 
+    public async Task RegistrarUsuarioAsync(
+        Guid id,
+        string username,
+        string passwordHash,
+        IReadOnlyList<string> roles,
+        string perfilCliente = "PublicoGeneral",
+        CancellationToken cancellationToken = default)
+    {
+        var conn = _dbContext.Database.GetDbConnection();
+        var tx = _dbContext.Database.CurrentTransaction?.GetDbTransaction();
+
+        string rolesJson = JsonSerializer.Serialize(roles);
+
+        const string sql = """
+            INSERT INTO usuarios (id, username, password_hash, intentos_fallidos, bloqueado_hasta_utc, esta_activo, roles_json, perfil_cliente)
+            VALUES (@id, @username, @passwordHash, 0, NULL, TRUE, @rolesJson, @perfilCliente);
+            """;
+
+        var cmd = new CommandDefinition(sql, new { id, username, passwordHash, rolesJson, perfilCliente }, tx, cancellationToken: cancellationToken);
+        await conn.ExecuteAsync(cmd);
+    }
+
     private static IReadOnlyList<string> ParseRoles(string? rolesJson)
     {
         if (string.IsNullOrWhiteSpace(rolesJson))

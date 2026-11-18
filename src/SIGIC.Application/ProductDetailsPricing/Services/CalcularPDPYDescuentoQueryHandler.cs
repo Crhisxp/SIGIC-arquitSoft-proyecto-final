@@ -145,6 +145,9 @@ public class CalcularPDPYDescuentoQueryHandler
 
         public Task ActualizarStockAlmacenAsync(Domain.Entities.StockAlmacen stock, CancellationToken cancellationToken = default)
             => Task.CompletedTask;
+
+        public Task<IReadOnlyList<Inventory.Commands.StockAlmacenDetalleDto>> ObtenerListadoStockAsync(Guid? almacenId = null, Guid? productoId = null, CancellationToken cancellationToken = default)
+            => Task.FromResult<IReadOnlyList<Inventory.Commands.StockAlmacenDetalleDto>>(Array.Empty<Inventory.Commands.StockAlmacenDetalleDto>());
     }
 
     private class DefaultWarehouseConfigurationPort : IWarehouseConfigurationPort

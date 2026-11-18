@@ -1,6 +1,7 @@
 using Dapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using SIGIC.Application.CashManagement.Commands;
 using SIGIC.Application.SalesPOS.Ports;
 using SIGIC.Infrastructure.Persistence;
 
@@ -73,5 +74,47 @@ public class PostgresCashShiftPort : ICashShiftPort
 
         var command = new CommandDefinition(sql, new { turnoCajaId }, tx, cancellationToken: cancellationToken);
         return await conn.QuerySingleOrDefaultAsync<Guid>(command);
+    }
+
+    public async Task AbrirTurnoAsync(
+        Guid turnoId,
+        Guid cajaId,
+        Guid cajeroId,
+        Guid almacenId,
+        decimal fondoInicial,
+        DateTime fechaAperturaUtc,
+        CancellationToken cancellationToken = default)
+    {
+        var conn = _dbContext.Database.GetDbConnection();
+        var tx = _dbContext.Database.CurrentTransaction?.GetDbTransaction();
+
+        const string sql = """
+            INSERT INTO turnos_caja (id, caja_id, cajero_id, almacen_id, fondo_inicial, estado, fecha_apertura_utc)
+            VALUES (@turnoId, @cajaId, @cajeroId, @almacenId, @fondoInicial, 'Aperturado', @fechaAperturaUtc);
+            """;
+
+        var cmd = new CommandDefinition(sql, new { turnoId, cajaId, cajeroId, almacenId, fondoInicial, fechaAperturaUtc }, tx, cancellationToken: cancellationToken);
+        await conn.ExecuteAsync(cmd);
+    }
+
+    public async Task<TurnoCajaDto?> ObtenerTurnoActualAsync(
+        Guid cajeroId,
+        CancellationToken cancellationToken = default)
+    {
+        var conn = _dbContext.Database.GetDbConnection();
+        var tx = _dbContext.Database.CurrentTransaction?.GetDbTransaction();
+
+        const string sql = """
+            SELECT id AS TurnoId, caja_id AS CajaId, cajero_id AS CajeroId, almacen_id AS AlmacenId,
+                   fondo_inicial AS FondoInicial, estado AS Estado, fecha_apertura_utc AS FechaAperturaUtc,
+                   fecha_cierre_utc AS FechaCierreUtc
+            FROM turnos_caja
+            WHERE cajero_id = @cajeroId AND estado = 'Aperturado'
+            ORDER BY fecha_apertura_utc DESC
+            LIMIT 1;
+            """;
+
+        var cmd = new CommandDefinition(sql, new { cajeroId }, tx, cancellationToken: cancellationToken);
+        return await conn.QuerySingleOrDefaultAsync<TurnoCajaDto>(cmd);
     }
 }

@@ -1,3 +1,4 @@
+using SIGIC.Application.Inventory.Commands;
 using SIGIC.Domain.Entities;
 
 namespace SIGIC.Application.Inventory.Ports;
@@ -25,4 +26,9 @@ public interface IInventoryStockPort
     Task ActualizarStockAlmacenAsync(
         StockAlmacen stock,
         CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<StockAlmacenDetalleDto>> ObtenerListadoStockAsync(
+        Guid? almacenId = null,
+        Guid? productoId = null,
+        CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<StockAlmacenDetalleDto>>(Array.Empty<StockAlmacenDetalleDto>());
 }

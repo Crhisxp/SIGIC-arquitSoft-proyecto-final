@@ -32,4 +32,12 @@ public interface IAccountLockoutRepository
         string username,
         DateTime bloqueadoHastaUtc,
         CancellationToken cancellationToken = default);
+
+    Task RegistrarUsuarioAsync(
+        Guid id,
+        string username,
+        string passwordHash,
+        IReadOnlyList<string> roles,
+        string perfilCliente = "PublicoGeneral",
+        CancellationToken cancellationToken = default) => Task.CompletedTask;
 }

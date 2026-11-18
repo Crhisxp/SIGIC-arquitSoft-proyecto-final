@@ -1,6 +1,7 @@
 using Dapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using SIGIC.Application.ProductDetailsPricing.Commands;
 using SIGIC.Application.ProductDetailsPricing.Ports;
 using SIGIC.Domain.Entities;
 using SIGIC.Infrastructure.Persistence;
@@ -116,6 +117,42 @@ public class PostgresProductQueryPort : IProductQueryPort
         }
 
         return factor.Value;
+    }
+
+    public async Task<IReadOnlyList<ProductoCatalogoDto>> ListarCatalogoWebAsync(
+        string? search = null,
+        Guid? almacenId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var conn = _dbContext.Database.GetDbConnection();
+        var tx = _dbContext.Database.CurrentTransaction?.GetDbTransaction();
+
+        string sql = """
+            SELECT p.id, p.codigo_sku, p.nombre_comercial, p.unidad_base, p.precio_venta, p.disponible_en_web,
+                   COALESCE(s.stock_fisico, p.stock_fisico) AS stock_fisico,
+                   COALESCE(s.stock_comprometido, p.stock_comprometido) AS stock_comprometido
+            FROM productos p
+            LEFT JOIN stock_almacen s ON p.id = s.producto_id AND (@almacenId IS NULL OR s.almacen_id = @almacenId)
+            WHERE p.disponible_en_web = TRUE
+              AND (@searchPattern IS NULL OR UPPER(p.nombre_comercial) LIKE @searchPattern OR UPPER(p.codigo_sku) LIKE @searchPattern)
+            ORDER BY p.nombre_comercial ASC;
+            """;
+
+        string? searchPattern = string.IsNullOrWhiteSpace(search) ? null : $"%{search.Trim().ToUpperInvariant()}%";
+        var cmd = new CommandDefinition(sql, new { almacenId, searchPattern }, tx, cancellationToken: cancellationToken);
+        var rows = await conn.QueryAsync<dynamic>(cmd);
+
+        var list = new List<ProductoCatalogoDto>();
+        foreach (var r in rows)
+        {
+            decimal f = Convert.ToDecimal(r.stock_fisico);
+            decimal c = Convert.ToDecimal(r.stock_comprometido);
+            decimal disp = Math.Max(0m, f - c);
+            list.Add(new ProductoCatalogoDto(
+                r.id, r.codigo_sku, r.nombre_comercial, r.unidad_base,
+                Convert.ToDecimal(r.precio_venta), disp, Convert.ToBoolean(r.disponible_en_web)));
+        }
+        return list;
     }
 
     private class ProductRow

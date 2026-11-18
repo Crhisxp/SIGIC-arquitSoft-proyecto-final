@@ -152,4 +152,47 @@ public class PostgresSalesPOSRepository : ISalesPOSRepository
         var result = await conn.ExecuteScalarAsync<decimal?>(cmd);
         return result ?? 0m;
     }
+
+    public async Task<VentaPOSDetalleDto?> ObtenerPorIdAsync(
+        Guid ventaId,
+        CancellationToken cancellationToken = default)
+    {
+        var conn = _dbContext.Database.GetDbConnection();
+        var tx = _dbContext.Database.CurrentTransaction?.GetDbTransaction();
+
+        const string sqlVenta = """
+            SELECT id, turno_caja_id, cajero_id, almacen_id, total, fecha_utc, metodo_pago
+            FROM ventas_pos
+            WHERE id = @ventaId;
+            """;
+
+        var cmdVenta = new CommandDefinition(sqlVenta, new { ventaId }, tx, cancellationToken: cancellationToken);
+        var venta = await conn.QuerySingleOrDefaultAsync<dynamic>(cmdVenta);
+        if (venta == null) return null;
+
+        const string sqlItems = """
+            SELECT producto_id, cantidad, precio_unitario
+            FROM ventas_pos_items
+            WHERE venta_pos_id = @ventaId;
+            """;
+        var cmdItems = new CommandDefinition(sqlItems, new { ventaId }, tx, cancellationToken: cancellationToken);
+        var itemsRows = await conn.QueryAsync<dynamic>(cmdItems);
+        var items = itemsRows.Select(i => new VentaPOSItemDto(
+            (Guid)i.producto_id, Convert.ToDecimal(i.cantidad), "UND", Convert.ToDecimal(i.precio_unitario))).ToList();
+
+        const string sqlPagos = """
+            SELECT metodo_pago, monto, codigo_operacion_digital
+            FROM ventas_pos_pagos
+            WHERE venta_pos_id = @ventaId;
+            """;
+        var cmdPagos = new CommandDefinition(sqlPagos, new { ventaId }, tx, cancellationToken: cancellationToken);
+        var pagosRows = await conn.QueryAsync<dynamic>(cmdPagos);
+        var pagos = pagosRows.Select(p => new VentaPOSPagoDto(
+            (string)p.metodo_pago, Convert.ToDecimal(p.monto), (string?)p.codigo_operacion_digital)).ToList();
+
+        return new VentaPOSDetalleDto(
+            (Guid)venta.id, (Guid)venta.turno_caja_id, (Guid)venta.cajero_id, (Guid)venta.almacen_id,
+            Convert.ToDecimal(venta.total), (DateTime)venta.fecha_utc, (string)venta.metodo_pago,
+            items, pagos);
+    }
 }

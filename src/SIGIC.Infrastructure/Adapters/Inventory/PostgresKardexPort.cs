@@ -1,6 +1,7 @@
 using Dapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using SIGIC.Application.Inventory.Commands;
 using SIGIC.Application.Inventory.Ports;
 using SIGIC.Infrastructure.Persistence;
 
@@ -50,5 +51,28 @@ public class PostgresKardexPort : IKardexPort
             cancellationToken: cancellationToken);
 
         await conn.ExecuteAsync(command);
+    }
+
+    public async Task<IReadOnlyList<KardexMovimientoDto>> ObtenerMovimientosAsync(
+        Guid productoId,
+        Guid? almacenId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var conn = _dbContext.Database.GetDbConnection();
+        var tx = _dbContext.Database.CurrentTransaction?.GetDbTransaction();
+
+        const string sql = """
+            SELECT id AS Id, producto_id AS ProductoId, almacen_id AS AlmacenId,
+                   tipo_operacion AS TipoOperacion, cantidad_base AS CantidadBase,
+                   costo_unitario AS CostoUnitario, documento_referencia AS DocumentoReferencia,
+                   codigo_autorizacion AS CodigoAutorizacion, motivo AS Motivo, fecha_utc AS FechaUtc
+            FROM kardex_movimientos
+            WHERE producto_id = @productoId AND (@almacenId IS NULL OR almacen_id = @almacenId)
+            ORDER BY fecha_utc DESC;
+            """;
+
+        var command = new CommandDefinition(sql, new { productoId, almacenId }, tx, cancellationToken: cancellationToken);
+        var rows = await conn.QueryAsync<KardexMovimientoDto>(command);
+        return rows.ToList();
     }
 }

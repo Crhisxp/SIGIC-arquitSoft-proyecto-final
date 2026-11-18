@@ -16,3 +16,14 @@ public record VentaPOSResultDto(
     string NumeroComprobante,
     decimal TotalVenta,
     DateTime FechaEmisionUtc);
+
+public record VentaPOSDetalleDto(
+    Guid VentaId,
+    Guid TurnoCajaId,
+    Guid CajeroId,
+    Guid AlmacenId,
+    decimal Total,
+    DateTime FechaUtc,
+    string MetodoPago,
+    IReadOnlyList<VentaPOSItemDto> Items,
+    IReadOnlyList<VentaPOSPagoDto> Pagos);

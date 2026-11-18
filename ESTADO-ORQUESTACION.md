@@ -15,6 +15,7 @@ Este documento es la **bitácora viva de coordinación y trazabilidad** entre **
 | **Fase 3A** | **Conciliación Modular, Interacción POS Híbrida y SDD Gate:** 6 Bounded Contexts independientes (PDP-Mediciones-Descuentos y Seguridad independientes), operación POS híbrida (teclado 100% y ratón 100%, botones $\ge 44 \times 44\text{ px}$, auto-refoco $\le 50\text{ ms}$, ceros a la izquierda EAN-13), formalización F9/F11, margen RF-PRE-002, workflow sigic-sdd-gate.yml y paridad binaria de skills. | **COMPLETADA** | Gemini Flash |
 | **Fase 3B** | **Capa Application y Suites de Pruebas Unitarias TDD/SDD:** Implementación de casos de uso y puertos para los 6 módulos (PDP, SalesPOS, CashManagement, OrdersWeb, Inventory, Security), sin dependencias externas de producción, CQRS ligero, <= 300 líneas y cobertura >= 95%. | **COMPLETADA** | Gemini Flash |
 | **Fase 3C** | **Capa Infrastructure, Persistencia PostgreSQL 16, PgBouncer y Seguridad:** Implementación de adaptadores reales para los 6 módulos, EF Core 8 y Dapper sobre PostgreSQL 16 con PgBouncer, Argon2id, JWT RS256, worker de expiración de reservas, tablas append-only inmutables y pruebas de integración y concurrencia. | **COMPLETADA** | Gemini Flash |
+| **Fase 3D** | **Capa SIGIC.WebApi (REST API ASP.NET Core 8 para los 6 Bounded Contexts):** Controladores RESTful para Auth, Catálogo Público/PDP, Pedidos Web, Ventas POS, Caja y Tesorería, Inventario/Kardex. Middlewares de Excepciones Globales y UserContext, TDD con WebApplicationFactory y Postgres 16 real, 28 pruebas de integración pasadas (187 pruebas totales en SIGIC.sln), $\le 300$ líneas por archivo y 0 violaciones de capas. | **COMPLETADA** | Gemini Flash |
 | **Fase 4** | **Certificación de Calidad y Pruebas Continuas:** Ejecución de suites xUnit ($\ge 95\%$ cobertura), pruebas E2E Playwright y k6. | **PENDIENTE** | Codex + Gemini Flash |
 
 ---
@@ -323,4 +324,53 @@ Este documento es la **bitácora viva de coordinación y trazabilidad** entre **
 - **Estado:** Finalizado con código 0 sin errores de cuota.
 
 ### ✅ Ejecución Exitosa - 2026-11-17 23:47:01 (Intento 1)
+- **Estado:** Finalizado con código 0 sin errores de cuota.
+
+---
+
+## 7. Detalle de Entregas — Fase 3D (Completada)
+
+* **Fecha de Culminación:** 2026-11-18
+* **Hitos Alcanzados:**
+  1. **Creación de `src/SIGIC.WebApi` (`net8.0`, ASP.NET Core 8 Web API):**
+     - Referencias estrictas: Depende únicamente de `SIGIC.Application` y `SIGIC.Infrastructure`.
+     - Controladores RESTful completos para los 6 Bounded Contexts:
+       - `AuthController`: login staff (`SIGIC_InternalStaff`) y web (`SIGIC_WebClient`) con tokens JWT RS256 (15 min) y bloqueo tras 5 intentos fallidos (`RNF-SEG-001/002/005`).
+       - `CatalogoPublicoController`: consultas de catálogo y PDP, conversiones y exclusión HTTP 404 absoluto para productos con `disponible_en_web == false` (`RF-INV-001`, `RF-PRE-002`, `RF-WEB-005`).
+       - `PedidosWebController`: reserva atómica en Almacén Central con Havender ordering, subida multipart de vouchers ($\le 5\text{ MB}$, JPG/PNG/PDF) y consulta (`RF-WEB-002`, `RF-WEB-005`).
+       - `VentasPOSController`: checkout mostrador con pagos mixtos (efectivo/digital) y turno abierto (`RF-POS-001`, `RF-POS-006`).
+       - `CajaController`: apertura y cierre con Arqueo Ciego inmutable append-only (cero visibilidad de saldos teóricos al cajero, `RF-CAJ-002`), validación de vouchers con rol Tesorería.
+       - `InventarioController`: ajustes por Superadmin (`RF-INV-007`), trazabilidad Kardex (`RF-INV-003`), guías de traslado y consulta de stock con fórmula `stockDisponible = stockFisico - stockComprometido` (`RNF-CON-003`).
+  2. **Middlewares de Arquitectura y Seguridad:**
+     - `GlobalExceptionMiddleware`: mapeo a 409 Conflict (`StockInsuficienteException`), 400 Bad Request (`ValidationException`, `MargenInvalidoException`, `ArgumentException`), 403 Forbidden (`UnauthorizedException`), 404 Not Found (`NotFoundException`) y 500 sin filtrar información confidencial ni stack traces.
+     - `UserContextMiddleware`: extracción de token Bearer RS256, validación de audiencia y scope (`WAN-WEB` vs `LAN-POS`), enlace con `CurrentUserContextAccessor`.
+  3. **Suite de Integración `tests/SIGIC.WebApi.Tests`:**
+     - 28 pruebas pasadas al 100% con `CustomWebApplicationFactory`, PostgreSQL 16 y colección xUnit (`WebApiTestCollection`).
+     - Total de pruebas en `SIGIC.sln`: 187 pruebas pasando al 100% (18 Domain, 87 Application, 54 Infrastructure, 28 WebApi).
+  4. **Gobernanza SDD y Certificación MCP:**
+     - `quality_gate_enforcer`: ✅ **GO — Quality Gate Aprobado** (Core 96.84% $\ge 95\%$, 96 archivos en `src/` $\le 300$ líneas).
+     - `architecture_drift_auditor`: ✅ **ARQUITECTURA LIMPIA** (0 violaciones de capas).
+     - `sdd_chain_validator`: ✅ **CADENA SDD SALUDABLE Y SIN BLOQUEOS** (44 especificaciones validadas).
+     - `auditar_especificacion_stock_sdd`: ✅ **CUMPLIMIENTO_VERIFICADO** (POS y WEB con fórmula y Havender).
+     - `validar_reserva_web_sdd`: ✅ **CUMPLIMIENTO_VERIFICADO** (TTL 20 min Pasarela / 240 min Manual).
+     - `validar_ergonomia_pos_sdd`: ✅ **CUMPLIMIENTO_VERIFICADO** (Hotkeys F1-F12 y resolución 1024x768).
+  5. **Topología Documental:** DAG canónico intacto (79 nodos, 96 aristas, 0 ciclos, 0 wikilinks).
+
+
+### ✅ Ejecución Exitosa - 2026-11-18 00:43:04 (Intento 1)
+
+### ✅ Ejecución Exitosa - 2026-11-18 01:02:00 (Fase 3D - Parche Quirúrgico de Seguridad y Segregación de Audiencias)
+- **Estado:** Finalizado con código 0 sin errores de cuota.
+- **Entregables:**
+  - Segregación estricta de audiencias en `UserContextMiddleware.cs` y en controladores (`InventarioController`, `CajaController`, `VentasPOSController`, `PedidosWebController`).
+  - Intercepción inmediata de acceso anónimo en rutas operativas internas con `HTTP 401 Unauthorized`.
+  - Rechazo inmediato de tokens de cliente web (`SIGIC_WebClient`) en rutas internas con `HTTP 403 Forbidden` (audiencia cruzada no autorizada), y viceversa para tokens internos en checkout web.
+  - Nueva suite `SecurityAudienceSegregationTests` en `tests/SIGIC.WebApi.Tests` (+5 pruebas de integración reales).
+  - 192/192 pruebas aprobadas al 100% en `SIGIC.sln` (18 Domain, 87 Application, 54 Infrastructure, 33 WebApi).
+  - Cobertura Core 96.84% $\ge 95\%$, 96 archivos en `src/` $\le 300$ líneas físicas.
+  - Certificación MCP aprobada: `quality_gate_enforcer` (GO), `architecture_drift_auditor` (0 violaciones), `sdd_chain_validator` (cadena saludable), `auditar_especificacion_stock_sdd` (CUMPLIMIENTO_VERIFICADO), `validar_reserva_web_sdd` (CUMPLIMIENTO_VERIFICADO), `validar_ergonomia_pos_sdd` (CUMPLIMIENTO_VERIFICADO).
+  - DAG canónico intacto: 79 nodos, 96 aristas, 0 ciclos, 0 wikilinks.
+- **Estado:** Finalizado con código 0 sin errores de cuota.
+
+### ✅ Ejecución Exitosa - 2026-11-18 01:02:33 (Intento 1)
 - **Estado:** Finalizado con código 0 sin errores de cuota.

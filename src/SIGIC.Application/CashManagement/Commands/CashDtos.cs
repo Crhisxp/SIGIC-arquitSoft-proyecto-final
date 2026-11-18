@@ -36,3 +36,25 @@ public record VoucherMetadataDto(
     string ContentType,
     long TamanoBytes,
     DateTime FechaSubidaUtc);
+
+public record TurnoCajaDto(
+    Guid TurnoId,
+    Guid CajaId,
+    Guid CajeroId,
+    Guid AlmacenId,
+    decimal FondoInicial,
+    string Estado,
+    DateTime FechaAperturaUtc,
+    DateTime? FechaCierreUtc);
+
+public record GuiaTrasladoItemDto(Guid ProductoId, decimal Cantidad);
+
+public record GuiaTrasladoDetalleDto(
+    Guid GuiaId,
+    string NumeroGuia,
+    Guid PedidoWebId,
+    Guid AlmacenOrigenId,
+    Guid TiendaDestinoId,
+    string Estado,
+    DateTime FechaEmisionUtc,
+    IReadOnlyList<GuiaTrasladoItemDto> Items);
