@@ -63,11 +63,9 @@ public class AjustarInventarioCommandHandler
         if (producto == null)
             throw new NotFoundException("Producto", command.ProductoId);
 
-        await using var tx = await _unitOfWork.BeginTransactionAsync(cancellationToken);
-
-        try
+        return await _unitOfWork.ExecuteInTransactionWithRetryAsync(async ct =>
         {
-            var stocks = await _inventoryStockPort.ObtenerParaBloqueoOrdenadosAsync(command.AlmacenId, new[] { command.ProductoId }, cancellationToken);
+            var stocks = await _inventoryStockPort.ObtenerParaBloqueoOrdenadosAsync(command.AlmacenId, new[] { command.ProductoId }, ct);
             var stockAlmacen = stocks.FirstOrDefault();
             if (stockAlmacen == null)
                 throw new NotFoundException("StockAlmacen", command.ProductoId);
@@ -87,9 +85,9 @@ public class AjustarInventarioCommandHandler
                 command.Motivo,
                 command.CodigoAutorizacionSuperadmin,
                 now,
-                cancellationToken);
+                ct);
 
-            await _inventoryStockPort.ActualizarStockAlmacenAsync(stockAlmacen, cancellationToken);
+            await _inventoryStockPort.ActualizarStockAlmacenAsync(stockAlmacen, ct);
 
             await _auditLogPort.RegistrarAccionAsync(new AuditLogEntry(
                 _currentUserContext.UserId,
@@ -99,10 +97,9 @@ public class AjustarInventarioCommandHandler
                 $"Almacen: {command.AlmacenId}, Delta: {command.CantidadAjuste}, Anterior: {stockFisicoAnterior}, Nuevo: {stockAlmacen.StockFisico}, Comprometido: {stockAlmacen.StockComprometido}, Motivo: {command.Motivo}",
                 _currentUserContext.ClientIp,
                 _currentUserContext.TerminalScope,
-                now), cancellationToken);
+                now), ct);
 
-            await _unitOfWork.CommitAsync(cancellationToken);
-            await tx.CommitAsync(cancellationToken);
+            await _unitOfWork.CommitAsync(ct);
 
             return new AjustarInventarioResultDto(
                 AjusteId: ajusteId,
@@ -112,11 +109,6 @@ public class AjustarInventarioCommandHandler
                 StockFisicoNuevo: stockAlmacen.StockFisico,
                 StockComprometido: stockAlmacen.StockComprometido,
                 FechaUtc: now);
-        }
-        catch
-        {
-            await tx.RollbackAsync(cancellationToken);
-            throw;
-        }
+        }, cancellationToken);
     }
 }

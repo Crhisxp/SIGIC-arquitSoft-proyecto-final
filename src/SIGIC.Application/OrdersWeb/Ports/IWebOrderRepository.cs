@@ -14,4 +14,5 @@ public interface IWebOrderRepository
     Task ActualizarEstadoAsync(Guid pedidoId, string nuevoEstado, CancellationToken cancellationToken = default);
     Task<bool> ActualizarEstadoConcurrenteAsync(Guid pedidoId, string estadoEsperado, string nuevoEstado, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<PedidoWebDto>> ObtenerPedidosExpiradosAsync(DateTime fechaReferenciaUtc, CancellationToken cancellationToken = default);
+    Task AsignarGuiaRemisionAsync(Guid pedidoId, string numeroGuia, CancellationToken cancellationToken = default) => Task.CompletedTask;
 }

@@ -116,4 +116,33 @@ public class FakeUnitOfWork : IUnitOfWork
         ExecuteRollbackActions();
         return Task.CompletedTask;
     }
+
+    public async Task<T> ExecuteInTransactionWithRetryAsync<T>(
+        Func<CancellationToken, Task<T>> operation,
+        CancellationToken cancellationToken = default)
+    {
+        await using var tx = await BeginTransactionAsync(cancellationToken);
+        try
+        {
+            var result = await operation(cancellationToken);
+            await tx.CommitAsync(cancellationToken);
+            return result;
+        }
+        catch
+        {
+            await tx.RollbackAsync(cancellationToken);
+            throw;
+        }
+    }
+
+    public Task ExecuteInTransactionWithRetryAsync(
+        Func<CancellationToken, Task> operation,
+        CancellationToken cancellationToken = default)
+    {
+        return ExecuteInTransactionWithRetryAsync<bool>(async ct =>
+        {
+            await operation(ct);
+            return true;
+        }, cancellationToken);
+    }
 }

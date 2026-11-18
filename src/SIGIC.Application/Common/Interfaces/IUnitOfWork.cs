@@ -15,4 +15,6 @@ public interface IUnitOfWork
     Task<ITransaction> BeginTransactionAsync(CancellationToken cancellationToken = default);
     Task<int> CommitAsync(CancellationToken cancellationToken = default);
     Task RollbackAsync(CancellationToken cancellationToken = default);
+    Task<T> ExecuteInTransactionWithRetryAsync<T>(Func<CancellationToken, Task<T>> operation, CancellationToken cancellationToken = default);
+    Task ExecuteInTransactionWithRetryAsync(Func<CancellationToken, Task> operation, CancellationToken cancellationToken = default);
 }

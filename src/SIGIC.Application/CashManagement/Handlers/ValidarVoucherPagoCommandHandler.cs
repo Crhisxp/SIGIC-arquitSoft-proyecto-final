@@ -65,11 +65,9 @@ public class ValidarVoucherPagoCommandHandler
     {
         _authService.ExigirUnoDeRoles("Tesoreria", "Superadmin");
 
-        await using var tx = await _unitOfWork.BeginTransactionAsync(cancellationToken);
-
-        try
+        return await _unitOfWork.ExecuteInTransactionWithRetryAsync(async ct =>
         {
-            var pedido = await _webOrderRepository.ObtenerParaBloqueoAsync(command.PedidoWebId, cancellationToken);
+            var pedido = await _webOrderRepository.ObtenerParaBloqueoAsync(command.PedidoWebId, ct);
             if (pedido == null)
                 throw new NotFoundException("PedidoWeb", command.PedidoWebId);
 
@@ -84,7 +82,7 @@ public class ValidarVoucherPagoCommandHandler
                 throw new ValidationException($"El pedido {command.PedidoWebId} está en estado '{pedido.Estado}' y no admite validación de comprobante.");
             }
 
-            var voucher = await _voucherStoragePort.ObtenerMetadatosVoucherAsync(command.PedidoWebId, cancellationToken);
+            var voucher = await _voucherStoragePort.ObtenerMetadatosVoucherAsync(command.PedidoWebId, ct);
             if (voucher == null)
                 throw new ValidationException("No se encontró ningún voucher registrado para este pedido.");
 
@@ -112,7 +110,7 @@ public class ValidarVoucherPagoCommandHandler
 
             // Havender ordering y bloqueo sobre Almacén Central
             var productIds = pedido.Items.Select(i => i.ProductoId).Distinct().OrderBy(id => id).ToList();
-            var stocks = await _inventoryStockPort.ObtenerParaBloqueoOrdenadosAsync(pedido.AlmacenOrigenId, productIds, cancellationToken);
+            var stocks = await _inventoryStockPort.ObtenerParaBloqueoOrdenadosAsync(pedido.AlmacenOrigenId, productIds, ct);
             var stockDict = stocks.ToDictionary(s => s.ProductoId);
 
             string? guiaCodigo = null;
@@ -127,11 +125,11 @@ public class ValidarVoucherPagoCommandHandler
 
                     decimal cantidadBase = item.CantidadBaseEfectiva;
                     stockAlm.RegistrarSalidaFisica(cantidadBase, esDesdeReserva: true);
-                    await _inventoryStockPort.ActualizarStockAlmacenAsync(stockAlm, cancellationToken);
+                    await _inventoryStockPort.ActualizarStockAlmacenAsync(stockAlm, ct);
 
                     await _kardexPort.RegistrarMovimientoSalidaAsync(
                         item.ProductoId, pedido.AlmacenOrigenId, cantidadBase, 0m,
-                        "VENTA_WEB", pedido.Id.ToString(), nowUtc, cancellationToken);
+                        "VENTA_WEB", pedido.Id.ToString(), nowUtc, ct);
                 }
 
                 // Invariante 5 (RF-INV-003): Si es Retiro en Tienda física, emitir Guía Interna de Traslado
@@ -143,7 +141,7 @@ public class ValidarVoucherPagoCommandHandler
                         pedido.AlmacenOrigenId,
                         pedido.TiendaDestinoId ?? Guid.Empty,
                         itemsGuia,
-                        cancellationToken);
+                        ct);
                 }
 
                 estadoFinal = "PagadoConfirmado";
@@ -157,13 +155,13 @@ public class ValidarVoucherPagoCommandHandler
 
                     decimal cantidadBase = item.CantidadBaseEfectiva;
                     stockAlm.LiberarReserva(cantidadBase);
-                    await _inventoryStockPort.ActualizarStockAlmacenAsync(stockAlm, cancellationToken);
+                    await _inventoryStockPort.ActualizarStockAlmacenAsync(stockAlm, ct);
                 }
 
                 estadoFinal = "Rechazado";
             }
 
-            bool transitionOk = await _webOrderRepository.ActualizarEstadoConcurrenteAsync(pedido.Id, pedido.Estado, estadoFinal, cancellationToken);
+            bool transitionOk = await _webOrderRepository.ActualizarEstadoConcurrenteAsync(pedido.Id, pedido.Estado, estadoFinal, ct);
             if (!transitionOk)
             {
                 throw new ValidationException("El pedido web cambió de estado concurrentemente.");
@@ -177,17 +175,11 @@ public class ValidarVoucherPagoCommandHandler
                 $"Estado: {estadoFinal}, Guia: {guiaCodigo ?? "N/A"}, Motivo: {command.MotivoRechazo ?? "Aprobado"}",
                 _currentUserContext.ClientIp,
                 _currentUserContext.TerminalScope,
-                nowUtc), cancellationToken);
+                nowUtc), ct);
 
-            await _unitOfWork.CommitAsync(cancellationToken);
-            await tx.CommitAsync(cancellationToken);
+            await _unitOfWork.CommitAsync(ct);
 
             return new VoucherValidacionResultDto(pedido.Id, command.Aprobado, estadoFinal, guiaCodigo);
-        }
-        catch
-        {
-            await tx.RollbackAsync(cancellationToken);
-            throw;
-        }
+        }, cancellationToken);
     }
 }

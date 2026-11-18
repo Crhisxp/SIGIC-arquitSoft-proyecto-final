@@ -92,12 +92,10 @@ public class RegistrarVentaPOSCommandHandler
         if (command.Items.Any(i => i.Cantidad <= 0))
             throw new ValidationException("La cantidad de cada ítem debe ser estrictamente mayor a cero.");
 
-        await using var tx = await _unitOfWork.BeginTransactionAsync(cancellationToken);
-
-        try
+        return await _unitOfWork.ExecuteInTransactionWithRetryAsync(async ct =>
         {
             // Coordinación atómica de turno: verificar y bloquear turno contra cierres concurrentes
-            bool turnoBloqueado = await _cashShiftPort.ValidarYBloquearTurnoParaVentaAsync(command.TurnoCajaId, _currentUserContext.UserId, cancellationToken);
+            bool turnoBloqueado = await _cashShiftPort.ValidarYBloquearTurnoParaVentaAsync(command.TurnoCajaId, _currentUserContext.UserId, ct);
             if (!turnoBloqueado)
                 throw new ValidationException("El turno de caja especificado no existe, no está aperturado o fue cerrado concurrentemente.");
 
@@ -105,14 +103,14 @@ public class RegistrarVentaPOSCommandHandler
             var itemsOrdenados = command.Items.OrderBy(i => i.ProductoId).ToList();
             var productIdsOrdenados = itemsOrdenados.Select(i => i.ProductoId).Distinct().ToList();
 
-            var productos = await _productQueryPort.ObtenerMultiplesParaPDPAsync(productIdsOrdenados, cancellationToken);
+            var productos = await _productQueryPort.ObtenerMultiplesParaPDPAsync(productIdsOrdenados, ct);
             var prodDict = productos.ToDictionary(p => p.Id);
 
-            var stocks = await _inventoryStockPort.ObtenerParaBloqueoOrdenadosAsync(almacenTiendaId, productIdsOrdenados, cancellationToken);
+            var stocks = await _inventoryStockPort.ObtenerParaBloqueoOrdenadosAsync(almacenTiendaId, productIdsOrdenados, ct);
             var stockDict = stocks.ToDictionary(s => s.ProductoId);
 
-            string rolCliente = await _customerProfilePort.ObtenerPerfilClienteAsync(command.ClienteId, cancellationToken);
-            decimal descRol = await _tariffRepository.ObtenerPorcentajeDescuentoRolAsync(rolCliente, cancellationToken);
+            string rolCliente = await _customerProfilePort.ObtenerPerfilClienteAsync(command.ClienteId, ct);
+            decimal descRol = await _tariffRepository.ObtenerPorcentajeDescuentoRolAsync(rolCliente, ct);
 
             decimal totalVenta = 0m;
             var deduccionesStock = new List<(StockAlmacen Stock, decimal CantidadBase)>();
@@ -125,14 +123,14 @@ public class RegistrarVentaPOSCommandHandler
                 if (!stockDict.TryGetValue(item.ProductoId, out var stockAlm))
                     throw new NotFoundException("StockAlmacen", item.ProductoId);
 
-                decimal factor = await _productQueryPort.ObtenerFactorConversionAsync(item.UnidadMedida, producto.UnidadBase, cancellationToken);
+                decimal factor = await _productQueryPort.ObtenerFactorConversionAsync(item.UnidadMedida, producto.UnidadBase, ct);
                 if (factor <= 0)
                     throw new InvalidOperationException($"Factor de conversión inválido para unidad {item.UnidadMedida}.");
 
                 decimal cantidadBase = Math.Round(item.Cantidad * factor, 4, MidpointRounding.ToEven);
 
                 // Revalidación de tarifa y descuento autoritativo dentro de transacción
-                decimal descVolumen = await _tariffRepository.ObtenerPorcentajeDescuentoVolumenAsync(cantidadBase, cancellationToken);
+                decimal descVolumen = await _tariffRepository.ObtenerPorcentajeDescuentoVolumenAsync(cantidadBase, ct);
                 decimal descTotal = descRol + descVolumen;
 
                 decimal precioBaseComercial = Math.Round(producto.PrecioVenta * factor, 2, MidpointRounding.ToEven);
@@ -181,7 +179,7 @@ public class RegistrarVentaPOSCommandHandler
                     if (!codigosDigitalesEnRequest.Add(codigoLimpio))
                         throw new ValidationException($"Código de operación digital duplicado en la solicitud: '{codigoLimpio}'.");
 
-                    bool yaExiste = await _digitalPaymentPort.ExisteCodigoOperacionAsync(pago.MetodoPago, codigoLimpio, fechaHoy, cancellationToken);
+                    bool yaExiste = await _digitalPaymentPort.ExisteCodigoOperacionAsync(pago.MetodoPago, codigoLimpio, fechaHoy, ct);
                     if (yaExiste)
                         throw new ValidationException($"El código de operación digital '{codigoLimpio}' ya fue utilizado previamente para {pago.MetodoPago} en la fecha actual (RF-POS-006).");
                 }
@@ -190,26 +188,26 @@ public class RegistrarVentaPOSCommandHandler
             if (Math.Abs(totalPagado - totalVenta) > 0.001m)
                 throw new ValidationException($"El total pagado ({totalPagado:F2}) no coincide con el total de la venta ({totalVenta:F2}).");
 
-            var result = await _salesPOSRepository.RegistrarVentaAsync(command, totalVenta, fechaUtc, cancellationToken);
+            var result = await _salesPOSRepository.RegistrarVentaAsync(command, totalVenta, fechaUtc, ct);
 
             foreach (var (stockAlm, _) in deduccionesStock)
             {
-                await _inventoryStockPort.ActualizarStockAlmacenAsync(stockAlm, cancellationToken);
+                await _inventoryStockPort.ActualizarStockAlmacenAsync(stockAlm, ct);
             }
 
             foreach (var item in itemsOrdenados)
             {
                 var prod = prodDict[item.ProductoId];
-                decimal factor = await _productQueryPort.ObtenerFactorConversionAsync(item.UnidadMedida, prod.UnidadBase, cancellationToken);
+                decimal factor = await _productQueryPort.ObtenerFactorConversionAsync(item.UnidadMedida, prod.UnidadBase, ct);
                 decimal cantidadBase = Math.Round(item.Cantidad * factor, 4, MidpointRounding.ToEven);
                 await _kardexPort.RegistrarMovimientoSalidaAsync(
                     item.ProductoId, almacenTiendaId, cantidadBase, prod.CostoUnitario,
-                    "VENTA_POS", result.NumeroComprobante, fechaUtc, cancellationToken);
+                    "VENTA_POS", result.NumeroComprobante, fechaUtc, ct);
             }
 
             foreach (var pago in command.Pagos.Where(p => !p.MetodoPago.Equals("Efectivo", StringComparison.OrdinalIgnoreCase)))
             {
-                await _digitalPaymentPort.RegistrarCodigoOperacionAsync(pago.MetodoPago, pago.CodigoOperacionDigital!.Trim(), fechaHoy, result.VentaId, cancellationToken);
+                await _digitalPaymentPort.RegistrarCodigoOperacionAsync(pago.MetodoPago, pago.CodigoOperacionDigital!.Trim(), fechaHoy, result.VentaId, ct);
             }
 
             // Auditoría Append-Only (RNF-SEG-004)
@@ -221,17 +219,11 @@ public class RegistrarVentaPOSCommandHandler
                 $"Comprobante: {result.NumeroComprobante}, Total: {totalVenta:F2}, Almacen: {almacenTiendaId}",
                 _currentUserContext.ClientIp,
                 _currentUserContext.TerminalScope,
-                fechaUtc), cancellationToken);
+                fechaUtc), ct);
 
-            await _unitOfWork.CommitAsync(cancellationToken);
-            await tx.CommitAsync(cancellationToken);
+            await _unitOfWork.CommitAsync(ct);
 
             return result;
-        }
-        catch
-        {
-            await tx.RollbackAsync(cancellationToken);
-            throw;
-        }
+        }, cancellationToken);
     }
 }

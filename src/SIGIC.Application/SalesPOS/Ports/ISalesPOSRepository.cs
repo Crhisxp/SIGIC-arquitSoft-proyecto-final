@@ -12,4 +12,8 @@ public interface ISalesPOSRepository
         decimal totalVenta,
         DateTime fechaUtc,
         CancellationToken cancellationToken = default);
+
+    Task<decimal> ObtenerTotalRecaudadoTurnoAsync(
+        Guid turnoCajaId,
+        CancellationToken cancellationToken = default) => Task.FromResult(0m);
 }

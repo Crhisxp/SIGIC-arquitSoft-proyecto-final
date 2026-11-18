@@ -69,20 +69,18 @@ public class RegistrarArqueoCiegoCommandHandler
         if (cajeroDeTurno != _currentUserContext.UserId)
             throw new UnauthorizedException("Cajero", "El turno de caja pertenece a otro cajero.");
 
-        await using var tx = await _unitOfWork.BeginTransactionAsync(cancellationToken);
-
-        try
+        return await _unitOfWork.ExecuteInTransactionWithRetryAsync(async ct =>
         {
             // Invariante RF-CAJ-002: Transición atómica del turno ANTES de calcular el saldo para evitar intercalación de ventas POS
-            bool cerradoOk = await _cashRegisterRepository.CerrarTurnoCajaConEstadoEsperadoAsync(command.TurnoCajaId, "Aperturado", cancellationToken);
+            bool cerradoOk = await _cashRegisterRepository.CerrarTurnoCajaConEstadoEsperadoAsync(command.TurnoCajaId, "Aperturado", ct);
             if (!cerradoOk)
             {
                 throw new ValidationException("El turno de caja especificado no existe, no está aperturado o ya fue cerrado concurrentemente.");
             }
 
-            decimal saldoTeorico = await _cashRegisterRepository.ObtenerSaldoTeoricoSistemaAsync(command.TurnoCajaId, cancellationToken);
-            DateTime fechaAperturaUtc = await _cashRegisterRepository.ObtenerFechaAperturaTurnoAsync(command.TurnoCajaId, cancellationToken);
-            decimal fondoInicial = await _cashRegisterRepository.ObtenerFondoInicialAsync(command.TurnoCajaId, cancellationToken);
+            decimal saldoTeorico = await _cashRegisterRepository.ObtenerSaldoTeoricoSistemaAsync(command.TurnoCajaId, ct);
+            DateTime fechaAperturaUtc = await _cashRegisterRepository.ObtenerFechaAperturaTurnoAsync(command.TurnoCajaId, ct);
+            decimal fondoInicial = await _cashRegisterRepository.ObtenerFondoInicialAsync(command.TurnoCajaId, ct);
 
             var desglose = command.DesgloseFisico
                 .Select(d => new ArqueoDenominacion(d.ValorUnitario, d.Cantidad))
@@ -90,6 +88,7 @@ public class RegistrarArqueoCiegoCommandHandler
 
             DateTime fechaCierreUtc = _dateTimeProvider.UtcNow;
 
+            // Contrato RNF-CON-003 / RF-CAJ-002: El saldo teórico total esperado es la suma del fondo inicial más lo recaudado en el turno.
             decimal totalTeoricoEsperado = fondoInicial + saldoTeorico;
 
             var arqueo = new ArqueoCaja(
@@ -117,10 +116,10 @@ public class RegistrarArqueoCiegoCommandHandler
                     arqueo.Diferencia,
                     command.JustificacionDiscrepancia,
                     fechaCierreUtc,
-                    cancellationToken);
+                    ct);
             }
 
-            await _cashRegisterRepository.GuardarArqueoCajaAppendOnlyAsync(arqueo, command.JustificacionDiscrepancia, cancellationToken);
+            await _cashRegisterRepository.GuardarArqueoCajaAppendOnlyAsync(arqueo, command.JustificacionDiscrepancia, ct);
 
             // Auditoría Append-Only (RNF-SEG-004) - Se registra en auditoría interna para Backoffice
             await _auditLogPort.RegistrarAccionAsync(new AuditLogEntry(
@@ -131,10 +130,9 @@ public class RegistrarArqueoCiegoCommandHandler
                 $"Turno: {command.TurnoCajaId}, TotalDeclarado: {arqueo.TotalDeclarado:F2}, Diferencia: {arqueo.Diferencia:F2}",
                 _currentUserContext.ClientIp,
                 _currentUserContext.TerminalScope,
-                fechaCierreUtc), cancellationToken);
+                fechaCierreUtc), ct);
 
-            await _unitOfWork.CommitAsync(cancellationToken);
-            await tx.CommitAsync(cancellationToken);
+            await _unitOfWork.CommitAsync(ct);
 
             // Cero visibilidad de saldos teóricos o discrepancias en la respuesta al cajero (AC03)
             return new ArqueoResultDto(
@@ -142,11 +140,6 @@ public class RegistrarArqueoCiegoCommandHandler
                 TurnoCajaId: command.TurnoCajaId,
                 TotalDeclarado: arqueo.TotalDeclarado,
                 FechaCierreUtc: fechaCierreUtc);
-        }
-        catch
-        {
-            await tx.RollbackAsync(cancellationToken);
-            throw;
-        }
+        }, cancellationToken);
     }
 }

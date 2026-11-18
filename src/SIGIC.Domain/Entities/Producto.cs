@@ -40,7 +40,8 @@ public class Producto
         bool disponibleEnWeb = false,
         string ean13 = "",
         Guid familiaId = default,
-        Guid subfamiliaId = default)
+        Guid subfamiliaId = default,
+        decimal stockComprometidoInicial = 0m)
     {
         if (string.IsNullOrWhiteSpace(codigoSku))
             throw new ArgumentException("El código SKU no puede ser vacío.", nameof(codigoSku));
@@ -60,6 +61,12 @@ public class Producto
         if (stockFisicoInicial < 0)
             throw new ArgumentOutOfRangeException(nameof(stockFisicoInicial), "El stock inicial no puede ser negativo.");
 
+        if (stockComprometidoInicial < 0)
+            throw new ArgumentOutOfRangeException(nameof(stockComprometidoInicial), "El stock comprometido inicial no puede ser negativo.");
+
+        if (stockFisicoInicial < stockComprometidoInicial)
+            throw new InvalidOperationException("El stock físico inicial no puede ser inferior al stock comprometido.");
+
         Id = id == Guid.Empty ? Guid.NewGuid() : id;
         CodigoSku = codigoSku;
         NombreComercial = nombreComercial;
@@ -67,7 +74,7 @@ public class Producto
         PrecioVenta = precioVenta;
         CostoUnitario = costoUnitario;
         StockFisico = stockFisicoInicial;
-        StockComprometido = 0m;
+        StockComprometido = stockComprometidoInicial;
         DisponibleEnWeb = disponibleEnWeb;
         Ean13 = ean13;
         FamiliaId = familiaId;

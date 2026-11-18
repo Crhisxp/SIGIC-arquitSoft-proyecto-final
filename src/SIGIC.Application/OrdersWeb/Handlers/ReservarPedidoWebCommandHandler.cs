@@ -91,22 +91,20 @@ public class ReservarPedidoWebCommandHandler
         if (almacenCentralId == Guid.Empty)
             throw new InvalidOperationException("No se encuentra configurado el Almacén Central para pedidos web.");
 
-        await using var tx = await _unitOfWork.BeginTransactionAsync(cancellationToken);
-
-        try
+        return await _unitOfWork.ExecuteInTransactionWithRetryAsync(async ct =>
         {
             // Invariante 3 (RF-WEB-005): Ordenamiento Havender en memoria por ProductoId ASC antes del bloqueo
             var itemsOrdenados = command.Items.OrderBy(i => i.ProductoId).ToList();
             var productIds = itemsOrdenados.Select(i => i.ProductoId).Distinct().ToList();
 
-            var productos = await _productQueryPort.ObtenerMultiplesParaPDPAsync(productIds, cancellationToken);
+            var productos = await _productQueryPort.ObtenerMultiplesParaPDPAsync(productIds, ct);
             var prodDict = productos.ToDictionary(p => p.Id);
 
-            var stocks = await _inventoryStockPort.ObtenerParaBloqueoOrdenadosAsync(almacenCentralId, productIds, cancellationToken);
+            var stocks = await _inventoryStockPort.ObtenerParaBloqueoOrdenadosAsync(almacenCentralId, productIds, ct);
             var stockDict = stocks.ToDictionary(s => s.ProductoId);
 
-            string rolCliente = await _customerProfilePort.ObtenerPerfilClienteAsync(command.ClienteId, cancellationToken);
-            decimal descRol = await _tariffRepository.ObtenerPorcentajeDescuentoRolAsync(rolCliente, cancellationToken);
+            string rolCliente = await _customerProfilePort.ObtenerPerfilClienteAsync(command.ClienteId, ct);
+            decimal descRol = await _tariffRepository.ObtenerPorcentajeDescuentoRolAsync(rolCliente, ct);
 
             decimal total = 0m;
             var reservas = new List<(StockAlmacen Stock, decimal CantidadBase)>();
@@ -124,14 +122,14 @@ public class ReservarPedidoWebCommandHandler
                 if (!stockDict.TryGetValue(item.ProductoId, out var stockCentral))
                     throw new NotFoundException("StockAlmacen", item.ProductoId);
 
-                decimal factor = await _productQueryPort.ObtenerFactorConversionAsync(item.UnidadMedida, prod.UnidadBase, cancellationToken);
+                decimal factor = await _productQueryPort.ObtenerFactorConversionAsync(item.UnidadMedida, prod.UnidadBase, ct);
                 if (factor <= 0)
                     throw new InvalidOperationException($"Factor de conversión inválido para {item.UnidadMedida}.");
 
                 decimal cantidadBase = Math.Round(item.Cantidad * factor, 4, MidpointRounding.ToEven);
 
                 // Revalidación de tarifa comercial
-                decimal descVolumen = await _tariffRepository.ObtenerPorcentajeDescuentoVolumenAsync(cantidadBase, cancellationToken);
+                decimal descVolumen = await _tariffRepository.ObtenerPorcentajeDescuentoVolumenAsync(cantidadBase, ct);
                 decimal descTotal = descRol + descVolumen;
 
                 decimal precioBaseComercial = Math.Round(prod.PrecioVenta * factor, 2, MidpointRounding.ToEven);
@@ -187,11 +185,11 @@ public class ReservarPedidoWebCommandHandler
                 Estado: "PendientePago",
                 Items: itemsSnapshot);
 
-            await _webOrderRepository.GuardarPedidoAsync(pedido, cancellationToken);
+            await _webOrderRepository.GuardarPedidoAsync(pedido, ct);
 
             foreach (var (stockCentral, _) in reservas)
             {
-                await _inventoryStockPort.ActualizarStockAlmacenAsync(stockCentral, cancellationToken);
+                await _inventoryStockPort.ActualizarStockAlmacenAsync(stockCentral, ct);
             }
 
             await _auditLogPort.RegistrarAccionAsync(new AuditLogEntry(
@@ -202,10 +200,9 @@ public class ReservarPedidoWebCommandHandler
                 $"Metodo: {command.MetodoPago}, Modalidad: {command.ModalidadEntrega}, Total: {total:F2}, Almacen: {almacenCentralId}",
                 _currentUserContext.ClientIp,
                 _currentUserContext.TerminalScope,
-                now), cancellationToken);
+                now), ct);
 
-            await _unitOfWork.CommitAsync(cancellationToken);
-            await tx.CommitAsync(cancellationToken);
+            await _unitOfWork.CommitAsync(ct);
 
             return new ReservarPedidoWebResultDto(
                 PedidoId: pedidoId,
@@ -214,11 +211,6 @@ public class ReservarPedidoWebCommandHandler
                 FechaLimiteVoucherUtc: fechaLimiteVoucher,
                 Total: total,
                 Estado: "PendientePago");
-        }
-        catch
-        {
-            await tx.RollbackAsync(cancellationToken);
-            throw;
-        }
+        }, cancellationToken);
     }
 }

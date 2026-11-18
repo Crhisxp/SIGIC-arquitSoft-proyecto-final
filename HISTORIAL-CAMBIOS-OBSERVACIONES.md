@@ -309,3 +309,132 @@ estado: "ACTIVO_EN_PROCESO"
      - Reversión integral en dobles transaccionales ante `FailOnTransactionCommit = true`: en venta POS revierte stock a 20, Kardex a 0 movimientos, auditoría a 0 entradas y código digital liberado; en arqueo de caja revierte turno a false, arqueo guardado a null, alerta emitida a 0 entradas y auditoría a 0 entradas (TEST 18).
      - Pruebas de concurrencia reales mediante `Task.WhenAll` y barrera de sincronización `TaskCompletionSource<bool>` sobre dobles con `SemaphoreSlim` por pedido/turno: carreras de doble aprobación (TEST 8), doble expiración (TEST 9), aprobación vs expiración (TEST 10) y doble cierre de turno simultáneo con venta POS contra turno cerrado (TEST 11).
   5. *Frontmatter y Certificación MCP Limpia:* Inclusión de `estado: "VALIDADO_PARA_EXPOSICION"` en `recursos-exposicion/ESTRUCTURA-DIAPOSITIVAS-CANVA-LIMPIAS.md` y `recursos-exposicion/GUION-SUSTENTACION-ORAL.md`, logrando que `sdd_chain_validator` reporte 0 observaciones y cadena saludable. 101/101 pruebas unitarias aprobadas (18 Domain, 83 Application). Cobertura real: `SIGIC.Domain` 96.47% (492/510) y `SIGIC.Application` 95.65% (1716/1794), Total 95.83% (2208/2304) con veredicto `quality_gate_enforcer` GO. DAG canónico 79/96/0 intacto.
+
+---
+
+### [CHG-026] — Fase 3C: Implementación de SIGIC.Infrastructure, Persistencia PostgreSQL 16, PgBouncer, Argon2id, JWT RS256 y Concurrencia RNF-CON-004
+- **Fecha y Hora:** 2026-11-17 17:50:00-05:00
+- **Responsables:** Gemini Flash (gemini-3.8-flash-high vía CLI agy)
+- **Implementación Técnica de Infraestructura:**
+  1. *Estructura del Proyecto y Reglas Arquitectónicas:* Creación de `src/SIGIC.Infrastructure/SIGIC.Infrastructure.csproj` y `tests/SIGIC.Infrastructure.Tests/SIGIC.Infrastructure.Tests.csproj` en .NET 8 e integrados en `SIGIC.sln`. `SIGIC.Infrastructure` referencia única y exclusivamente `SIGIC.Domain` y `SIGIC.Application`. Cero violaciones detectadas por `architecture_drift_auditor`. Límite de 300 líneas estrictamente cumplido en todos los archivos de `src/` (máximo 241 líneas).
+  2. *Seguridad Criptográfica (RNF-SEG-001, RNF-SEG-002, RNF-SEG-004, RNF-SEG-005):*
+     - `Argon2idPasswordHasher`: Parámetros `m=65536 KiB (64 MB)`, `t=3 iteraciones`, `p=4 grados de paralelismo`, sal criptográfica de 16 bytes y comparación en tiempo constante (`CryptographicOperations.FixedTimeEquals`).
+     - `RsaJwtTokenService`: Firma digital asimétrica RS256 con claves RSA de 2048 bits, TTL de 15 minutos, identificador único `jti`, segregación estricta de audiencias (`SIGIC_InternalStaff` para mostrador y `SIGIC_WebClient` para portal web) y validación criptográfica completa.
+     - `PostgresAccountLockoutRepository`: Bloqueo temporal automático por 15 minutos tras 5 intentos fallidos consecutivos de autenticación.
+  3. *Persistencia Híbrida EF Core 8 + Dapper sobre PostgreSQL 16 y PgBouncer:*
+     - `SigicDbContext`: Configuración Fluent API (`IEntityTypeConfiguration`) para todas las tablas relacionales, índices y restricciones de unicidad.
+     - `UnitOfWork` y `TransactionWrapper`: Coordinación transaccional unificada entre EF Core y Dapper compartiendo la misma conexión física `NpgsqlConnection` y la misma transacción activa `NpgsqlTransaction`.
+     - Adaptadores de persistencia para los 6 módulos: `PostgresInventoryStockPort`, `PostgresInventoryAdjustmentRepository`, `PostgresKardexPort`, `PostgresSalesPOSRepository`, `PostgresCashShiftPort`, `PostgresDigitalPaymentVerificationPort`, `PostgresWebOrderRepository`, `PostgresCashRegisterRepository`, `LocalVoucherStoragePort`, `SystemTransferGuidePort`, `OutboxCashAlertNotificationPort`, `PostgresProductQueryPort`, `PostgresTariffRepository`, `PostgresCustomerProfilePort`, `PostgresAuditLogPort`, `PostgresAccountLockoutRepository`, `SystemDateTimeProvider`.
+  4. *Inmutabilidad Append-Only en Base de Datos (RF-CAJ-002 / AC03):* Permisos revocados `REVOKE UPDATE, DELETE` a nivel de motor PostgreSQL para el usuario de aplicación sobre tablas de arqueo (`caja_arqueo`, `caja_arqueo_denominacion`), auditoría (`audit_log`) y kardex (`kardex_movimientos`). Todo intento de alteración o borrado falla con `PostgresException 42501 permission denied`, protegiendo la inmutabilidad física de los datos.
+  5. *Gobernanza de Concurrencia y Anti-Deadlock (RNF-CON-003, RF-WEB-005, RNF-CON-004):*
+     - Algoritmo Havender: Ordenamiento en memoria `OrderBy(i => i.ProductoId)` antes de abrir o solicitar bloqueos. Sentencia pesimista `SELECT ... FOR UPDATE` ordenada ascendentemente, erradicando deadlocks por inversión de orden de bloqueo en accesos cruzados.
+     - Revalidación atómica condicional: predicado `(stock_fisico - stock_comprometido) >= @CantidadSolicitada` en sentencias de actualización.
+     - Batería de concurrencia: 100 checkout concurrentes para 5 unidades físicas resultaron en exactamente 5 ventas aprobadas y 95 rechazos de negocio, sin sobreventa. Batería RNF-CON-004 de 1,000 carreras simultáneas aprobación vs expiración de órdenes web ejecutada con 100% de consistencia (exactamente 1 ganador por carrera).
+  6. *Servicio en Segundo Plano (RF-WEB-002):* `ReservationExpirationBackgroundService` (`IHostedService` / `BackgroundService`) ejecutando ciclo periódico continuo de liberación de reservas web vencidas y liberación de stock comprometido.
+  7. *Configuración PgBouncer (RNF-CON-001):* Archivos `infrastructure/pgbouncer/pgbouncer.ini` y `userlist.txt` configurando pools segregados `sigic_pos_pool` (50 conexiones fijas LAN, latencia < 1 ms) y `sigic_web_pool` (30 conexiones compartidas WAN, backpressure y queue timeout 3s).
+  8. *Métricas y Certificación Integral:* 132/132 pruebas unitarias e integración aprobadas (18 Domain, 87 Application, 27 Infrastructure). Cobertura global Core: 96.33% (Domain 96.47%, Application 96.29%). Calidad de código: 85 archivos analizados en `src/`, 0 sobredimensionados (todos <= 300 líneas). Certificación MCP: `quality_gate_enforcer` GO, `architecture_drift_auditor` limpio (0 violaciones), `sdd_chain_validator` saludable (44 documentos validados, 0 bloqueos), `validar_reserva_web_sdd` verificado, `auditar_especificacion_stock_sdd` verificado. DAG canónico 79/96/0 intacto.
+
+---
+
+### [CHG-027] — Fase 3C (Subsanación y Certificación Exhaustiva de Infrastructure): Anti-Deadlock, Segregación PgBouncer, Inmutabilidad de Vistas y Batería de 1,000 Carreras
+- **Fecha y Hora:** 2026-11-17 18:38:00-05:00
+- **Responsables:** Gemini Flash (gemini-3.8-flash-high vía CLI agy)
+- **Subsanaciones y Fortalecimiento Técnico:**
+  1. *Gobernanza de Stock Atómica y Reintentos (RNF-CON-002, RNF-CON-003, RF-WEB-005):*
+     - En `PostgresInventoryStockPort.ActualizarStockAlmacenAsync`, se implementaron sentencias atómicas condicionadas con predicado `WHERE (stock_fisico - stock_comprometido) >= @CantidadSolicitada`, diferenciando reserva, consumo físico desde reserva, liberación y salida directa.
+     - Se incorporó lazo de reintentos exponencial con backoff y jitter ante serialización/deadlock (`PostgresException 40001 / 40P01`), exigencia de transacción activa en sentencias de mutación y ordenamiento ascendente Havender `ORDER BY producto_id ASC FOR UPDATE`.
+  2. *Cierre de Bypass de Inmutabilidad en Vistas (RF-CAJ-002 / AC03):* Revocación explícita de permisos `REVOKE UPDATE, DELETE, TRUNCATE ON TABLE caja_arqueo_detalle FROM PUBLIC, sigic_app_user`. Pruebas en `AppendOnlyPermissionsTests` verificando que todo intento de modificación sobre la vista falla con `PostgresException 42501 permission denied`.
+  3. *Segregación Efectiva de Conexiones PgBouncer (RNF-CON-001 / DA-02):*
+     - Configuración y ejecución de PgBouncer en puerto 6432 con pools segregados `sigic_pos_pool` (50 conexiones dedicadas LAN) y `sigic_web_pool` (30 conexiones compartidas WAN con queue timeout de 3s).
+     - Suite `PgBouncerPoolSegregationTests` verificando latencia  < 250	ext{ ms}$, resistencia a inanición de terminales POS ante saturación del pool web con 30 peticiones concurrentes, y lecturas no bloqueantes de catálogo vía Dapper.
+  4. *Alineación EF Core y Dapper:*
+     - Convención automática PascalCase a snake_case en `SigicDbContext` para compatibilidad nativa con PostgreSQL 16.
+     - Suite `EfCoreDapperAlignmentTests` verificando entidades (`ProductoEntity`, `VentaPOSPagoEntity`, `GuiaTrasladoInternoEntity`, `GuiaTrasladoItemEntity`), transacciones compartidas EF Core + Dapper, rollback integral y verificación de almacenes central y no centrales en `ConfigurationWarehousePort`.
+  5. *Seguridad y Contexto de Inyección de Dependencias (RNF-SEG-001, RNF-SEG-002):*
+     - Validación asimétrica con clave pública pura (`ExportParameters(false)`), emisión de tokens con scopes diferenciados `pos_terminal` y `web_customer` con filtrado automático de roles administrativos en clientes web.
+     - Registro de contexto mediante `TryAddScoped<ICurrentUserContext>` para preservar contextos pre-registrados en pruebas. Consistencia de `Argon2idPasswordHasher` rechazando cadenas vacías y espacios en blanco tanto en `HashPassword` como en `VerifyPassword`.
+  6. *Contabilidad y Desglose de Caja:*
+     - Cómputo exacto de saldo teórico sumando `fondo_inicial` exactamente una vez en el caso de uso y ventas netas desde repositorio.
+     - Registro detallado de pagos mixtos en tabla `ventas_pos_pagos` con marca `MIXTO` ante múltiples métodos.
+  7. *Baterías de Concurrencia con Handlers Reales:*
+     - 100 operaciones simultáneas de checkout (50 POS + 50 Web sobre 5 unidades) ejecutadas con `RegistrarVentaPOSCommandHandler` y `ReservarPedidoWebCommandHandler`, verificando exactamente 5 éxitos post-commit, 95 rechazos clasificados exclusivamente como `StockInsuficienteException` y 0 unidades sobrevendidas.
+     - Batería de 1,000 carreras concurrentes `ValidarVoucherPagoCommandHandler` vs `ExpirarReservasWebCommandHandler` (`RNF-CON-004`) en bloques de 25, con 0 inconsistencias, exactamente 1 ganador por carrera, y verificación de todos los efectos secundarios (stock físico/comprometido, emisión de Guía Interna de Traslado para Retiro en Tienda, Kardex `VENTA_WEB` y bitácora de auditoría inmutable).
+  8. *Métricas Finales de Calidad y Certificación:*
+     - 151/151 pruebas aprobadas al 100% (18 Domain, 87 Application, 46 Infrastructure).
+     - Cobertura global Core: 96.18% (Domain 95.77%, Application 96.30%).
+     - 85 archivos analizados en `src/`, 0 sobredimensionados (100% <= 300 líneas físicas).
+     - Certificación MCP aprobada: `quality_gate_enforcer` (GO), `architecture_drift_auditor` (0 violaciones), `sdd_chain_validator` (0 bloqueos, cadena saludable), `validar_reserva_web_sdd` (CUMPLIMIENTO_VERIFICADO), `auditar_especificacion_stock_sdd` (CUMPLIMIENTO_VERIFICADO), `validar_ergonomia_pos_sdd` (NO APLICA).
+     - Topología canónica SDD preservada íntegramente: 79 nodos, 96 aristas, 0 ciclos, máximo 4 enlaces salientes por documento, 0 wikilinks.
+
+---
+
+### [CHG-028] — Fase 3C (Bloque 2 de Corrección Integral): Fixture Limpia, Concurrencia Real, Append-Only y Certificación MCP
+- **Fecha y Hora:** 2026-11-17 21:25:00-05:00
+- **Responsables:** Gemini Flash (gemini-3.8-flash-high vía CLI agy)
+- **Implementación y Subsanaciones Realizadas:**
+  1. *Fixture Reproducible desde Base Limpia:* `PostgreSqlTestFixture` en `tests/SIGIC.Infrastructure.Tests/Fixtures/PostgreSqlTestFixture.cs` para inicialización automatizada aplicando DDL inicial (`00_init_schema.sql`) y permisos inmutables (`01_append_only_permissions.sql`) mediante configuración y variables de entorno, asegurando reproducibilidad total sin dependencias preinstaladas manualmente.
+  2. *PgBouncerPoolSegregationTests Reales:* Saturación real de las 30 conexiones de `sigic_web_pool` mediante tareas activas concurrentes, comprobación de latencia de adquisición en `sigic_pos_pool` ($P95 < 250\text{ ms}$), verificación del timeout/rechazo de la conexión web #31 tras 3 segundos (`query_wait_timeout`), y validación de consultas de catálogo desacopladas mediante `PostgresProductQueryPort` sin bloqueo de fila.
+  3. *Concurrencia Real sin Límites Artificiales (RNF-CON-003, RNF-CON-004):*
+     - `InventoryConcurrencyTests`: 100 peticiones concurrentes reales (50 POS + 50 Web, sin semáforos ni límites artificiales en pruebas) con barrera de sincronización compitiendo contra 5 unidades físicas de stock. Resultado: exactamente 5 aprobadas con commit exitoso, 95 rechazadas con `StockInsuficienteException`, 0 sobreventas y 0 deadlocks.
+     - `RnfCon004RaceBatteryTests`: Batería de 1.000 carreras reales entre `ValidarVoucherPagoCommandHandler` y `ExpirarReservasWebCommandHandler` con reloj controlado. Demostración de ambos ganadores con cero capturas generales (cero excepciones genéricas en el flujo), 0 inconsistencias y verificación exhaustiva de efectos secundarios por ítem (stock comprometido liberado a 0, stock físico descontado o preservado, Guía Interna de Traslado emitida únicamente ante aprobación para Retiro en Tienda, Kardex `VENTA_WEB` y bitácora de auditoría inmutable).
+  4. *Inmutabilidad Append-Only Directa (RF-CAJ-002 / AC03):* Validación directa bajo el rol de aplicación `sigic_app` de que las operaciones `INSERT` están permitidas mientras que `UPDATE` y `DELETE` son rechazados con código `PostgresException 42501 permission denied` en las tablas `caja_arqueo`, `caja_arqueo_denominacion`, `caja_arqueo_detalle`, `audit_log` y `kardex_movimientos`.
+  5. *Ciclo de Cierre de Caja y Servicio en Segundo Plano:*
+     - Cierre de turno caja con fondo inicial computado una sola vez, desglose de pagos mixtos, contención ante carreras concurrentes de venta vs cierre, y ceguera total del cajero respecto al saldo teórico.
+     - `ReservationExpirationBackgroundService` con pruebas directas de ciclo de vida para pasarela (20 min), manual sin voucher (60 min), manual con voucher (240 min) e idempotencia entre múltiples workers concurrentes.
+  6. *Métricas Finales de Calidad y Certificación MCP:*
+     - 155/155 pruebas aprobadas al 100% (18 Domain, 87 Application, 50 Infrastructure).
+     - Cobertura de código Core: 96.02% (Domain 95.77% $\ge 95\%$, Application 96.09%, Infrastructure 76.28%).
+     - 86 archivos de código analizados en `src/`, 0 archivos sobredimensionados ($\le 300$ líneas físicas por archivo).
+     - Certificación MCP aprobada: `quality_gate_enforcer` (GO), `architecture_drift_auditor` (0 violaciones), `sdd_chain_validator` (0 bloqueos, cadena saludable), `auditar_especificacion_stock_sdd` (CUMPLIMIENTO_VERIFICADO POS/WEB), `validar_reserva_web_sdd` (CUMPLIMIENTO_VERIFICADO Pasarela/Manual), `validar_ergonomia_pos_sdd` (CUMPLIMIENTO_VERIFICADO).
+     - Topología canónica SDD preservada íntegramente: 79 nodos, 96 aristas, 0 ciclos, máximo 4 enlaces salientes por documento, 0 wikilinks.
+
+---
+
+### [CHG-029] — Fase 3C (Cierre Quirúrgico de los 5 Puntos de Auditoría GPT-6.1-Sol)
+- **Fecha y Hora:** 2026-11-17 22:15:00-05:00
+- **Responsables:** Gemini Flash (gemini-3.8-flash-high vía CLI agy)
+- **Subsanaciones y Fortalecimiento Técnico:**
+  1. *Reintentos Transaccionales Íntegros (IUnitOfWork + PostgresInventoryStockPort):*
+     - Incorporación de `ExecuteInTransactionWithRetryAsync<T>` y su sobrecarga no genérica en `IUnitOfWork` y `UnitOfWork` (hasta 3 intentos con backoff exponencial y jitter ante `PostgresException` `40P01` y `57014`). Rollback íntegro de la transacción abortada previo a la apertura de una transacción limpia en cada reintento, evitando el error `25P02 current transaction is aborted`.
+     - Erradicación del inicio huérfano de transacciones en `PostgresInventoryStockPort.ObtenerParaBloqueoOrdenadosAsync`.
+     - Nueva suite `TransactionRetryTests` en PostgreSQL 16 provocando deadlocks reales cruzados (`40P01`) y excedentes de tiempo (`57014`), verificando recuperación y éxito atómico post-reintento.
+  2. *Batería de 1.000 Carreras RNF-CON-004 Sin Alternancia Artificial:*
+     - Inicialización unificada de pedidos no expirados (`creationTime = baseTime - 239 min`, `expirationTime = baseTime + 1 min`) con avance sincronizado de reloj en `MutableDateTimeProvider` al momento del disparo concurrente.
+     - Demostración de ambos ganadores (aprobación administrativa vs expiración de reserva) con 0 inconsistencias, 0 capturas genéricas y efectos secundarios comprobados al 100%.
+  3. *Seguridad Criptográfica y Encapsulamiento Modular:*
+     - Sustitución de listas negras por lista blanca estricta `RolesWebPermitidos = { "ClienteWeb", "PublicoGeneral", "MaestroObra", "ContratistaB2B" }` en `RsaJwtTokenService`, rechazando en emisión y validación roles administrativos no autorizados.
+     - Asignación canónica del canal `WORKER` (pool POS con prioridad) a `ReservationExpirationBackgroundService` mediante `CurrentUserContextAccessor`.
+     - Eliminación de fallbacks a contraseñas por defecto en `DependencyInjection.cs`, exigiendo `PosConnection` y `WebConnection` explícitas sin degradación silenciosa.
+     - Eliminación de accesos SQL directos a tablas intermodulares (`turnos_caja` en `PostgresSalesPOSRepository`), delegando la consulta a puertos públicos (`ICashShiftPort` y `ICurrentUserContext`).
+     - Exposición de errores en `ExpirarReservasResultDto` y propagación no silenciosa de `OperationCanceledException` en `ExpirarReservasWebCommandHandler`.
+  4. *Barrera Real de 100 Hilos en InventoryConcurrencyTests:*
+     - Implementación de barrera de sincronización estricta de dos fases (`CountdownEvent(100)` y `TaskCompletionSource`) garantizando que los 100 hilos (50 POS + 50 Web) compitan simultáneamente contra 5 unidades físicas.
+     - Validación explícita de segregación en DI de pools (`pos_pool` vs `web_pool`).
+  5. *Métricas Finales de Calidad y Certificación MCP:*
+     - 158/158 pruebas aprobadas al 100% (18 Domain, 87 Application, 53 Infrastructure).
+     - Cobertura de código Core: 96.02% (Domain 95.77% $\ge 95\%$, Application 96.09%, Infrastructure 70.94%).
+     - 87 archivos analizados en `src/`, 0 archivos sobredimensionados ($\le 300$ líneas físicas por archivo).
+     - Certificación MCP aprobada: `quality_gate_enforcer` (GO), `architecture_drift_auditor` (0 violaciones), `sdd_chain_validator` (0 bloqueos, cadena saludable), `auditar_especificacion_stock_sdd` (CUMPLIMIENTO_VERIFICADO POS/WEB), `validar_reserva_web_sdd` (CUMPLIMIENTO_VERIFICADO Pasarela/Manual), `validar_ergonomia_pos_sdd` (CUMPLIMIENTO_VERIFICADO).
+     - Topología canónica SDD preservada íntegramente: 79 nodos, 96 aristas, 0 ciclos, máximo 4 enlaces salientes por documento, 0 wikilinks.
+
+---
+
+### [CHG-030] — Fase 3C (Parche Quirúrgico de Aprobación Definitiva GPT-6.1-Sol)
+- **Fecha y Hora:** 2026-11-17 22:58:00-05:00
+- **Responsables:** Gemini Flash (gemini-3.8-flash-high vía CLI agy)
+- **Subsanaciones y Fortalecimiento Técnico:**
+  1. *Transaccionalidad con Reintentos en Casos de Uso Productivos:*
+     - Actualización de los 6 handlers de la capa Application (`RegistrarVentaPOSCommandHandler`, `ReservarPedidoWebCommandHandler`, `ValidarVoucherPagoCommandHandler`, `ExpirarReservasWebCommandHandler`, `RegistrarArqueoCiegoCommandHandler` y `AjustarInventarioCommandHandler`) para ejecutar sus unidades de trabajo atómicas mediante `_unitOfWork.ExecuteInTransactionWithRetryAsync(...)`.
+     - Preservación estricta de la cota de tamaño: todos los archivos $\le 229$ líneas físicas.
+  2. *Batería de 1.000 Carreras RNF-CON-004 sin Paridad y sin Capturas Genéricas:*
+     - Eliminación de cualquier predeterminación por paridad `i % 2`. Avance continuo de `MutableDateTimeProvider` batch a batch cruzando la frontera de expiración.
+     - Disparo en paralelo de ambos hilos mediante barrera de dos fases (`CountdownEvent(2)` + `TaskCompletionSource`) y jitter aleatorio de microsegundos.
+     - Captura estricta y exclusiva de `ValidationException` / `InvalidOperationException` para el perdedor legítimo, y comprobación de `Assert.Empty(expResult.Errores)`.
+  3. *Eliminación de Claves de Desarrollo y Rechazo Estricto en Web:*
+     - Eliminación total de `DevPublicKeyPem` en `DependencyInjection.cs`, exigiendo explícitamente `PrivateKeyPem` o `PublicKeyPem` bajo penalización de `InvalidOperationException`.
+     - Emisión de tokens web en `RsaJwtTokenService` rechaza inmediatamente con `ArgumentException` ante cualquier rol fuera de `RolesWebPermitidos`. Pruebas unitarias actualizadas con validación de excepciones.
+  4. *Recálculo Fidedigno de Métricas y Quality Gate:*
+     - 159/159 pruebas unitarias y de integración aprobadas al 100% (18 Domain, 87 Application, 54 Infrastructure).
+     - Cobertura Core consolidada calculada desde los XML de Cobertura vigentes: 96.32% (Domain: 95.77% $\ge 95\%$, Application: 96.45% $\ge 95\%$, Infrastructure: 76.61%).
+     - Certificación MCP aprobada: `quality_gate_enforcer` (GO), `architecture_drift_auditor` (0 violaciones), `sdd_chain_validator` (cadena saludable), `auditar_especificacion_stock_sdd` (CUMPLIMIENTO_VERIFICADO POS/WEB), `validar_reserva_web_sdd` (CUMPLIMIENTO_VERIFICADO), `validar_ergonomia_pos_sdd` (CUMPLIMIENTO_VERIFICADO).
+     - DAG canónico intacto: 79 nodos, 96 aristas, 0 ciclos, 0 wikilinks.

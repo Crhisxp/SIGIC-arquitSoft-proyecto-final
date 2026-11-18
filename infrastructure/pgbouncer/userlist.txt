@@ -1,0 +1,3 @@
+"sigic_app_user" "SCRAM-SHA-256$4096:D9/UX9WnpSauMSElg9sWrA==$JYKloxeZ4y8G/pL/WjMMs56xsdI3ueuh7W3wD5RpEtM=:MpsUsu995XXO2pxy/VGoqZUi/JbtBv4IiOrv91kyUBw="
+"sigic_app" "SCRAM-SHA-256$4096:bGzG+/W7F4Fm31rOel82NQ==$lAtvK258fbfkMzztvIWU9PCT4I+Qnawj7tLzJoeYLr0=:fW7Dl60TpEGXp/tYJqt0R9rm7tNIJgIUvgTI+CLY0ZI="
+"sigic_monitor" "SCRAM-SHA-256$4096:Qo094gA9vQe+nEf+0f96KA==$uIbiNTGa/zm7HUjWaEBC51itUgr3FvxncAMA6p7rxAk=:oEwYpuCgW0YgfuBN/+BFr4xEJT1aVIkoWN0p0bjvQj4="
