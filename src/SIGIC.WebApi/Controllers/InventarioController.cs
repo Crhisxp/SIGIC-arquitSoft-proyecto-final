@@ -77,20 +77,44 @@ public class InventarioController : ControllerBase
         return Ok(movimientos);
     }
 
-    [HttpGet("guias-traslado/{guiaId:guid}")]
+    [HttpGet("guias-traslado/{idOrCode}")]
     public async Task<IActionResult> ObtenerGuiaTraslado(
-        Guid guiaId,
+        string idOrCode,
         CancellationToken ct = default)
     {
         var authCheck = ValidarAccesoStaffInterno();
         if (authCheck != null) return authCheck;
 
-        var guia = await _transferGuidePort.ObtenerGuiaPorIdAsync(guiaId, ct);
+        var guia = await _transferGuidePort.ObtenerGuiaPorIdOCodigoAsync(idOrCode, ct);
         if (guia == null)
-            throw new NotFoundException("GuiaTrasladoInterno", guiaId);
+            throw new NotFoundException("GuiaTrasladoInterno", idOrCode);
 
         return Ok(guia);
     }
+
+    [HttpPost("guias-traslado/{idOrCode}/entregar")]
+    public async Task<IActionResult> EntregarGuiaTraslado(
+        string idOrCode,
+        [FromBody] EntregarGuiaRequestDto request,
+        CancellationToken ct = default)
+    {
+        var authCheck = ValidarAccesoStaffInterno();
+        if (authCheck != null) return authCheck;
+
+        if (request == null)
+            throw new ValidationException("El cuerpo de la solicitud no puede ser nulo.");
+
+        var resultado = await _transferGuidePort.EntregarGuiaAsync(
+            idOrCode,
+            request.DniReceptor,
+            request.CodigoRetiro,
+            _userContext.UserId,
+            ct);
+
+        return Ok(resultado);
+    }
+
+    public record EntregarGuiaRequestDto(string DniReceptor, string? CodigoRetiro);
 
     [HttpGet("stock")]
     public async Task<IActionResult> ObtenerStock(

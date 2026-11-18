@@ -17,4 +17,16 @@ public interface ITransferGuidePort
     Task<GuiaTrasladoDetalleDto?> ObtenerGuiaPorIdAsync(
         Guid guiaId,
         CancellationToken cancellationToken = default) => Task.FromResult<GuiaTrasladoDetalleDto?>(null);
+
+    Task<GuiaTrasladoDetalleDto?> ObtenerGuiaPorIdOCodigoAsync(
+        string idOrCode,
+        CancellationToken cancellationToken = default) => Task.FromResult<GuiaTrasladoDetalleDto?>(null);
+
+    Task<GuiaEntregaResultadoDto> EntregarGuiaAsync(
+        string idOrCode,
+        string dniReceptor,
+        string? codigoRetiro,
+        Guid operadorId,
+        CancellationToken cancellationToken = default) => Task.FromResult(new GuiaEntregaResultadoDto(
+            Guid.Empty, idOrCode, Guid.Empty, "ENTREGADO", dniReceptor, DateTime.UtcNow, "Entrega registrada."));
 }

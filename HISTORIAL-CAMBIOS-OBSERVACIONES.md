@@ -491,3 +491,87 @@ estado: "ACTIVO_EN_PROCESO"
      - Cobertura Core 96.84% $\ge 95\%$, 96 archivos en `src/` $\le 300$ líneas físicas.
      - Certificación MCP aprobada: `quality_gate_enforcer` (GO), `architecture_drift_auditor` (0 violaciones), `sdd_chain_validator` (cadena saludable), `auditar_especificacion_stock_sdd` (CUMPLIMIENTO_VERIFICADO), `validar_reserva_web_sdd` (CUMPLIMIENTO_VERIFICADO), `validar_ergonomia_pos_sdd` (CUMPLIMIENTO_VERIFICADO).
      - DAG canónico intacto: 79 nodos, 96 aristas, 0 ciclos, 0 wikilinks.
+
+---
+
+### [CHG-033] — Fase 3E: Frontend POS Industrial en Mostrador (RF-POS-001 a RF-POS-007, RF-CAJ-002, RNF-USA-002)
+- **Fecha y Hora:** 2026-11-18 01:45:00-05:00
+- **Responsables:** Gemini Flash (gemini-3.8-flash-high vía CLI agy)
+- **Alcance y Componentes Implementados:**
+  1. *Creación de `src/SIGIC.POS` (React 18 + TypeScript + Vite + Tailwind CSS):*
+     - SPA de mostrador de alta velocidad configurada con Vite 5, Tailwind CSS y Vitest.
+     - Cliente API tipado (`src/services/api.ts`) consumiendo los endpoints de `SIGIC.WebApi` (`/auth/login-staff`, `/pos/ventas`, `/caja/*`, `/inventario/stock`).
+  2. *Ergonomía Industrial 1024x768 y Operación 100% Teclado (`RNF-USA-002`, `RF-POS-003`):*
+     - Viewport estricto `1024x768` sin scroll horizontal (`overflow-x-hidden`, `overflow-hidden`), fondo Slate-900 `#0f172a` y acento industrial `#e4f222`.
+     - Presupuesto de pantalla vertical: Telemetría (`36px`) + Escáner EAN-13 (`52px`) + Área central tabla/inspector (`560px`) + Zócalo tributario/atajos (`120px`).
+     - Atajos globales `F1`–`F12` sin colisiones:
+       - `F1`: Escáner EAN-13 con auto-refocus $\le 50\text{ ms}$ y preservación de ceros iniciales como texto.
+       - `F2`: Búsqueda paramétrica de artículos ferreteros.
+       - `F3`: Captura y selección de cliente (DNI, RUC, Público, Maestro, Contratista B2B).
+       - `F4`: Modificación de cantidad con validación estricta de Stock Disponible ($\text{Disp} = \text{Fís} - \text{Comp}$).
+       - `F5`: Consulta de stock multialmacén (Almacén Central vs Tiendas Mostrador).
+       - `F6`: Aplicación de descuento porcentual y tarifa especial.
+       - `F7`: Consulta y sustitución técnica de productos equivalentes dentro de la misma familia.
+       - `F8`: Eliminación de ítem seleccionado del carrito.
+       - `F9`: Panel de liquidación y cobro mixto (Efectivo con cálculo de vuelto en vivo + Yape/Plin/Tarjeta con captura obligatoria de código de operación digital).
+       - `F10`: Alternancia rápida de comprobante oficial (Boleta vs Factura).
+       - `F11`: Encolado y recuperación de tickets en espera sin afectación de Kardex (`RF-POS-005`).
+       - `F12`: Arqueo ciego e inmutable de caja por denominaciones monetarias peruanas (S/ 0.10 a S/ 200) y declaración digital sin mostrar saldo teórico (`RF-CAJ-002`).
+  3. *Despacho Web en Mostrador (`RF-POS-011`):*
+     - Componente ligero `WebDispatchModal.tsx` para retiro en tienda, validando pedidos en estado "Listo para Retiro" mediante Guía Interna de Traslado y DNI receptor, confirmando entrega con estado `ENTREGADO` sin acceso a vouchers financieros ni recálculo contable.
+  4. *Suites de Pruebas Automatizadas (Vitest + React Testing Library):*
+     - 17 pruebas unitarias y de integración pasando al 100% en 6 archivos: `hotkeys.test.tsx`, `cart.test.tsx`, `payment.test.tsx`, `blindClose.test.tsx`, `layout.test.tsx`, `webDispatch.test.tsx`.
+  5. *Métricas y Certificación MCP:*
+     - Compilación limpia con `npm run build` en 2.19s (0 errores TypeScript/Vite).
+     - Todos los archivos en `src/` cumplen con la restricción de $\le 300$ líneas físicas (máximo 287 líneas).
+     - Certificación MCP: `validar_ergonomia_pos_sdd` (CUMPLIMIENTO_VERIFICADO para `App.tsx` y `WebDispatchModal.tsx`), `architecture_drift_auditor` (0 violaciones), `sdd_chain_validator` (cadena saludable).
+     - Topología DAG canónica: 79 nodos, 96 aristas, 0 ciclos, 0 wikilinks.
+
+---
+
+### [CHG-034] — Fase 3E: Parche Quirúrgico Definitivo de Aprobación para Mostrador POS y Despacho Ligero (RF-POS-005, RF-POS-011, RF-INV-003)
+- **Fecha y Hora:** 2026-11-18 03:05:00-05:00
+- **Responsables:** Gemini Flash (gemini-3.8-flash-high vía CLI agy)
+- **Subsanaciones y Fortalecimiento:**
+  1. *Revalidación de Stock en Tickets en Espera F11 contra API (`App.tsx`, `useCart.ts`, `PosModalContainer.tsx`):*
+     - Erradicación de `INITIAL_PRODUCTS` como fuente de revalidación en `restoreTicket`.
+     - Invocación en tiempo real a `api.obtenerStockAlmacen()` (`GET /api/v1/inventario/stock`) para obtener `stockFisico` y `stockComprometido` vigentes en base de datos.
+     - Revalidación estricta de stock disponible ($\text{Stock Disponible} = \text{Stock Físico} - \text{Stock Comprometido}$), ajustando cantidades o emitiendo alertas si el stock disponible es insuficiente.
+     - Sincronización proactiva de inventario en `App.tsx` al montar el turno de caja.
+  2. *Estado Estricto "Listo para Retiro" en `WebDispatchModal.tsx` (`RF-POS-011`):*
+     - Validación inquebrantable de estado en pantalla de despacho: Rechaza cualquier guía que no se encuentre exactamente en `"Listo para Retiro"` (sin fallbacks permisivos ni aceptación de `"EMITIDA"`).
+  3. *Despacho Real contra Backend por Código Alfanumérico o GUID (`api.ts`, `InventarioController.cs`):*
+     - `confirmarDespachoWeb` ejecuta `fetch` `POST` real a `/api/v1/inventario/guias-traslado/{idOrCode}/entregar`.
+     - Endpoint backend implementado en `InventarioController.cs`, `ITransferGuidePort` y `SystemTransferGuidePort`:
+       - Búsqueda dual transparente por GUID o código alfanumérico (`numero_guia`).
+       - Validación de DNI receptor de 8 dígitos numéricos exactos (`Regex.IsMatch(dni, @"^\d{8}$")`).
+       - Validación de estado `"Listo para Retiro"`, actualización atómica a `"ENTREGADO"` y auditoría del operador.
+  4. *Métricas, Pruebas y Certificación MCP:*
+     - Frontend Vitest: 24/24 pruebas aprobadas al 100% (6 suites en `/tmp/pos_vitest_report.txt`).
+     - Backend .NET 8: 196/196 pruebas aprobadas al 100% (37 pruebas en `SIGIC.WebApi.Tests` incluyendo integración de guías).
+     - Límites físicos: 100% de archivos en `src/` $\le 300$ líneas físicas (0 archivos sobredimensionados).
+     - Certificación MCP: `validar_ergonomia_pos_sdd` (CUMPLIMIENTO_VERIFICADO), `auditar_especificacion_stock_sdd` (CUMPLIMIENTO_VERIFICADO), `architecture_drift_auditor` (0 violaciones), `sdd_chain_validator` (cadena saludable), `quality_gate_enforcer` (GO).
+     - DAG canónico intacto: 79 nodos, 96 aristas, 0 ciclos, 0 wikilinks.
+
+---
+
+### [CHG-035] — Fase 3E: Cierre Definitivo de 3 Cirugías de Consistencia y Erradicación de Fallbacks Locales (RF-POS-005, RF-POS-011)
+- **Fecha y Hora:** 2026-11-18 03:22:00-05:00
+- **Responsables:** Gemini Flash (gemini-3.8-flash-high vía CLI agy)
+- **Cirugías y Ajustes de Rigor:**
+  1. *Cero Fallbacks de Stock en Tickets en Espera (`useCart.ts`):*
+     - Erradicado cualquier fallback a `item.producto.stockFisico` / `stockComprometido`.
+     - Si `api.obtenerStockAlmacen()` falla cuando no hay `stockOverride`, se interrumpe la recuperación retornando `{ success: false, error: "No se pudo verificar el stock vigente en el servidor." }`.
+     - Si un ítem no figura en la respuesta de `stockVigente`, se computa con stock disponible `0` sin utilizar datos cacheados de `INITIAL_PRODUCTS`.
+  2. *Cero Fallbacks en Despacho Ligero de Mostrador (`WebDispatchModal.tsx`, `api.ts`):*
+     - Eliminado el bloque `catch` que consultaba `pedidosDisponibles` locales en `WebDispatchModal.tsx`; cualquier fallo de consulta en `api.consultarGuiaTraslado` se propaga directamente a la vista.
+     - En `api.confirmarDespachoWeb`, se exige validación estricta de `data.status === "ENTREGADO"`, lanzando `Error` ante estados dispares sin asumir éxito predeterminado.
+  3. *Transacción Explícita y Condición de Estado en Despacho Backend (`SystemTransferGuidePort.cs`):*
+     - `EntregarGuiaAsync` ejecuta la operación dentro de una transacción explícita (`BeginTransactionAsync` / `CommitAsync` / `RollbackAsync`).
+     - Predicado de mutación condicionado: `WHERE (id = @id OR numero_guia = @code) AND estado = 'Listo para Retiro'`.
+     - Si `filasAfectadas == 0`, se lanza `InvalidOperationException("La guía no existe o ya no está en estado Listo para Retiro.")` antes de modificar `pedidos_web` o registrar auditoría.
+  4. *Pruebas, Métricas y Certificación:*
+     - Frontend Vitest: 26/26 pruebas aprobadas al 100% (incorporando pruebas de fallo de red y descarte de ítems sin stock).
+     - Backend .NET 8: 196/196 pruebas aprobadas al 100%.
+     - Límite de líneas en `src/`: 100% de archivos $\le 300$ líneas físicas (máximo: 287 líneas).
+     - Topología DAG canónica: 79 nodos, 96 aristas, 0 ciclos, 0 wikilinks.

@@ -72,6 +72,12 @@ public class GlobalExceptionMiddleware
                 argEx.Message,
                 new[] { argEx.Message }
             ),
+            InvalidOperationException invEx => (
+                HttpStatusCode.BadRequest,
+                "Bad Request",
+                invEx.Message,
+                new[] { invEx.Message }
+            ),
             _ => (
                 HttpStatusCode.InternalServerError,
                 "Internal Server Error",

@@ -58,3 +58,15 @@ public record GuiaTrasladoDetalleDto(
     string Estado,
     DateTime FechaEmisionUtc,
     IReadOnlyList<GuiaTrasladoItemDto> Items);
+
+public record GuiaEntregaResultadoDto(
+    Guid GuiaId,
+    string NumeroGuia,
+    Guid PedidoWebId,
+    string Estado,
+    string DniReceptor,
+    DateTime FechaEntregaUtc,
+    string Mensaje)
+{
+    public string Status => Estado;
+}

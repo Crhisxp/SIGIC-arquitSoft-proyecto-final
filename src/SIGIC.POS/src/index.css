@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body {
+    width: 1024px;
+    height: 768px;
+    max-width: 1024px;
+    max-height: 768px;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: #0f172a;
+    color: #f7f8f8;
+    font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    user-select: none;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  *:focus-visible {
+    outline: 2px solid #e4f222 !important;
+    outline-offset: -1px !important;
+    background-color: rgba(228, 242, 34, 0.14);
+  }
+}
+
+@layer utilities {
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .sigic-hardware-desc {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.15rem;
+    font-size: 0.8125rem;
+    word-break: break-word;
+  }
+
+  .sigic-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .sigic-scrollbar::-webkit-scrollbar-track {
+    background: #0f1011;
+  }
+
+  .sigic-scrollbar::-webkit-scrollbar-thumb {
+    background: #23252a;
+    border-radius: 3px;
+  }
+
+  .sigic-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #334155;
+  }
+}

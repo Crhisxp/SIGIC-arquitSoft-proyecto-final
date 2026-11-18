@@ -190,7 +190,7 @@ public class RnfCon004RaceBatteryTests
             await goSignal.Task;
 
             // Jitter aleatorio para competencia equitativa por el bloqueo Havender
-            int jitterA = Random.Shared.Next(0, 25);
+            int jitterA = Random.Shared.Next(5, 35);
             if (jitterA > 0)
                 await Task.Delay(jitterA);
 

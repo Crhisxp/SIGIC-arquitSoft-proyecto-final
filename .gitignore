@@ -37,3 +37,6 @@ obj/
 # Obsidian y herramientas locales / temporales
 .obsidian/
 .agy_last_run.tmp
+.vite/
+node_modules/
+dist/
