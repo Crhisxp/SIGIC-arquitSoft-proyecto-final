@@ -21,8 +21,8 @@ if test -z "$prompt_content"
     exit 1
 end
 
-set -l estado_file "ESTADO-ORQUESTACION.md"
-set -l tmp_output ".agy_last_run.tmp"
+set -l estado_file "docs/bitacora/ESTADO-ORQUESTACION.md"
+set -l tmp_output "$sigic_repo_root/.agy_last_run.tmp"
 set -l sleep_interval 900 # 15 minutos
 set -l attempt 1
 

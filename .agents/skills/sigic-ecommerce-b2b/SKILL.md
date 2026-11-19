@@ -8,7 +8,7 @@ description: >-
 # Skill: Portal E-Commerce B2B/B2C — SIGIC Ferretería v2.2
 
 Gobierna el diseño, construcción y revisión de la aplicación web pública en Next.js 14 App Router.
-Alineado con [03-requisitos-funcionales.md](../../../01-analisis-de-sistema/03-requisitos-funcionales.md) y [DESIGN.md](../../../DESIGN.md), bajo la autoridad metodológica de `AGENTS.md`.
+Alineado con [03-requisitos-funcionales.md](../../../docs/especificaciones/03-requisitos-funcionales.md) y [DESIGN.md](../../../DESIGN.md), bajo la autoridad metodológica de `AGENTS.md`.
 
 ## 1. Disparadores de Uso
 - Construcción o refactorización de Server Components, Client Components o Server Actions en Next.js 14 (`RF-WEB-001`, `RF-WEB-005`).

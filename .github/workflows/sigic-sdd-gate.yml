@@ -66,7 +66,7 @@ jobs:
               print("✅ AUDITORÍA SUPERADA: Cero wikilinks detectados en documentación propia.")
           EOF
 
-      - name: Verify Canonical SDD DAG Topology (79 Nodes, 96 Edges, 0 Cycles, Exact Set Equality)
+      - name: Verify Canonical SDD DAG Topology (85 Nodes, 107 Edges, 0 Cycles, Exact Set Equality)
         shell: bash
         run: |
           python3 -c "import sys, textwrap; exec(textwrap.dedent(sys.stdin.read()))" << 'EOF'
@@ -77,47 +77,52 @@ jobs:
 
           repo_root = os.path.abspath(".")
 
-          # Topología congelada canónica (79 nodos, 96 aristas dirigidas únicas)
+          # Topología congelada canónica (85 nodos, 107 aristas dirigidas únicas)
           EXPECTED_NODES = [
             ".agents/skills/sigic-clean-arch-auditor/SKILL.md",
             ".agents/skills/sigic-ecommerce-b2b/SKILL.md",
             ".agents/skills/sigic-frontend-polish/SKILL.md",
             ".agents/skills/sigic-pos-industrial-ui/SKILL.md",
             ".agents/skills/sigic-sdd-guardian/SKILL.md",
-            "01-analisis-de-sistema/01-actores.md",
-            "01-analisis-de-sistema/02-historias-del-usuario.md",
-            "01-analisis-de-sistema/03-requisitos-funcionales.md",
-            "01-analisis-de-sistema/04-atributos-de-calidad.md",
-            "01-analisis-de-sistema/05-restricciones.md",
-            "01-analisis-de-sistema/06-driver-arquitectonicos.md",
-            "01-analisis-de-sistema/07-decisiones-arquitectonicas.md",
-            "01-analisis-de-sistema/08-escenarios-atributos-calidad.md",
-            "02-arquitectura-software/arquitectura-inicial.md",
-            "02-arquitectura-software/componentes-arquitectonicos.md",
-            "02-arquitectura-software/enfoque-arquitectonico.md",
-            "02-arquitectura-software/estilo-arquitectonico.md",
-            "02-arquitectura-software/estrategia-cache.md",
-            "02-arquitectura-software/infraestructura-red-dns-cdn.md",
-            "03-diseno-de-software/diseno-interno-modulos/diseno-interno-de-modulos.md",
-            "03-diseno-de-software/diseno-interno-modulos/patrones-de-diseno.md",
-            "03-diseno-de-software/diseno-interno-modulos/principios-de-diseno.md",
-            "04-modelo-c4/Nivel1-DiagramadeContexto.md",
-            "04-modelo-c4/Nivel2-DiagramadeContenedores.md",
-            "04-modelo-c4/Nivel3-Diagrama-de-Componentes.md",
-            "04-modelo-c4/Nivel4-DiagramadeCodigo.md",
-            "05-pruebas-y-calidad/01-pruebas-unitarias.md",
-            "05-pruebas-y-calidad/02-pruebas-e2e.md",
-            "05-pruebas-y-calidad/03-pruebas-carga.md",
             "AGENTS.md",
             "DESIGN.md",
-            "ESTADO-ORQUESTACION.md",
             "GEMINI.md",
-            "HISTORIAL-CAMBIOS-OBSERVACIONES.md",
-            "PLAN-MIGRACION-SIGIC.md",
             "README.md",
+            "docs/GUIA-EJECUCION.md",
             "docs/agentes/indice.md",
             "docs/agentes/skills-sdd.md",
             "docs/agentes/skills-ui.md",
+            "docs/arquitectura/06-driver-arquitectonicos.md",
+            "docs/arquitectura/07-decisiones-arquitectonicas.md",
+            "docs/arquitectura/08-escenarios-atributos-calidad.md",
+            "docs/arquitectura/arquitectura-inicial.md",
+            "docs/arquitectura/c4/Nivel1-DiagramadeContexto.md",
+            "docs/arquitectura/c4/Nivel2-DiagramadeContenedores.md",
+            "docs/arquitectura/c4/Nivel3-Diagrama-de-Componentes.md",
+            "docs/arquitectura/c4/Nivel4-DiagramadeCodigo.md",
+            "docs/arquitectura/componentes-arquitectonicos.md",
+            "docs/arquitectura/diseno-interno-modulos/diseno-interno-de-modulos.md",
+            "docs/arquitectura/diseno-interno-modulos/patrones-de-diseno.md",
+            "docs/arquitectura/diseno-interno-modulos/principios-de-diseno.md",
+            "docs/arquitectura/enfoque-arquitectonico.md",
+            "docs/arquitectura/estilo-arquitectonico.md",
+            "docs/arquitectura/estrategia-cache.md",
+            "docs/arquitectura/infraestructura-red-dns-cdn.md",
+            "docs/bitacora/ESTADO-ORQUESTACION.md",
+            "docs/bitacora/HISTORIAL-CAMBIOS-OBSERVACIONES.md",
+            "docs/bitacora/PLAN-MIGRACION-SIGIC.md",
+            "docs/entregables/sprint-2/01-pruebas-unitarias.md",
+            "docs/entregables/sprint-2/02-pruebas-e2e.md",
+            "docs/entregables/sprint-2/03-pruebas-carga.md",
+            "docs/entregables/sprint-2/cierre.md",
+            "docs/entregables/sprint-2/estrategia-bd-cache.md",
+            "docs/entregables/sprint-3/cierre.md",
+            "docs/especificaciones/01-actores.md",
+            "docs/especificaciones/02-historias-del-usuario.md",
+            "docs/especificaciones/03-requisitos-funcionales.md",
+            "docs/especificaciones/04-atributos-de-calidad.md",
+            "docs/especificaciones/05-restricciones.md",
+            "docs/especificaciones/RF-ANA-001.md",
             "docs/implementacion/arqueo-caja.md",
             "docs/implementacion/producto.md",
             "docs/implementacion/soporte-dominio.md",
@@ -157,106 +162,439 @@ jobs:
             "tests/SIGIC.Domain.Tests/ProductoTests.cs",
             "tests/SIGIC.Domain.Tests/SIGIC.Domain.Tests.csproj",
             "tests/e2e/checkout-omnicanal.spec.ts",
-            "tests/k6/checkout-stress-test.js"
+            "tests/k6/checkout-stress-test.js",
+            "tests/postman/sigic-sprint-2.postman_collection.json"
           ]
 
           EXPECTED_EDGES = [
-            [".agents/skills/sigic-clean-arch-auditor/SKILL.md", "02-arquitectura-software/estilo-arquitectonico.md"],
-            [".agents/skills/sigic-clean-arch-auditor/SKILL.md", "docs/mcp/indice.md"],
-            [".agents/skills/sigic-ecommerce-b2b/SKILL.md", "01-analisis-de-sistema/03-requisitos-funcionales.md"],
-            [".agents/skills/sigic-ecommerce-b2b/SKILL.md", "DESIGN.md"],
-            [".agents/skills/sigic-ecommerce-b2b/SKILL.md", "docs/mcp/indice.md"],
-            [".agents/skills/sigic-frontend-polish/SKILL.md", "DESIGN.md"],
-            [".agents/skills/sigic-frontend-polish/SKILL.md", "docs/mcp/indice.md"],
-            [".agents/skills/sigic-pos-industrial-ui/SKILL.md", "01-analisis-de-sistema/02-historias-del-usuario.md"],
-            [".agents/skills/sigic-pos-industrial-ui/SKILL.md", "DESIGN.md"],
-            [".agents/skills/sigic-pos-industrial-ui/SKILL.md", "docs/mcp/indice.md"],
-            [".agents/skills/sigic-sdd-guardian/SKILL.md", "01-analisis-de-sistema/03-requisitos-funcionales.md"],
-            [".agents/skills/sigic-sdd-guardian/SKILL.md", "01-analisis-de-sistema/04-atributos-de-calidad.md"],
-            [".agents/skills/sigic-sdd-guardian/SKILL.md", "docs/mcp/indice.md"],
-            ["01-analisis-de-sistema/01-actores.md", "01-analisis-de-sistema/02-historias-del-usuario.md"],
-            ["01-analisis-de-sistema/02-historias-del-usuario.md", "01-analisis-de-sistema/03-requisitos-funcionales.md"],
-            ["01-analisis-de-sistema/03-requisitos-funcionales.md", "01-analisis-de-sistema/06-driver-arquitectonicos.md"],
-            ["01-analisis-de-sistema/04-atributos-de-calidad.md", "01-analisis-de-sistema/06-driver-arquitectonicos.md"],
-            ["01-analisis-de-sistema/05-restricciones.md", "01-analisis-de-sistema/04-atributos-de-calidad.md"],
-            ["01-analisis-de-sistema/06-driver-arquitectonicos.md", "01-analisis-de-sistema/08-escenarios-atributos-calidad.md"],
-            ["01-analisis-de-sistema/07-decisiones-arquitectonicas.md", "02-arquitectura-software/estilo-arquitectonico.md"],
-            ["01-analisis-de-sistema/08-escenarios-atributos-calidad.md", "01-analisis-de-sistema/07-decisiones-arquitectonicas.md"],
-            ["02-arquitectura-software/arquitectura-inicial.md", "02-arquitectura-software/infraestructura-red-dns-cdn.md"],
-            ["02-arquitectura-software/arquitectura-inicial.md", "04-modelo-c4/Nivel1-DiagramadeContexto.md"],
-            ["02-arquitectura-software/componentes-arquitectonicos.md", "04-modelo-c4/Nivel3-Diagrama-de-Componentes.md"],
-            ["02-arquitectura-software/enfoque-arquitectonico.md", "02-arquitectura-software/componentes-arquitectonicos.md"],
-            ["02-arquitectura-software/estilo-arquitectonico.md", "02-arquitectura-software/arquitectura-inicial.md"],
-            ["02-arquitectura-software/estilo-arquitectonico.md", "02-arquitectura-software/enfoque-arquitectonico.md"],
-            ["02-arquitectura-software/estrategia-cache.md", "04-modelo-c4/Nivel2-DiagramadeContenedores.md"],
-            ["02-arquitectura-software/infraestructura-red-dns-cdn.md", "02-arquitectura-software/estrategia-cache.md"],
-            ["03-diseno-de-software/diseno-interno-modulos/diseno-interno-de-modulos.md", "05-pruebas-y-calidad/03-pruebas-carga.md"],
-            ["03-diseno-de-software/diseno-interno-modulos/diseno-interno-de-modulos.md", "DESIGN.md"],
-            ["03-diseno-de-software/diseno-interno-modulos/diseno-interno-de-modulos.md", "docs/implementacion/arqueo-caja.md"],
-            ["03-diseno-de-software/diseno-interno-modulos/diseno-interno-de-modulos.md", "docs/implementacion/producto.md"],
-            ["03-diseno-de-software/diseno-interno-modulos/patrones-de-diseno.md", "03-diseno-de-software/diseno-interno-modulos/diseno-interno-de-modulos.md"],
-            ["03-diseno-de-software/diseno-interno-modulos/principios-de-diseno.md", "03-diseno-de-software/diseno-interno-modulos/patrones-de-diseno.md"],
-            ["03-diseno-de-software/diseno-interno-modulos/principios-de-diseno.md", "docs/implementacion/soporte-dominio.md"],
-            ["04-modelo-c4/Nivel1-DiagramadeContexto.md", "04-modelo-c4/Nivel2-DiagramadeContenedores.md"],
-            ["04-modelo-c4/Nivel2-DiagramadeContenedores.md", "04-modelo-c4/Nivel3-Diagrama-de-Componentes.md"],
-            ["04-modelo-c4/Nivel3-Diagrama-de-Componentes.md", "04-modelo-c4/Nivel4-DiagramadeCodigo.md"],
-            ["04-modelo-c4/Nivel4-DiagramadeCodigo.md", "03-diseno-de-software/diseno-interno-modulos/principios-de-diseno.md"],
-            ["05-pruebas-y-calidad/01-pruebas-unitarias.md", "tests/SIGIC.Domain.Tests/ArqueoCajaTests.cs"],
-            ["05-pruebas-y-calidad/01-pruebas-unitarias.md", "tests/SIGIC.Domain.Tests/GlobalUsings.cs"],
-            ["05-pruebas-y-calidad/01-pruebas-unitarias.md", "tests/SIGIC.Domain.Tests/ProductoTests.cs"],
-            ["05-pruebas-y-calidad/01-pruebas-unitarias.md", "tests/SIGIC.Domain.Tests/SIGIC.Domain.Tests.csproj"],
-            ["05-pruebas-y-calidad/02-pruebas-e2e.md", "tests/e2e/checkout-omnicanal.spec.ts"],
-            ["05-pruebas-y-calidad/03-pruebas-carga.md", "tests/k6/checkout-stress-test.js"],
-            ["AGENTS.md", "ESTADO-ORQUESTACION.md"],
-            ["AGENTS.md", "GEMINI.md"],
-            ["AGENTS.md", "README.md"],
-            ["AGENTS.md", "docs/agentes/indice.md"],
-            ["DESIGN.md", "05-pruebas-y-calidad/02-pruebas-e2e.md"],
-            ["ESTADO-ORQUESTACION.md", "PLAN-MIGRACION-SIGIC.md"],
-            ["ESTADO-ORQUESTACION.md", "scripts/agy_runner.fish"],
-            ["PLAN-MIGRACION-SIGIC.md", "HISTORIAL-CAMBIOS-OBSERVACIONES.md"],
-            ["README.md", "01-analisis-de-sistema/01-actores.md"],
-            ["README.md", "01-analisis-de-sistema/05-restricciones.md"],
-            ["docs/agentes/indice.md", "docs/agentes/skills-sdd.md"],
-            ["docs/agentes/indice.md", "docs/agentes/skills-ui.md"],
-            ["docs/agentes/skills-sdd.md", ".agents/skills/sigic-clean-arch-auditor/SKILL.md"],
-            ["docs/agentes/skills-sdd.md", ".agents/skills/sigic-sdd-guardian/SKILL.md"],
-            ["docs/agentes/skills-sdd.md", "docs/mcp/indice.md"],
-            ["docs/agentes/skills-ui.md", ".agents/skills/sigic-ecommerce-b2b/SKILL.md"],
-            ["docs/agentes/skills-ui.md", ".agents/skills/sigic-frontend-polish/SKILL.md"],
-            ["docs/agentes/skills-ui.md", ".agents/skills/sigic-pos-industrial-ui/SKILL.md"],
-            ["docs/agentes/skills-ui.md", "docs/mcp/indice.md"],
-            ["docs/implementacion/arqueo-caja.md", "05-pruebas-y-calidad/01-pruebas-unitarias.md"],
-            ["docs/implementacion/arqueo-caja.md", "src/SIGIC.Domain/Entities/ArqueoCaja.cs"],
-            ["docs/implementacion/producto.md", "05-pruebas-y-calidad/01-pruebas-unitarias.md"],
-            ["docs/implementacion/producto.md", "src/SIGIC.Domain/Entities/Producto.cs"],
-            ["docs/implementacion/soporte-dominio.md", "src/SIGIC.Domain/Exceptions/MargenInvalidoException.cs"],
-            ["docs/implementacion/soporte-dominio.md", "src/SIGIC.Domain/Exceptions/StockInsuficienteException.cs"],
-            ["docs/implementacion/soporte-dominio.md", "src/SIGIC.Domain/SIGIC.Domain.csproj"],
-            ["docs/mcp/arquitectura.md", "mcp-server/src/tools/governance/architecture-drift-auditor.ts"],
-            ["docs/mcp/cadena-sdd.md", "mcp-server/src/tools/governance/index.ts"],
-            ["docs/mcp/cadena-sdd.md", "mcp-server/src/tools/governance/sdd-chain-validator.ts"],
-            ["docs/mcp/calidad.md", "mcp-server/src/tools/governance/quality-gate-enforcer.ts"],
-            ["docs/mcp/compatibilidad.md", "mcp-server/src/tools/inventoryTools.ts"],
-            ["docs/mcp/compatibilidad.md", "mcp-server/src/tools/posTools.ts"],
-            ["docs/mcp/dominio.md", "mcp-server/src/tools/domain/index.ts"],
-            ["docs/mcp/dominio.md", "mcp-server/src/tools/domain/inventoryTools.ts"],
-            ["docs/mcp/dominio.md", "mcp-server/src/tools/domain/posTools.ts"],
-            ["docs/mcp/gobernanza.md", "docs/mcp/arquitectura.md"],
-            ["docs/mcp/gobernanza.md", "docs/mcp/cadena-sdd.md"],
-            ["docs/mcp/gobernanza.md", "docs/mcp/calidad.md"],
-            ["docs/mcp/gobernanza.md", "docs/mcp/obsidian.md"],
-            ["docs/mcp/indice.md", "docs/mcp/dominio.md"],
-            ["docs/mcp/indice.md", "docs/mcp/gobernanza.md"],
-            ["docs/mcp/indice.md", "docs/mcp/runtime.md"],
-            ["docs/mcp/indice.md", "docs/mcp/soporte.md"],
-            ["docs/mcp/obsidian.md", "mcp-server/src/tools/governance/obsidian-vault-sync.ts"],
-            ["docs/mcp/runtime.md", "docs/mcp/compatibilidad.md"],
-            ["docs/mcp/runtime.md", "mcp-server/src/server.ts"],
-            ["docs/mcp/runtime.md", "mcp-server/src/tools/index.ts"],
-            ["docs/mcp/soporte.md", "mcp-server/src/core/sandbox.ts"],
-            ["docs/mcp/soporte.md", "mcp-server/src/core/yaml-frontmatter.ts"],
-            ["docs/mcp/soporte.md", "mcp-server/src/tools/types.ts"]
+            [
+              ".agents/skills/sigic-clean-arch-auditor/SKILL.md",
+              "docs/arquitectura/estilo-arquitectonico.md"
+            ],
+            [
+              ".agents/skills/sigic-clean-arch-auditor/SKILL.md",
+              "docs/mcp/indice.md"
+            ],
+            [
+              ".agents/skills/sigic-ecommerce-b2b/SKILL.md",
+              "DESIGN.md"
+            ],
+            [
+              ".agents/skills/sigic-ecommerce-b2b/SKILL.md",
+              "docs/especificaciones/03-requisitos-funcionales.md"
+            ],
+            [
+              ".agents/skills/sigic-ecommerce-b2b/SKILL.md",
+              "docs/mcp/indice.md"
+            ],
+            [
+              ".agents/skills/sigic-frontend-polish/SKILL.md",
+              "DESIGN.md"
+            ],
+            [
+              ".agents/skills/sigic-frontend-polish/SKILL.md",
+              "docs/mcp/indice.md"
+            ],
+            [
+              ".agents/skills/sigic-pos-industrial-ui/SKILL.md",
+              "DESIGN.md"
+            ],
+            [
+              ".agents/skills/sigic-pos-industrial-ui/SKILL.md",
+              "docs/especificaciones/02-historias-del-usuario.md"
+            ],
+            [
+              ".agents/skills/sigic-pos-industrial-ui/SKILL.md",
+              "docs/mcp/indice.md"
+            ],
+            [
+              ".agents/skills/sigic-sdd-guardian/SKILL.md",
+              "docs/especificaciones/03-requisitos-funcionales.md"
+            ],
+            [
+              ".agents/skills/sigic-sdd-guardian/SKILL.md",
+              "docs/especificaciones/04-atributos-de-calidad.md"
+            ],
+            [
+              ".agents/skills/sigic-sdd-guardian/SKILL.md",
+              "docs/mcp/indice.md"
+            ],
+            [
+              "AGENTS.md",
+              "GEMINI.md"
+            ],
+            [
+              "AGENTS.md",
+              "README.md"
+            ],
+            [
+              "AGENTS.md",
+              "docs/agentes/indice.md"
+            ],
+            [
+              "AGENTS.md",
+              "docs/bitacora/ESTADO-ORQUESTACION.md"
+            ],
+            [
+              "DESIGN.md",
+              "docs/entregables/sprint-2/02-pruebas-e2e.md"
+            ],
+            [
+              "README.md",
+              "docs/GUIA-EJECUCION.md"
+            ],
+            [
+              "README.md",
+              "docs/especificaciones/01-actores.md"
+            ],
+            [
+              "README.md",
+              "docs/especificaciones/05-restricciones.md"
+            ],
+            [
+              "docs/GUIA-EJECUCION.md",
+              "docs/entregables/sprint-2/cierre.md"
+            ],
+            [
+              "docs/GUIA-EJECUCION.md",
+              "docs/entregables/sprint-3/cierre.md"
+            ],
+            [
+              "docs/agentes/indice.md",
+              "docs/agentes/skills-sdd.md"
+            ],
+            [
+              "docs/agentes/indice.md",
+              "docs/agentes/skills-ui.md"
+            ],
+            [
+              "docs/agentes/skills-sdd.md",
+              ".agents/skills/sigic-clean-arch-auditor/SKILL.md"
+            ],
+            [
+              "docs/agentes/skills-sdd.md",
+              ".agents/skills/sigic-sdd-guardian/SKILL.md"
+            ],
+            [
+              "docs/agentes/skills-sdd.md",
+              "docs/mcp/indice.md"
+            ],
+            [
+              "docs/agentes/skills-ui.md",
+              ".agents/skills/sigic-ecommerce-b2b/SKILL.md"
+            ],
+            [
+              "docs/agentes/skills-ui.md",
+              ".agents/skills/sigic-frontend-polish/SKILL.md"
+            ],
+            [
+              "docs/agentes/skills-ui.md",
+              ".agents/skills/sigic-pos-industrial-ui/SKILL.md"
+            ],
+            [
+              "docs/agentes/skills-ui.md",
+              "docs/mcp/indice.md"
+            ],
+            [
+              "docs/arquitectura/06-driver-arquitectonicos.md",
+              "docs/arquitectura/08-escenarios-atributos-calidad.md"
+            ],
+            [
+              "docs/arquitectura/07-decisiones-arquitectonicas.md",
+              "docs/arquitectura/estilo-arquitectonico.md"
+            ],
+            [
+              "docs/arquitectura/08-escenarios-atributos-calidad.md",
+              "docs/arquitectura/07-decisiones-arquitectonicas.md"
+            ],
+            [
+              "docs/arquitectura/arquitectura-inicial.md",
+              "docs/arquitectura/c4/Nivel1-DiagramadeContexto.md"
+            ],
+            [
+              "docs/arquitectura/arquitectura-inicial.md",
+              "docs/arquitectura/infraestructura-red-dns-cdn.md"
+            ],
+            [
+              "docs/arquitectura/c4/Nivel1-DiagramadeContexto.md",
+              "docs/arquitectura/c4/Nivel2-DiagramadeContenedores.md"
+            ],
+            [
+              "docs/arquitectura/c4/Nivel2-DiagramadeContenedores.md",
+              "docs/arquitectura/c4/Nivel3-Diagrama-de-Componentes.md"
+            ],
+            [
+              "docs/arquitectura/c4/Nivel3-Diagrama-de-Componentes.md",
+              "docs/arquitectura/c4/Nivel4-DiagramadeCodigo.md"
+            ],
+            [
+              "docs/arquitectura/c4/Nivel4-DiagramadeCodigo.md",
+              "docs/arquitectura/diseno-interno-modulos/principios-de-diseno.md"
+            ],
+            [
+              "docs/arquitectura/componentes-arquitectonicos.md",
+              "docs/arquitectura/c4/Nivel3-Diagrama-de-Componentes.md"
+            ],
+            [
+              "docs/arquitectura/diseno-interno-modulos/diseno-interno-de-modulos.md",
+              "DESIGN.md"
+            ],
+            [
+              "docs/arquitectura/diseno-interno-modulos/diseno-interno-de-modulos.md",
+              "docs/entregables/sprint-2/03-pruebas-carga.md"
+            ],
+            [
+              "docs/arquitectura/diseno-interno-modulos/diseno-interno-de-modulos.md",
+              "docs/implementacion/arqueo-caja.md"
+            ],
+            [
+              "docs/arquitectura/diseno-interno-modulos/diseno-interno-de-modulos.md",
+              "docs/implementacion/producto.md"
+            ],
+            [
+              "docs/arquitectura/diseno-interno-modulos/patrones-de-diseno.md",
+              "docs/arquitectura/diseno-interno-modulos/diseno-interno-de-modulos.md"
+            ],
+            [
+              "docs/arquitectura/diseno-interno-modulos/principios-de-diseno.md",
+              "docs/arquitectura/diseno-interno-modulos/patrones-de-diseno.md"
+            ],
+            [
+              "docs/arquitectura/diseno-interno-modulos/principios-de-diseno.md",
+              "docs/implementacion/soporte-dominio.md"
+            ],
+            [
+              "docs/arquitectura/enfoque-arquitectonico.md",
+              "docs/arquitectura/componentes-arquitectonicos.md"
+            ],
+            [
+              "docs/arquitectura/estilo-arquitectonico.md",
+              "docs/arquitectura/arquitectura-inicial.md"
+            ],
+            [
+              "docs/arquitectura/estilo-arquitectonico.md",
+              "docs/arquitectura/enfoque-arquitectonico.md"
+            ],
+            [
+              "docs/arquitectura/estrategia-cache.md",
+              "docs/arquitectura/c4/Nivel2-DiagramadeContenedores.md"
+            ],
+            [
+              "docs/arquitectura/infraestructura-red-dns-cdn.md",
+              "docs/arquitectura/estrategia-cache.md"
+            ],
+            [
+              "docs/bitacora/ESTADO-ORQUESTACION.md",
+              "docs/bitacora/PLAN-MIGRACION-SIGIC.md"
+            ],
+            [
+              "docs/bitacora/ESTADO-ORQUESTACION.md",
+              "scripts/agy_runner.fish"
+            ],
+            [
+              "docs/bitacora/PLAN-MIGRACION-SIGIC.md",
+              "docs/bitacora/HISTORIAL-CAMBIOS-OBSERVACIONES.md"
+            ],
+            [
+              "docs/entregables/sprint-2/01-pruebas-unitarias.md",
+              "tests/SIGIC.Domain.Tests/ArqueoCajaTests.cs"
+            ],
+            [
+              "docs/entregables/sprint-2/01-pruebas-unitarias.md",
+              "tests/SIGIC.Domain.Tests/GlobalUsings.cs"
+            ],
+            [
+              "docs/entregables/sprint-2/01-pruebas-unitarias.md",
+              "tests/SIGIC.Domain.Tests/ProductoTests.cs"
+            ],
+            [
+              "docs/entregables/sprint-2/01-pruebas-unitarias.md",
+              "tests/SIGIC.Domain.Tests/SIGIC.Domain.Tests.csproj"
+            ],
+            [
+              "docs/entregables/sprint-2/02-pruebas-e2e.md",
+              "tests/e2e/checkout-omnicanal.spec.ts"
+            ],
+            [
+              "docs/entregables/sprint-2/02-pruebas-e2e.md",
+              "tests/postman/sigic-sprint-2.postman_collection.json"
+            ],
+            [
+              "docs/entregables/sprint-2/03-pruebas-carga.md",
+              "tests/k6/checkout-stress-test.js"
+            ],
+            [
+              "docs/entregables/sprint-2/cierre.md",
+              "docs/entregables/sprint-2/01-pruebas-unitarias.md"
+            ],
+            [
+              "docs/entregables/sprint-2/cierre.md",
+              "docs/entregables/sprint-2/02-pruebas-e2e.md"
+            ],
+            [
+              "docs/entregables/sprint-2/cierre.md",
+              "docs/entregables/sprint-2/03-pruebas-carga.md"
+            ],
+            [
+              "docs/entregables/sprint-2/cierre.md",
+              "docs/entregables/sprint-2/estrategia-bd-cache.md"
+            ],
+            [
+              "docs/entregables/sprint-2/estrategia-bd-cache.md",
+              "docs/arquitectura/estrategia-cache.md"
+            ],
+            [
+              "docs/entregables/sprint-3/cierre.md",
+              "docs/especificaciones/RF-ANA-001.md"
+            ],
+            [
+              "docs/especificaciones/01-actores.md",
+              "docs/especificaciones/02-historias-del-usuario.md"
+            ],
+            [
+              "docs/especificaciones/02-historias-del-usuario.md",
+              "docs/especificaciones/03-requisitos-funcionales.md"
+            ],
+            [
+              "docs/especificaciones/03-requisitos-funcionales.md",
+              "docs/arquitectura/06-driver-arquitectonicos.md"
+            ],
+            [
+              "docs/especificaciones/03-requisitos-funcionales.md",
+              "docs/especificaciones/RF-ANA-001.md"
+            ],
+            [
+              "docs/especificaciones/04-atributos-de-calidad.md",
+              "docs/arquitectura/06-driver-arquitectonicos.md"
+            ],
+            [
+              "docs/especificaciones/05-restricciones.md",
+              "docs/especificaciones/04-atributos-de-calidad.md"
+            ],
+            [
+              "docs/implementacion/arqueo-caja.md",
+              "docs/entregables/sprint-2/01-pruebas-unitarias.md"
+            ],
+            [
+              "docs/implementacion/arqueo-caja.md",
+              "src/SIGIC.Domain/Entities/ArqueoCaja.cs"
+            ],
+            [
+              "docs/implementacion/producto.md",
+              "docs/entregables/sprint-2/01-pruebas-unitarias.md"
+            ],
+            [
+              "docs/implementacion/producto.md",
+              "src/SIGIC.Domain/Entities/Producto.cs"
+            ],
+            [
+              "docs/implementacion/soporte-dominio.md",
+              "src/SIGIC.Domain/Exceptions/MargenInvalidoException.cs"
+            ],
+            [
+              "docs/implementacion/soporte-dominio.md",
+              "src/SIGIC.Domain/Exceptions/StockInsuficienteException.cs"
+            ],
+            [
+              "docs/implementacion/soporte-dominio.md",
+              "src/SIGIC.Domain/SIGIC.Domain.csproj"
+            ],
+            [
+              "docs/mcp/arquitectura.md",
+              "mcp-server/src/tools/governance/architecture-drift-auditor.ts"
+            ],
+            [
+              "docs/mcp/cadena-sdd.md",
+              "mcp-server/src/tools/governance/index.ts"
+            ],
+            [
+              "docs/mcp/cadena-sdd.md",
+              "mcp-server/src/tools/governance/sdd-chain-validator.ts"
+            ],
+            [
+              "docs/mcp/calidad.md",
+              "mcp-server/src/tools/governance/quality-gate-enforcer.ts"
+            ],
+            [
+              "docs/mcp/compatibilidad.md",
+              "mcp-server/src/tools/inventoryTools.ts"
+            ],
+            [
+              "docs/mcp/compatibilidad.md",
+              "mcp-server/src/tools/posTools.ts"
+            ],
+            [
+              "docs/mcp/dominio.md",
+              "mcp-server/src/tools/domain/index.ts"
+            ],
+            [
+              "docs/mcp/dominio.md",
+              "mcp-server/src/tools/domain/inventoryTools.ts"
+            ],
+            [
+              "docs/mcp/dominio.md",
+              "mcp-server/src/tools/domain/posTools.ts"
+            ],
+            [
+              "docs/mcp/gobernanza.md",
+              "docs/mcp/arquitectura.md"
+            ],
+            [
+              "docs/mcp/gobernanza.md",
+              "docs/mcp/cadena-sdd.md"
+            ],
+            [
+              "docs/mcp/gobernanza.md",
+              "docs/mcp/calidad.md"
+            ],
+            [
+              "docs/mcp/gobernanza.md",
+              "docs/mcp/obsidian.md"
+            ],
+            [
+              "docs/mcp/indice.md",
+              "docs/mcp/dominio.md"
+            ],
+            [
+              "docs/mcp/indice.md",
+              "docs/mcp/gobernanza.md"
+            ],
+            [
+              "docs/mcp/indice.md",
+              "docs/mcp/runtime.md"
+            ],
+            [
+              "docs/mcp/indice.md",
+              "docs/mcp/soporte.md"
+            ],
+            [
+              "docs/mcp/obsidian.md",
+              "mcp-server/src/tools/governance/obsidian-vault-sync.ts"
+            ],
+            [
+              "docs/mcp/runtime.md",
+              "docs/mcp/compatibilidad.md"
+            ],
+            [
+              "docs/mcp/runtime.md",
+              "mcp-server/src/server.ts"
+            ],
+            [
+              "docs/mcp/runtime.md",
+              "mcp-server/src/tools/index.ts"
+            ],
+            [
+              "docs/mcp/soporte.md",
+              "mcp-server/src/core/sandbox.ts"
+            ],
+            [
+              "docs/mcp/soporte.md",
+              "mcp-server/src/core/yaml-frontmatter.ts"
+            ],
+            [
+              "docs/mcp/soporte.md",
+              "mcp-server/src/tools/types.ts"
+            ]
           ]
 
           def extract_links(fp):
@@ -336,10 +674,10 @@ jobs:
           dfs("AGENTS.md", ["AGENTS.md"])
 
           errors = []
-          if len(visited) != 79:
-              errors.append(f"Cantidad de nodos incorrecta: esperados 79, obtenidos {len(visited)}")
-          if len(edges) != 96:
-              errors.append(f"Cantidad de aristas incorrecta: esperadas 96, obtenidas {len(edges)}")
+          if len(visited) != len(EXPECTED_NODES):
+              errors.append(f"Cantidad de nodos incorrecta: esperados 85, obtenidos {len(visited)}")
+          if len(edges) != len(EXPECTED_EDGES):
+              errors.append(f"Cantidad de aristas incorrecta: esperadas 107, obtenidas {len(edges)}")
           if has_cycle:
               errors.append(f"Ciclo detectado en el grafo documental: {' -> '.join(cycle_path)}")
           if excess:
@@ -356,11 +694,16 @@ jobs:
           if actual_edges_set != exp_edges_set:
               errors.append(f"Conjunto de aristas difiere. Faltantes: {exp_edges_set - actual_edges_set}, Extras: {actual_edges_set - exp_edges_set}")
 
+          if len(EXPECTED_NODES) != len(exp_nodes_set) or len(EXPECTED_EDGES) != len(exp_edges_set):
+              errors.append("Manifiesto canónico con duplicados")
+          if len(exp_nodes_set) != 85 or len(exp_edges_set) != 107:
+              errors.append("El manifiesto debe conservar 85 nodos y 107 aristas")
+
           if errors:
               print("❌ ERROR: Violación de la topología canónica SDD:", file=sys.stderr)
               for e in errors:
                   print("  - " + e, file=sys.stderr)
               sys.exit(1)
           else:
-              print("✅ AUDITORÍA SUPERADA: DAG canónico íntegro (79 nodos, 96 aristas, 0 ciclos, max 4 salientes, conjuntos idénticos).")
+              print("✅ AUDITORÍA SUPERADA: DAG canónico íntegro (85 nodos, 107 aristas, 0 ciclos, max 4 salientes, conjuntos idénticos).")
           EOF

@@ -2,13 +2,13 @@
 
 Este documento rige la ejecución técnica operativa para el entorno de Gemini Flash vía CLI `agy`, reconociendo en todo momento la autoridad única del contexto maestro definido en `AGENTS.md`. No constituye una fuente paralela de directivas ni un catálogo independiente de habilidades.
 
-Este repositorio implementa **SIGIC (Sistema Integrado de Gestión de Inventario y Comercialización)** bajo la metodología estricta **Spec-Driven Development (SDD)**. La documentación técnica en `01-analisis-de-sistema/`, `02-arquitectura-software/` y la especificación técnica oficial constituyen la **Única Fuente de Verdad (Single Source of Truth)**. Ningún agente de IA ni desarrollador está autorizado a escribir código de negocio que contradiga o ignore las especificaciones vigentes.
+Este repositorio implementa **SIGIC (Sistema Integrado de Gestión de Inventario y Comercialización)** bajo la metodología estricta **Spec-Driven Development (SDD)**. La documentación técnica en `docs/especificaciones/`, `docs/arquitectura/` y la especificación técnica oficial constituyen la **Única Fuente de Verdad (Single Source of Truth)**. Ningún agente de IA ni desarrollador está autorizado a escribir código de negocio que contradiga o ignore las especificaciones vigentes.
 
 ---
 
 ## 1. Arquitectura de Referencia e Infraestructura Crítica
 
-- **Estilo Arquitectónico (`arquitectura/estilo-arquitectonico.md`):** Monolito Modular en Capas (Cliente-Servidor) implementado con **Clean Architecture** sobre **ASP.NET Core 8 Web API**.
+- **Estilo Arquitectónico (`docs/arquitectura/estilo-arquitectonico.md`):** Monolito Modular en Capas (Cliente-Servidor) implementado con **Clean Architecture** sobre **ASP.NET Core 8 Web API**.
 - **Persistencia y Segregación de Conexiones:** **PostgreSQL 16** antecedido por **PgBouncer** configurado en dos *Connection Pools* estrictamente aislados:
   1. `sigic_pos_pool` (Prioridad Alta / Baja Latencia): Garantiza disponibilidad inmediata de conexiones para terminales de mostrador POS evitando inanición por picos de tráfico web.
   2. `sigic_web_pool` (Pool Limitado / Control de Backpressure): Gestiona las lecturas asíncronas y transacciones acotadas del Portal E-Commerce.
@@ -23,7 +23,7 @@ Este repositorio implementa **SIGIC (Sistema Integrado de Gestión de Inventario
 Todo agente (AGY / Gemini) **DEBE** ejecutar secuencialmente estas 3 etapas antes de emitir cualquier bloque de código C#, SQL o TypeScript/React:
 
 1. **Fase 1 — Inspección Documental:**
-   - Localizar y leer el Requerimiento Funcional (`RF-*`), Atributo de Calidad (`RNF-*`), Historia de Usuario y Decisión Arquitectónica (`ADR`) en `analisis-de-sistema/` y `arquitectura/`.
+   - Localizar y leer el Requerimiento Funcional (`RF-*`), Atributo de Calidad (`RNF-*`), Historia de Usuario y Decisión Arquitectónica (`ADR`) en `docs/especificaciones/` y `docs/arquitectura/`.
    - Activar la skill `.agents/skills/sigic-sdd-guardian/SKILL.md`.
 2. **Fase 2 — Auditoría Previa mediante el Servidor MCP Interno (`mcp-server`):**
    - Invocar obligatoriamente `auditar_especificacion_stock_sdd` para todo código de inventario, consultas de catálogo o checkout.

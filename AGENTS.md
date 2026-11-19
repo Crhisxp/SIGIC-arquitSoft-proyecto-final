@@ -73,4 +73,4 @@ Este documento constituye la referencia de contexto de alta densidad para **Code
 | `sigic-frontend-polish` | Pulido visual y de interacción, auditoría de tokens de `DESIGN.md`, contraste, densidad, foco visible `:focus-visible` y los 4 estados canónicos | `.agents/skills/sigic-frontend-polish/SKILL.md` | `.gemini/skills/sigic-frontend-polish/SKILL.md` |
 | `sigic-clean-arch-auditor` | Auditoría de Clean Architecture en .NET 8, transacciones pesimistas anti-deadlock, arqueo ciego inmutable, pools PgBouncer y cobertura $\ge 95\%$ | `.agents/skills/sigic-clean-arch-auditor/SKILL.md` | `.gemini/skills/sigic-clean-arch-auditor/SKILL.md` |
 
-* **Bitácora de Estado:** Toda iteración orquestada se registra en [ESTADO-ORQUESTACION.md](ESTADO-ORQUESTACION.md) e `HISTORIAL-CAMBIOS-OBSERVACIONES.md`.
+* **Bitácora de Estado:** Toda iteración orquestada se registra en [ESTADO-ORQUESTACION.md](docs/bitacora/ESTADO-ORQUESTACION.md) e `docs/bitacora/HISTORIAL-CAMBIOS-OBSERVACIONES.md`.

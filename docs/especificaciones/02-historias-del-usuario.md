@@ -1,0 +1,307 @@
+---
+id: "02-historias-del-usuario"
+doc: "02-historias-del-usuario"
+version: "2.2.0"
+estado: "VALIDADO_PARA_EXPOSICION"
+tipo: "historias-usuario-bdd"
+proyecto: "SIGIC-Ferreteria-v2.2"
+autor: "Crhistian Emanuel Flores Marquina"
+evaluacion: "IS-488 UNSCH"
+fecha: "2026-10-30"
+---
+
+# Historias de Usuario Críticas (SIGIC Ferretería v2.2)
+
+> **Documento:** `docs/especificaciones/02-historias-del-usuario.md`  
+> **Versión de Especificación:** 2.2 (Oficial – SIGIC Ferretería)  
+> **Metodología:** User Story Mapping y Criterios Cuantitativos BDD (Given-When-Then)  
+> **Alineación de Calidad:** AC01 (Rendimiento P95 < 250ms), AC02 (Consistencia ACID Cero Sobreventas), AC03 (Trazabilidad Append-Only)  
+> **Estado:** VALIDADO_PARA_EXPOSICION  
+
+---
+
+## 1. Introducción y Matriz de Trazabilidad
+
+Las historias de usuario aquí documentadas formalizan los flujos transaccionales y de interacción críticos del sistema **SIGIC Ferretería v2.2**, resolviendo la concurrencia operativa entre el mostrador físico (POS) y el canal digital e-commerce sobre una persistencia relacional unificada en PostgreSQL 16 con PgBouncer.
+
+### 1.1 Ficha de Levantamiento de Campo — Caso Ferretería Real en Ayacucho
+
+El diseño de estas historias responde directamente a la realidad del retail ferretero de venta minorista y mayorista en Huamanga (Ayacucho):
+* **Contexto Operativo:** Negocio ferretero regional con venta presencial en tienda y portal e-commerce sincronizado.
+* **Volumen Transaccional Diario:** Emisión de **entre 120 y 180 comprobantes de venta emitidos por día** en mostrador físico, distribuidos en **2 cajas operando en red LAN** conectadas al pool prioritario (`sigic_pos_pool`), en coexistencia con el catálogo web sincronizado de forma asíncrona (`sigic_web_pool`).
+* **Insumos Críticos de Alta Rotación:**
+  1. **Cemento Portland Tipo I (bolsa de 42.5 kg):** Aglomerante para mezclas y vaciados de concreto con alta sensibilidad al quiebre de stock.
+  2. **Fierro Corrugado de 1/2 pulgada (varilla de 9 m, ASTM A615):** Barras de acero corrugado de alta rotación para armaduras estructurales.
+  3. **Tubos de PVC para Instalaciones Sanitarias (PVC SAP / SAL de 2" y 4"):** Tuberías para desagüe y conducción sanitaria con demanda sostenida en obras de saneamiento.
+* **Problemáticas Comerciales Reales Abordadas:**
+  a) **Sobreventa y Quiebre de Stock:** Ocurre cuando un cliente web reserva **40 bolsas de cemento Portland** desde el portal e-commerce incrementando `stock_comprometido`, mientras simultáneamente un maestro de obra compra y retira en mostrador las últimas **40 bolsas físicas** disponibles en tienda. El sistema garantiza que quien reserve primero adquiera el cerrojo atómico pesimista (`SELECT ... FOR UPDATE` ordenado) y la transacción concurrente sea notificada con stock insuficiente (`HTTP 409 Conflict`), erradicando sobreventas.
+  b) **Descuadre en Arqueo de Caja:** Errores y diferencias al final de turno generados por conteos manuales sobre papel y planillas manipulables sobre las 120-180 ventas del día, subsanado mediante el **Arqueo Ciego Append-Only** (`RF-CAJ-002`, `AC03`, `PostgresException 42501 permission denied`).
+  c) **Carga Manual Ineficiente:** Demora de horas al ingresar guías de remisión de proveedores con más de 100 ítems uno a uno en la interfaz, resuelto mediante la **Carga Masiva Transaccional en Streaming con Rollback Integral** (`RF-INV-008`, `HU-09`).
+
+| Historia de Usuario | Módulo / Bounded Context | Actor Primario | Código RF/RNF Relacionado | Atributo de Calidad Rector |
+| :--- | :--- | :--- | :--- | :--- |
+| **HU-01: Venta Rápida POS Híbrida** | Módulo 2: Ventas Mostrador POS (`SalesPOS`) | Cajero Mostrador | `RF-POS-003`, `RF-POS-001`, `RF-POS-004`, `RF-POS-005` | **AC01** (Latencia P95 < 250ms API / $\le 2$s cobro) |
+| **HU-02: Consulta Catálogo, PDP y Tarifas** | Módulo 5: PDP, Mediciones y Descuentos (`ProductDetailsPricing`) | Cliente Web (B2C/B2B) | `RF-INV-001`, `RF-WEB-001`, `RF-INV-005`, `RF-PRE-001/002` | **AC01** (Respuesta catálogo $\le 400$ms) |
+| **HU-03: Checkout Web con Revalidación Atómica** | Módulo 3: E-commerce y Pedidos Web (`OrdersWeb`) | Cliente Web (Contratista/B2C) | `RF-WEB-005`, `RF-WEB-002`, `RNF-CON-001` | **AC02** (Consistencia ACID, cero sobreventas) |
+| **HU-04: Reserva Dinámica de Stock por Medio Pago** | Módulo 3: E-commerce y Pedidos Web (`OrdersWeb`) | Cliente Web | `RF-WEB-002`, `RNF-CON-004` | **AC02** (Gestión de Stock Comprometido TTL) |
+| **HU-05: Validación Pagos en Backoffice Desacoplado** | Módulo 4: Caja y Tesorería (`CashManagement`) | Superadmin / Tesorería | `RF-WEB-003`, `RNF-SEG-004` | **AC03** (Trazabilidad inmutable de validación) |
+| **HU-06: Generación Automática de Guía de Traslado** | Módulo 1: Inventario y Almacenes (`Inventory`) | Almacenero | `RF-WEB-002`, `RF-INV-003`, `RF-POS-011` | **AC02** (Conservación de existencias en tránsito) |
+| **HU-07: Entrega Ágil Mostrador Pedidos Web (F6)** | Módulo 2: Ventas Mostrador POS (`SalesPOS`) | Despachador / Cajero | `RF-POS-011`, `RNF-PERF-001` | **AC01** (Despacho ligero en $\le 1$s) |
+| **HU-08: Arqueo Ciego de Caja Append-Only** | Módulo 4: Caja y Tesorería (`CashManagement`) | Cajero Mostrador | `RF-CAJ-002`, `RNF-SEG-004` | **AC03** (Trazabilidad contable inmutable) |
+| **HU-09: Carga Masiva Transaccional Excel/CSV** | Módulo 1: Inventario y Almacenes (`Inventory`) | Superadmin | `RF-INV-008`, `RNF-CON-003` | **AC02** (Consistencia atómica All-or-Nothing) |
+
+> **Nota de Gobernanza Transversal:** El Módulo 6: Seguridad y Auditoría (`SIGIC.Modules.Security`) provee de forma transversal la autenticación criptográfica dual mediante tokens JWT asimétricos RS256, políticas de autorización RBAC y la bitácora inmutable en `Audit_Log` para todos los flujos de usuario.
+
+---
+
+## 2. Historias de Usuario Detalladas (Formato BDD)
+
+### HU-01: Venta Rápida en Mostrador con Operación Híbrida 100% Teclado y 100% Ratón
+- **Código Relacionado:** `RF-POS-003`, `RF-POS-001`, `RF-POS-004`, `RF-POS-005`, `RNF-PERF-001`, `AC01`.
+- **Actor:** Cajero Mostrador.
+- **Narrativa:**
+  > **Como** Cajero de tienda en mostrador,  
+  > **quiero** registrar los productos de una compra mediante lectura óptica de código de barras o atajos de teclado y procesar el cobro con soporte híbrido completo de ratón y teclado,  
+  > **para** atender a los clientes y maestros de obra con la máxima velocidad reduciendo los tiempos de espera en las horas pico.
+- **Reglas de Negocio Asociadas:**
+  - El sistema mantiene el foco activo en el campo de captura del artículo (`F1`) durante el escaneo en grilla; cuando se abre un modal (`F2`, `F3`, `F7`, `F9`, `F12`) o se edita una celda (`F4`), aplica un focus trap dentro del componente activo y restituye el foco visible al escáner (`F1`) en <= 50 ms al confirmar, cancelar o cerrar (`Escape`).
+  - La lectura de un código de barras válido (EAN-13 o SKU) agrega el artículo al detalle con cantidad unitaria por defecto. Si el código ya existe en la grilla, incrementa la cantidad en 1. El código EAN-13 se captura y preserva estrictamente como texto, manteniendo los ceros iniciales.
+  - Teclas de función mapeadas de manera fija e inequívoca: `F1` (captura SKU/EAN-13), `F2` (búsqueda paramétrica), `F3` (cliente DNI/RUC), `F4` (editar cantidad), `F5` (ver stock multialmacén), `F6` (despacho entrega web), `F7` (sustitutos), `F8` (eliminar ítem), `F9` (Totalizar / Pago Mixto), `F10` (boleta), `F11` (Encolar / Recuperar Ticket en Espera), `F12` (factura).
+  - Operación híbrida 100% por ratón: la interfaz POS cuenta con botones de acción táctiles de al menos 44×44 px con badge visible de la tecla correspondiente. Los botones de acción directa en grilla devuelven el foco al escáner (`F1`) en <= 50 ms ($\le 50$ ms), mientras que los botones que abren modales (`F2`, `F3`, `F7`, `F9`, `F12`) transfieren el foco al primer input editable del modal (focus trap) y lo restituyen visiblemente al escáner al cerrarse o confirmarse.
+  - Ticket en espera (`F11`, `RF-POS-005`): retiene el carrito hasta por 2 horas sin movimientos de Kardex ni reservas definitivas, permitiendo su recuperación inmediata con `F11` o botón equivalente de 44×44 px.
+  - Tiempo de respuesta de búsqueda y adición $\le 1$ segundo; confirmación de cobro $\le 2$ segundos (P95).
+- **Criterios de Aceptación (Given-When-Then):**
+  - **Escenario 1: Captura consecutiva por escáner de código de barras.**
+    - **Dado** que el cajero tiene un turno de caja abierto y la pantalla de venta en mostrador activa,
+    - **Cuando** pasa 5 productos distintos por el lector óptico de código de barras sin tocar el teclado ni el ratón,
+    - **Entonces** los 5 productos se visualizan en la tabla de venta con sus descripciones, precios unitarios y subtotales en menos de 1 segundo por ítem, manteniendo el cursor listo para el siguiente producto.
+  - **Escenario 2: Cobro mixto con F9 (Totalizar / Pago Mixto) y emisión de comprobante.**
+    - **Dado** que se han registrado 3 artículos en la orden de venta actual,
+    - **Cuando** el cajero presiona `F9` (Totalizar / Pago Mixto), ingresa un pago mixto (S/ 50.00 en efectivo y S/ 80.00 con billetera digital Yape con código de operación), presiona `Enter` y luego presiona `F10` (Boleta),
+    - **Entonces** el sistema procesa la transacción en PostgreSQL en menos de 250 ms (P95 en API local), descuenta el inventario físico de tienda, registra el asiento inmutable de caja y emite la orden de impresión térmica ESC/POS.
+  - **Escenario 3: Encolar y recuperar ticket en espera con F11 (RF-POS-005).**
+    - **Dado** que el cajero tiene un ticket con 10 ítems para un maestro de obra que debe consultar una medida adicional,
+    - **Cuando** el cajero presiona `F11` (Encolar Ticket en Espera),
+    - **Entonces** el carrito se congela en memoria local sin generar movimientos en Kardex ni comprometer stock, la grilla se limpia con foco en `F1` para atender al siguiente cliente, y al presionar nuevamente `F11` dentro de la ventana de 2 horas, el ticket se recupera íntegramente con revalidación de disponibilidad en menos de 2 segundos.
+  - **Escenario 4: Operación equivalente 100% por ratón con auto-refocus al escáner.**
+    - **Dado** que el cajero utiliza el ratón sobre la pantalla del punto de venta,
+    - **Cuando** hace clic sobre el botón de acción de al menos 44×44 px correspondiente a "F9 Totalizar / Pago Mixto",
+    - **Entonces** se despliega el panel de cobro y, tras registrar el pago o presionar cerrar, el foco del cursor retorna automáticamente y de forma inmediata (en $\le 50$ ms) al input de captura EAN-13 con anillo visible `#e4f222`, listo para una nueva lectura.
+
+---
+
+### HU-02: Consulta de Catálogo Web, Ficha PDP, Conversión de Unidades y Tarifas Segmentadas
+- **Código Relacionado:** `RF-INV-001`, `RF-WEB-001`, `RF-INV-005`, `RF-PRE-001`, `RF-PRE-002`, `RNF-PERF-004`, `AC01`.
+- **Actor:** Cliente Web (Público General / Maestro de Obra / Contratista B2B).
+- **Narrativa:**
+  > **Como** cliente o contratista del portal web e-commerce,  
+  > **quiero** consultar la ficha técnica detallada (PDP), calcular requerimientos con factores de conversión de unidades y visualizar precios según mi perfil (Público, Maestro o Contratista B2B),  
+  > **para** cotizar y ordenar materiales pesados con precisión técnica, conociendo las escalas comerciales y asegurando que los artículos restringidos no aparezcan.
+- **Reglas de Negocio Asociadas:**
+  - El atributo booleano `disponible_en_web` determina la visibilidad del producto; si es `false`, se excluye de listados y responde `HTTP 404 Not Found` absoluto.
+  - El Módulo 5 (`SIGIC.Modules.ProductDetailsPricing`) gobierna la ficha PDP, especificaciones dimensionales y calculadora de conversiones de unidades de medida hacia la unidad base (`RF-INV-005`, factores con precisión de 4 decimales: bolsas, docenas, millares, varillas a unidad base).
+  - Listas de precios por perfil: Lista 1 (Público), Lista 2 (Maestro de Obra), Lista 3 (Contratista B2B). Prohibición estricta de precios bajo el costo unitario (`precioVenta >= costoUnitario`), blindada por la excepción de dominio `MargenInvalidoException`.
+- **Criterios de Aceptación (Given-When-Then):**
+  - **Escenario 1: Búsqueda pública en catálogo excluye artículos restringidos.**
+    - **Dado** que en la base de datos existen 500 artículos registrados, de los cuales 120 tienen `disponible_en_web = false`,
+    - **Cuando** un usuario no autenticado navega por el catálogo web o realiza una búsqueda general de materiales,
+    - **Entonces** la interfaz y la API pública listan únicamente entre los 380 artículos autorizados, con 0 % de presencia de los 120 artículos restringidos y latencia $\le 400$ ms (P95).
+  - **Escenario 2: Intento de acceso directo por URL a artículo restringido.**
+    - **Dado** que el producto "Tornillo Drywall a Granel x Kilo" tiene ID `409` y `disponible_en_web = false`,
+    - **Cuando** un usuario intenta acceder directamente a `https://ferreteria.pe/catalogo/producto/409` o consume `/api/v1/public/products/409`,
+    - **Entonces** el servidor retorna `HTTP 404 Not Found` y la interfaz web muestra la vista estándar de "Producto no encontrado".
+  - **Escenario 3: Consulta de Ficha PDP con calculadora de conversión de unidades y tarifa contratista.**
+    - **Dado** que un Contratista B2B autenticado consulta la PDP del producto "Cemento Portland Tipo I",
+    - **Cuando** selecciona en la calculadora comercial la cantidad de "120 bolsas" o su factor equivalente en pallets,
+    - **Entonces** la ficha técnica despliega la equivalencia exacta calculada en la unidad base (kg), aplica automáticamente la tarifa Lista 3 con descuento mayorista validando `precioVenta >= costoUnitario` (sin violar `MargenInvalidoException`), y refleja la disponibilidad del Almacén Central en menos de 400 ms (P95).
+
+---
+
+### HU-03: Checkout Web con Revalidación Atómica de Precio y Stock Disponible
+- **Código Relacionado:** `RF-WEB-005`, `RF-WEB-002`, `RNF-CON-001`, `RNF-CON-003`, `AC02`.
+- **Actor:** Cliente Web (Contratista / Público General).
+- **Narrativa:**
+  > **Como** cliente que finaliza una compra en el carrito del portal web,  
+  > **quiero** que el sistema verifique atómicamente el stock real disponible y los precios actualizados antes de autorizar mi pago,  
+  > **para** garantizar que no pagaré por mercadería inexistente ni se me cobrarán tarifas desactualizadas debido al desfase de la caché web.
+- **Reglas de Negocio Asociadas:**
+  - El catálogo web puede operar sobre una capa de lectura en caché con hasta 30 segundos de desfase.
+  - Al presionar "Pagar / Confirmar Pedido", la API pública invoca obligatoriamente una transacción ACID en PostgreSQL con bloqueo pesimista de fila (`SELECT ... FOR UPDATE`) sobre las tablas maestras, ordenando deterministamente por `producto_id ASC` para erradicar deadlocks.
+  - Se evalúa: $\text{Stock Disponible} = \text{Stock Físico} - \text{Stock Comprometido}$. Si la cantidad solicitada excede el disponible, la transacción se aborta con `HTTP 409 Conflict`.
+- **Criterios de Aceptación (Given-When-Then):**
+  - **Escenario 1: Confirmación de pedido con stock suficiente en Almacén Central.**
+    - **Dado** que el Almacén Central cuenta con 50 bolsas de Cemento Portland disponibles y el precio es S/ 28.50,
+    - **Cuando** el cliente envía la solicitud de checkout para 20 bolsas al precio de S/ 28.50,
+    - **Entonces** el sistema bloquea la fila transaccional, valida existencias, incrementa el `Stock Comprometido` en 20 bolsas, genera la orden en estado `Pendiente de Pago` y responde con éxito en menos de 1 segundo.
+  - **Escenario 2: Conflicto crítico de stock entre mostrador y web (Caso de las 40 bolsas de Cemento Portland Tipo I).**
+    - **Dado** que en el inventario físico quedan exactamente 40 bolsas de Cemento Portland Tipo I (y 0 bolsas de stock comprometido), y en el catálogo web se visualizan las 40 bolsas disponibles,
+    - **Cuando** un cliente web presiona "Confirmar Pedido y Reservar" para 40 bolsas a las 09:15:00 h mientras a las 09:15:01 h un maestro de obra compra en efectivo las 40 bolsas en el mostrador POS,
+    - **Entonces** la transacción web adquiere primero el cerrojo pesimista de fila (`SELECT ... FOR UPDATE`), incrementa el `Stock Comprometido` a 40 bolsas dejando `Stock Disponible = 0`; consecuentemente, al ejecutarse la validación en la terminal POS de mostrador, el sistema detecta que `Stock Disponible = 0`, bloquea la venta física alertando al cajero "Stock insuficiente: artículo comprometido por orden en línea", garantizando 0 sobreventas y evitando que dos clientes paguen por el mismo material físico.
+
+---
+
+### HU-04: Reserva Dinámica de Stock Temporal según Medio de Pago
+- **Código Relacionado:** `RF-WEB-002`, `RNF-CON-004`, `AC02`.
+- **Actor:** Cliente Web (Público General / Contratista).
+- **Narrativa:**
+  > **Como** cliente del portal web,  
+  > **quiero** contar con un tiempo prudencial garantizado para completar el pago de mi pedido sin perder los materiales reservados,  
+  > **para** poder realizar la transferencia bancaria o ingresar los datos de mi tarjeta con total tranquilidad.
+- **Reglas de Negocio Asociadas:**
+  - Al completar la revalidación atómica (HU-03), el sistema asigna un tiempo de vida (TTL) a la reserva según el medio de pago:
+    - **Pasarela de Tarjetas (Crédito/Débito):** Reserva fija de **20 minutos**.
+    - **Pago Manual (Transferencia Bancaria BCP/BBVA o Billeteras Yape/Plin):** Reserva de **hasta 4 horas**, sujeta a que el cliente adjunte el comprobante dentro de los primeros **60 minutos**.
+  - Si transcurren los plazos sin confirmación, el worker en segundo plano (`ReservaExpirationWorker`) cancela el pedido de forma idempotente y decrementa `stock_comprometido`, liberando el inventario.
+- **Criterios de Aceptación (Given-When-Then):**
+  - **Escenario 1: Expiración automática de reserva por tarjeta de crédito tras 20 minutos.**
+    - **Dado** que un cliente inició checkout con tarjeta reservando 10 planchas de fibrocemento a las 10:00:00 h,
+    - **Cuando** son las 10:20:01 h y la pasarela no ha emitido webhook de confirmación,
+    - **Entonces** el proceso en segundo plano cancela la orden por expiración, libera las 10 planchas al Stock Disponible y marca el pedido como `Cancelado por Expiración`.
+  - **Escenario 2: Plazo de carga de comprobante para transferencias bancarias.**
+    - **Dado** que un contratista genera un pedido a las 08:00 h seleccionando "Transferencia BCP", obteniendo un TTL máximo de reserva de 4 horas,
+    - **Cuando** transcurren 61 minutos (09:01 h) y el contratista no ha subido el archivo del voucher al portal,
+    - **Entonces** el sistema anula la reserva por incumplimiento del plazo de carga de 1 hora, liberando el material comprometido en Almacén Central.
+
+---
+
+### HU-05: Validación de Pagos Manuales en Consola de Backoffice Desacoplada
+- **Código Relacionado:** `RF-WEB-003`, `RNF-SEG-004`, `AC03`.
+- **Actor:** Superadmin / Asistente de Tesorería.
+- **Narrativa:**
+  > **Como** responsable de Tesorería en Backoffice,  
+  > **quiero** contar con una cola de auditoría donde pueda visualizar las constancias de transferencia y capturas de Yape subidas por los clientes web y contrastarlas con las cuentas bancarias corporativas,  
+  > **para** aprobar legítimamente los pedidos sin interrumpir ni recargar las labores del personal de caja en el mostrador.
+- **Reglas de Negocio Asociadas:**
+  - Archivos adjuntos soportados: JPG, PNG o PDF con un tamaño máximo de 5 MB.
+  - La consola muestra la cola priorizada por orden de llegada y tiempo de reserva restante.
+  - Al aprobar, el sistema cambia el pedido a `Pago Confirmado`, convierte el stock comprometido en salida definitiva de Kardex del Almacén Central y encola la orden para preparación.
+  - Desacoplamiento total: los cajeros de mostrador no tienen acceso ni responsabilidades sobre esta cola.
+- **Criterios de Aceptación (Given-When-Then):**
+  - **Escenario 1: Aprobación exitosa de pago con comprobante bancario.**
+    - **Dado** que un pedido web de S/ 1,450.00 tiene una constancia de transferencia BCP en estado `Pendiente de Validación` en la cola de Backoffice,
+    - **Cuando** el Superadmin / Tesorero verifica los fondos en el extracto bancario y hace clic en "Aprobar Pago",
+    - **Entonces** el pedido cambia a estado `Pago Confirmado`, el stock físico se debita formalmente en el Kardex, el pedido pasa a la cola de preparación del Almacenero y se registra la pista de auditoría inmutable en `Audit_Log`.
+  - **Escenario 2: Rechazo de comprobante duplicado o no verificado.**
+    - **Dado** que un comprobante adjunto corresponde a una captura reutilizada o no figura en la cuenta bancaria,
+    - **Cuando** el personal de Backoffice selecciona "Rechazar" e ingresa la justificación,
+    - **Entonces** el pedido pasa a estado `Rechazado`, la reserva de stock comprometido se decrementa liberando los productos al catálogo y se notifica al cliente por correo electrónico.
+
+---
+
+### HU-06: Generación Automática de Guía Interna de Traslado para Retiro en Tienda
+- **Código Relacionado:** `RF-WEB-002`, `RF-INV-003`, `RF-POS-011`, `AC02`.
+- **Actor:** Almacenero / Sistema Automatizado.
+- **Narrativa:**
+  > **Como** Almacenero encargado del depósito central,  
+  > **quiero** que el sistema genere automáticamente una guía interna de traslado en estado borrador cuando un pedido web pagado tenga modalidad "Retiro en Tienda",  
+  > **para** preparar el embalaje de los materiales y remitirlos ordenadamente hacia el mostrador de atención.
+- **Reglas de Negocio Asociadas:**
+  - Todos los pedidos web se reservan y preparan inicialmente en el Almacén Central.
+  - Al confirmarse el pago de un pedido con modalidad "Retiro en Tienda Mostrador", el sistema genera automáticamente una **Guía Interna de Traslado** con origen `Almacén Central` y destino `Tienda Mostrador`, en estado `Borrador`.
+  - El Almacenero recolecta los materiales físicamente y cambia la guía a `En Tránsito`, debitando el stock del Almacén Central.
+  - Al recibirse el lote en tienda física, el encargado confirma el bulto pasando la guía a `Recibido`; en ese instante el pedido web cambia automáticamente a `Listo para Retiro`.
+- **Criterios de Aceptación (Given-When-Then):**
+  - **Escenario 1: Creación automática de guía al confirmarse pago web.**
+    - **Dado** que un cliente completó la compra de 4 galones de esmalte sintético con modalidad "Retiro en Mostrador 1",
+    - **Cuando** Tesorería aprueba el comprobante de pago en Backoffice,
+    - **Entonces** el sistema crea una Guía Interna de Traslado vinculada al pedido con estado `Borrador`, detallando los 4 galones, el almacén emisor (Central) y el almacén receptor (Mostrador 1).
+  - **Escenario 2: Notificación al cliente tras recepción en mostrador.**
+    - **Dado** que la guía interna asociada al pedido `WEB-8821` se encuentra en estado `En Tránsito`,
+    - **Cuando** el encargado de tienda en Mostrador 1 revisa físicamente los artículos y marca la guía como `Recibido`,
+    - **Entonces** el pedido `WEB-8821` pasa automáticamente al estado `Listo para Retiro` y se emite un correo electrónico al cliente con el código de recojo.
+
+---
+
+### HU-07: Entrega Ágil en Mostrador de Pedidos Web mediante Escaneo y DNI (F6)
+- **Código Relacionado:** `RF-POS-011`, `RNF-PERF-001`, `AC01`.
+- **Actor:** Despachador Mostrador (o Cajero en función de entrega).
+- **Narrativa:**
+  > **Como** Despachador en el mostrador físico de la ferretería,  
+  > **quiero** entregar los pedidos web a los clientes en menos de 1 minuto validando únicamente el código del pedido y su documento de identidad,  
+  > **para** evitar aglomeraciones en la tienda sin tener que verificar estados de cuenta bancaria ni revisar comprobantes de pago.
+- **Reglas de Negocio Asociadas:**
+  - La pantalla ligera de entrega (`F6`) solo procesa pedidos en estado `Listo para Retiro`.
+  - El operador escanea el código QR/código alfanumérico, coteja el DNI físico y confirma la entrega.
+  - Prohibición de acceso: el operador no visualiza vouchers bancarios ni tiene acceso a la consola de tesorería.
+- **Criterios de Aceptación (Given-When-Then):**
+  - **Escenario 1: Entrega satisfactoria de pedido listo para retiro.**
+    - **Dado** que el pedido `PED-4020` está en estado `Listo para Retiro` en el mostrador de Huamanga,
+    - **Cuando** el Despachador escanea el código con la pistola óptica, verifica que el DNI coincide con el titular registrado y pulsa `Confirmar Entrega`,
+    - **Entonces** el sistema actualiza el estado a `Entregado` en menos de 1 segundo, imprime la constancia de entrega física y archiva la orden.
+  - **Escenario 2: Intento de retiro de pedido no validado por tesorería.**
+    - **Dado** que un cliente se presenta en mostrador exigiendo mercadería de un pedido en estado `Pendiente de Validación de Pago`,
+    - **Cuando** el operador escanea el código,
+    - **Entonces** la terminal muestra una alerta "PEDIDO NO DISPONIBLE: Pago en proceso de verificación por Tesorería", inhabilitando cualquier botón de despacho.
+
+---
+
+### HU-08: Arqueo Ciego de Caja Append-Only al Cierre de Turno por Cajero
+- **Código Relacionado:** `RF-CAJ-002`, `RNF-SEG-004`, `AC03`.
+- **Actor:** Cajero Mostrador.
+- **Narrativa:**
+  > **Como** Cajero al finalizar mi jornada laboral,  
+  > **quiero** declarar el monto físico total de dinero en efectivo y vouchers que tengo en mi gaveta sin que la pantalla me muestre cuánto dinero calcula el sistema,  
+  > **para** garantizar la transparencia del cuadre de caja y evitar manipulaciones en el proceso de rendición de cuentas.
+- **Reglas de Negocio Asociadas:**
+  - Al ejecutar el "Cierre de Turno", el sistema presenta el formulario de **Arqueo Ciego**, ocultando por completo las ventas acumuladas del día y el saldo esperado.
+  - El cajero desglosa obligatoriamente la cantidad física por denominación (billetes de S/ 200, 100, 50, 20, 10; monedas de S/ 5, 2, 1, 0.50, 0.20, 0.10) y la suma de vouchers físicos de tarjetas.
+  - El modelo de datos es estrictamente **append-only**: queda prohibido cualquier `UPDATE` o `DELETE` sobre las tablas de arqueo.
+  - El servidor congela el turno, calcula $\text{Diferencia} = \text{Monto Declarado} - \text{Monto Teórico}$ y emite una alerta clasificada si existe faltante o sobrante.
+- **Criterios de Aceptación (Given-When-Then):**
+  - **Escenario 1: Declaración de arqueo ciego sin información previa.**
+    - **Dado** que el cajero decide cerrar su turno a las 20:00 h,
+    - **Cuando** abre la opción de cierre de caja,
+    - **Entonces** la pantalla no muestra ningún monto de ventas acumuladas, solicitando exclusivamente el ingreso de la cantidad de unidades por denominación monetaria.
+  - **Escenario 2: Consolidación y detección de diferencias tras el cierre.**
+    - **Dado** que el sistema registró ventas en efectivo por S/ 3,250.00 con un fondo inicial de S/ 200.00 (Total esperado: S/ 3,450.00),
+    - **Cuando** el cajero ingresa un conteo físico que totaliza S/ 3,430.00 y confirma el cierre,
+    - **Entonces** el sistema cierra el turno de forma irrevocable en PostgreSQL, registra una diferencia de `- S/ 20.00` (Faltante) en un registro inmutable append-only, emite el ticket de cierre y remite el reporte al Superadmin.
+
+---
+
+### HU-09: Carga e Importación Masiva de Catálogo de Productos vía Excel / CSV
+- **Código Relacionado:** `RF-INV-008`, `RNF-CON-003`, `AC02`.
+- **Actor:** Superadmin.
+- **Narrativa:**
+  > **Como** Superadmin de la empresa ferretera,  
+  > **quiero** importar masivamente cientos de artículos desde un archivo Excel o CSV con validaciones automáticas de negocio y persistencia en bloque,  
+  > **para** evitar la digitación manual de guías de proveedores de más de 100 ítems y asegurar que ningún producto se venda por debajo de su costo ni con categorías inválidas.
+- **Reglas de Negocio Asociadas:**
+  - Endpoint transaccional: `POST /api/v1/productos/importar-masivo` (`multipart/form-data`).
+  - Procesamiento streaming en memoria con .NET 8 (`ClosedXML` / `ExcelDataReader`) para mitigar consumo de RAM ante archivos grandes.
+  - Validaciones atómicas fila por fila:
+    * SKU único e irrepetible.
+    * Familia y Subfamilia existentes en el catálogo maestro.
+    * Costo de compra unitario > 0.
+    * Margen comercial positivo (`PrecioVenta > CostoCompra`).
+    * Stock físico inicial $\ge 0$.
+    * Flag `disponible_en_web` (`true`/`false`).
+  - Persistencia 'All-or-Nothing': inserción en bloque mediante PostgreSQL COPY en una única transacción. Si una sola fila falla, se ejecuta `ROLLBACK` total y se retorna HTTP 422 con reporte detallado de filas rechazadas.
+- **Criterios de Aceptación (Given-When-Then):**
+  - **Escenario 1: Importación exitosa de lote sin inconsistencias.**
+    - **Dado** que el Superadmin sube un archivo `.xlsx` con 250 artículos ferreteros válidos (cemento, fierro, tuberías PVC),
+    - **Cuando** el sistema procesa la solicitud mediante streaming y ejecuta el COPY transaccional en PostgreSQL,
+    - **Entonces** los 250 artículos y sus inventarios iniciales quedan persistidos en menos de 5 segundos, retornando `HTTP 200 OK` con el resumen de la importación.
+  - **Escenario 2: Rollback total ante infracción de margen de ganancia o categoría inexistente.**
+    - **Dado** que en un archivo de 100 filas, la fila 48 contiene una familia no registrada y la fila 82 tiene un precio de venta menor al costo de compra,
+    - **Cuando** el backend valida el archivo en memoria,
+    - **Entonces** el sistema aborta la operación sin registrar ningún producto en base de datos (`ROLLBACK` total con cero inserciones parciales) y responde `HTTP 422 Unprocessable Entity` con un informe JSON detallando fila 48 y fila 82 con sus motivos de rechazo.
+---
+
+## Trazabilidad y Continuidad SDD
+
+Los escenarios operativos Given-When-Then se formalizan en los requisitos del sistema en [03-requisitos-funcionales.md](03-requisitos-funcionales.md).
+
+### HU-10: Copiloto Analítico IA
+
+- **Actor:** Superadmin interno. **Relacionado:** RF-ANA-001, RF-REP-001/002/007,
+  RNF-PERF-002/003. **Estado:** especificado; implementación pendiente.
+- **Como** Superadmin, **quiero** preguntar por ventas, tickets y ticket promedio
+  de un periodo **para** comparar Mostrador y Web y comprobar la cifra usada.
+- **Dado** un lote publicado con dos ventas POS por S/ 65 y cero Web, **cuando**
+  consulto el ticket promedio con filtros explícitos, **entonces** veo S/ 32,50,
+  dos tickets, canal Web sin observaciones, fuente y corte verificables.
+- **Dado** un periodo ambiguo o datos parciales, **cuando** consulto, **entonces**
+  recibo aclaración o cobertura incompleta sin cifras concluyentes inventadas.
+- **Dado** un actor sin rol/audiencia interna válida, **cuando** consulta,
+  **entonces** la API deniega antes de acceder al datamart o al proveedor.

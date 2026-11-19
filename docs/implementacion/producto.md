@@ -26,6 +26,6 @@ La clase [Producto.cs](../../src/SIGIC.Domain/Entities/Producto.cs) encapsula el
 
 ## 2. Verificación y Alcance Arquitectónico
 
-Los comportamientos lógicos de esta entidad se encuentran verificados unitariamente en memoria conforme a lo documentado en [01-pruebas-unitarias.md](../../05-pruebas-y-calidad/01-pruebas-unitarias.md).
+Los comportamientos lógicos de esta entidad se encuentran verificados unitariamente en memoria conforme a lo documentado en [01-pruebas-unitarias.md](../entregables/sprint-2/01-pruebas-unitarias.md).
 
 Es fundamental destacar que la entidad `Producto` modela exclusivamente las reglas de negocio en memoria; no ejecuta ni sustituye las transacciones de base de datos (`SELECT ... FOR UPDATE`), el ordenamiento determinista anti-deadlock ni las conexiones a PostgreSQL 16.

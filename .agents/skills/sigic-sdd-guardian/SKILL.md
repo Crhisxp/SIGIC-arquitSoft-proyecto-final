@@ -38,7 +38,7 @@ Ante cualquier solicitud de creación, modificación o revisión de código en e
 ---
 
 ### FASE 1: Lectura y Trazabilidad de Especificación (Spec Reading)
-1. Identifica qué requerimientos funcionales y atributos de calidad están involucrados, consultando [03-requisitos-funcionales.md](../../../01-analisis-de-sistema/03-requisitos-funcionales.md) y [04-atributos-de-calidad.md](../../../01-analisis-de-sistema/04-atributos-de-calidad.md).
+1. Identifica qué requerimientos funcionales y atributos de calidad están involucrados, consultando [03-requisitos-funcionales.md](../../../docs/especificaciones/03-requisitos-funcionales.md) y [04-atributos-de-calidad.md](../../../docs/especificaciones/04-atributos-de-calidad.md).
 2. Consulta las especificaciones de arquitectura y diseño correspondientes como texto de referencia.
 3. Declara explícitamente al inicio de tu razonamiento qué reglas rigen la tarea:
    - **Inventario y Concurrencia:** `RNF-CON-003` (`Stock Disponible = Stock Físico - Stock Comprometido`), `RF-INV-001` (`disponible_en_web == false` retorna HTTP 404 absoluto en API pública), `RF-WEB-005` (transacción corta con `SELECT ... FOR UPDATE` + `UPDATE` condicionado y orden ascendente de `ProductoId` para evitar deadlocks).

@@ -2,73 +2,117 @@ name: CI/CD Pipeline - SIGIC Ferretería v2.2
 
 on:
   push:
-    branches: [ main ]
+    branches: [main, master]
   pull_request:
-    branches: [ main ]
+    branches: [main, master]
+
+permissions:
+  contents: read
 
 jobs:
   build-and-verify:
-    name: Build, SDD Concurrency Tests & Coverage Gate (>= 95%)
-    runs-on: ubuntu-latest
-
+    name: .NET 8, PostgreSQL 16, PgBouncer 1.22.1 & Domain coverage >=95%
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: sigic_ci_ephemeral
+          POSTGRES_DB: postgres
+        ports:
+          - 54329:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d postgres"
+          --health-interval 2s --health-timeout 3s --health-retries 30
+    # Ephemeral credentials shared with PostgreSqlTestFixture; no production secrets.
+    env:
+      SIGIC_DB_HOST: 127.0.0.1
+      SIGIC_DB_PORT: '54329'
+      SIGIC_DB_NAME: postgres
+      SIGIC_DB_ADMIN_USER: postgres
+      SIGIC_DB_ADMIN_PASSWORD: sigic_ci_ephemeral
+      SIGIC_DB_USER: sigic_app
+      SIGIC_DB_PASSWORD: sigic_fixture_ephemeral
+      SIGIC_POS_CONNECTION_STRING: Host=127.0.0.1;Port=6432;Database=sigic_pos_pool;Username=sigic_app;Password=sigic_fixture_ephemeral;Pooling=false
+      SIGIC_WEB_CONNECTION_STRING: Host=127.0.0.1;Port=6432;Database=sigic_web_pool;Username=sigic_app;Password=sigic_fixture_ephemeral;Pooling=false
     steps:
-      - name: Checkout Repository
+      - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Setup .NET 8 SDK
+      - name: Setup .NET 8
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
-
-      - name: Restore Dependencies
-        run: dotnet restore SIGIC.sln
-
-      - name: Build Solution (Release with Warnings as Errors)
-        run: dotnet build SIGIC.sln --configuration Release --no-restore -warnaserror
-
-      - name: Run Domain & Concurrency Tests with Coverage
-        run: >
-          dotnet test SIGIC.sln
-          --configuration Release
-          --no-build
-          --collect:"XPlat Code Coverage"
-          --results-directory ./TestResults
-          --logger "console;verbosity=detailed"
-
-      - name: Verify Code Coverage Threshold (>= 95% Line Coverage Gate)
-        shell: bash
+      - name: Install pooler build and PostgreSQL client dependencies
         run: |
-          python3 - << 'EOF'
-          import glob
-          import sys
-          import xml.etree.ElementTree as ET
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client build-essential pkg-config libevent-dev libssl-dev curl
+      - name: Verify coverage aggregation regressions
+        run: python3 -m unittest discover -s scripts/ci -p 'test_*.py' -v
+      - name: Bootstrap schema, SCRAM and PgBouncer 1.22.1; verify both pools
+        run: bash scripts/ci/bootstrap.sh
+      - name: Restore
+        run: dotnet restore SIGIC.sln
+      - name: Build Release with warnings as errors
+        run: dotnet build SIGIC.sln --configuration Release --no-restore -warnaserror
+      - name: Four sequential suites, TRX and merged line coverage
+        run: bash scripts/ci/test-backend.sh
+      - name: Capture sanitized service diagnostics on failure
+        if: failure()
+        env:
+          SIGIC_POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          mkdir -p TestResults/diagnostics
+          if test -n "${SIGIC_POOL_DIR:-}" && test -f "$SIGIC_POOL_DIR/pgbouncer.log"; then
+            python3 scripts/ci/sanitize-log.py "$SIGIC_POOL_DIR/pgbouncer.log" > TestResults/diagnostics/pgbouncer.log
+          fi
+          docker logs "$SIGIC_POSTGRES_CONTAINER" 2>&1 | python3 scripts/ci/sanitize-log.py > TestResults/diagnostics/postgres.log
+      - name: Stop own pooler
+        if: always()
+        run: bash scripts/ci/stop-pgbouncer.sh
+      - name: Upload backend evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-${{ github.sha }}
+          path: TestResults/
+          if-no-files-found: warn
 
-          coverage_files = glob.glob('./TestResults/**/coverage.cobertura.xml', recursive=True)
-          if not coverage_files:
-              print("❌ ERROR: No se encontró ningún reporte 'coverage.cobertura.xml'.", file=sys.stderr)
-              sys.exit(1)
-
-          latest_report = max(coverage_files, key=lambda f: f)
-          print(f"📊 Analizando reporte: {latest_report}")
-
-          tree = ET.parse(latest_report)
-          root = tree.getroot()
-          line_rate = float(root.attrib.get('line-rate', 0)) * 100
-          branch_rate = float(root.attrib.get('branch-rate', 0)) * 100
-          lines_covered = root.attrib.get('lines-covered', '0')
-          lines_valid = root.attrib.get('lines-valid', '0')
-
-          print(f"==================================================")
-          print(f"📈 SIGIC SDD Quality Gate Summary:")
-          print(f"   Line Coverage:   {line_rate:.2f}% ({lines_covered}/{lines_valid} lines)")
-          print(f"   Branch Coverage: {branch_rate:.2f}%")
-          print(f"   Threshold:       >= 95.00%")
-          print(f"==================================================")
-
-          MIN_THRESHOLD = 95.00
-          if line_rate < MIN_THRESHOLD:
-              print(f"❌ ERROR: Cobertura de código insuficiente ({line_rate:.2f}% < {MIN_THRESHOLD}%). Build fallido por Quality Gate SDD.", file=sys.stderr)
-              sys.exit(1)
-
-          print(f"✅ Quality Gate APROBADO: Cobertura cumple con el estándar >= 95%.")
-          EOF
+  frontend:
+    name: Vitest and build - ${{ matrix.channel }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        channel: [SIGIC.POS, SIGIC.Web]
+    defaults:
+      run:
+        working-directory: src/${{ matrix.channel }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: src/${{ matrix.channel }}/package-lock.json
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Run Vitest
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/TestResults/${{ matrix.channel }}"
+          npm test -- --reporter=default --reporter=junit --outputFile="$GITHUB_WORKSPACE/TestResults/${{ matrix.channel }}/vitest.xml"
+      - name: Build
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+        run: npm run build
+      - name: Upload frontend evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-${{ matrix.channel }}-${{ github.sha }}
+          path: TestResults/${{ matrix.channel }}/
+          if-no-files-found: warn

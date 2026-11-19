@@ -1,0 +1,17 @@
+; Shared disposable CI/local configuration; rendered by scripts/ci/bootstrap.sh.
+[databases]
+sigic_pos_pool = host=${SIGIC_DB_HOST} port=${SIGIC_DB_PORT} dbname=${SIGIC_DB_NAME} pool_size=50 max_db_connections=50 reserve_pool=0
+sigic_web_pool = host=${SIGIC_DB_HOST} port=${SIGIC_DB_PORT} dbname=${SIGIC_DB_NAME} pool_size=30 max_db_connections=30 reserve_pool=0
+
+[pgbouncer]
+listen_addr = 127.0.0.1
+listen_port = 6432
+unix_socket_dir = ${SIGIC_POOL_DIR}
+pool_mode = transaction
+auth_type = scram-sha-256
+auth_file = ${SIGIC_POOL_DIR}/userlist.txt
+max_client_conn = 500
+query_wait_timeout = 3
+stats_users = sigic_app
+pidfile = ${SIGIC_POOL_DIR}/pgbouncer.pid
+logfile = ${SIGIC_POOL_DIR}/pgbouncer.log

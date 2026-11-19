@@ -23,7 +23,7 @@ En el archivo [ArqueoCaja.cs](../../src/SIGIC.Domain/Entities/ArqueoCaja.cs) se 
 
 ## 2. Relación con Pruebas y Exigencias de Infraestructura
 
-Los cálculos inmutables y la precisión de tipo `decimal` están descritos en [01-pruebas-unitarias.md](../../05-pruebas-y-calidad/01-pruebas-unitarias.md).
+Los cálculos inmutables y la precisión de tipo `decimal` están descritos en [01-pruebas-unitarias.md](../entregables/sprint-2/01-pruebas-unitarias.md).
 
 Límites de responsabilidad:
 - La propiedad `EsAppendOnly` de la entidad C# no equivale a las restricciones de persistencia física en PostgreSQL 16 (`REVOKE UPDATE, DELETE ON caja_arqueo`).

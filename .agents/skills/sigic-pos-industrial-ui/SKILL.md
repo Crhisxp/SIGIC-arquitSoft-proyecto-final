@@ -8,7 +8,7 @@ description: >-
 # Skill: Interfaz Industrial POS de Mostrador — SIGIC Ferretería v2.2
 
 Gobierna el diseño, construcción y revisión de componentes React 18/Vite para el Mostrador POS presencial.
-Alineado con [02-historias-del-usuario.md](../../../01-analisis-de-sistema/02-historias-del-usuario.md) y [DESIGN.md](../../../DESIGN.md), bajo la autoridad metodológica de `AGENTS.md`.
+Alineado con [02-historias-del-usuario.md](../../../docs/especificaciones/02-historias-del-usuario.md) y [DESIGN.md](../../../DESIGN.md), bajo la autoridad metodológica de `AGENTS.md`.
 
 ## 1. Disparadores de Uso
 - Creación o refactorización de pantallas, modales o hooks del Mostrador POS (`RF-POS-003`).

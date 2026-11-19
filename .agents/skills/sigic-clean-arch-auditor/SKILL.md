@@ -8,7 +8,7 @@ description: >-
 # Skill: Auditor de Clean Architecture y Persistencia — SIGIC Ferretería v2.2
 
 Gobierna la auditoría técnica del backend ASP.NET Core 8 LTS, base de datos PostgreSQL 16 y connection pooler PgBouncer 1.22.
-Alineado con [estilo-arquitectonico.md](../../../02-arquitectura-software/estilo-arquitectonico.md), bajo la autoridad metodológica de `AGENTS.md`.
+Alineado con [estilo-arquitectonico.md](../../../docs/arquitectura/estilo-arquitectonico.md), bajo la autoridad metodológica de `AGENTS.md`.
 
 ## 1. Disparadores de Uso
 - Auditoría de código en `src/SIGIC.Domain`, `src/SIGIC.Application`, `src/SIGIC.Infrastructure` o `src/SIGIC.WebApi`.

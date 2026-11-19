@@ -217,4 +217,4 @@ Al iniciar el Checkout, el backend ejecuta la transacción corta con `SELECT ...
 
 ## 6. Verificación y Pruebas de Interfaz
 
-La validación integral de los flujos de interacción omnicanal y las interfaces de usuario se especifica en [02-pruebas-e2e.md](05-pruebas-y-calidad/02-pruebas-e2e.md).
+La validación integral de los flujos de interacción omnicanal y las interfaces de usuario se especifica en [02-pruebas-e2e.md](docs/entregables/sprint-2/02-pruebas-e2e.md).
