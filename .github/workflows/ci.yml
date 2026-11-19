@@ -14,10 +14,6 @@ jobs:
     name: .NET 8, PostgreSQL 16, PgBouncer 1.22.1 & Domain coverage >=95%
     runs-on: ubuntu-24.04
     timeout-minutes: 25
-    steps:
-      - name: Start PostgreSQL 16 (max_connections=300)
-        run: |
-          docker run -d --name sigic-ci-postgres             -e POSTGRES_USER=postgres             -e POSTGRES_PASSWORD=sigic_ci_ephemeral             -e POSTGRES_DB=postgres             -p 54329:5432             postgres:16 -c max_connections=300
     # Ephemeral credentials shared with PostgreSqlTestFixture; no production secrets.
     env:
       SIGIC_DB_HOST: 127.0.0.1
@@ -29,6 +25,10 @@ jobs:
       SIGIC_DB_PASSWORD: sigic_fixture_ephemeral
       SIGIC_POS_CONNECTION_STRING: Host=127.0.0.1;Port=6432;Database=sigic_pos_pool;Username=sigic_app;Password=sigic_fixture_ephemeral;Pooling=false
       SIGIC_WEB_CONNECTION_STRING: Host=127.0.0.1;Port=6432;Database=sigic_web_pool;Username=sigic_app;Password=sigic_fixture_ephemeral;Pooling=false
+          steps:
+      - name: Start PostgreSQL 16 (max_connections=300)
+        run: |
+          docker run -d --name sigic-ci-postgres \n            -e POSTGRES_USER=postgres \n            -e POSTGRES_PASSWORD=sigic_ci_ephemeral \n            -e POSTGRES_DB=postgres \n            -p 54329:5432 \n            postgres:16 -c max_connections=300
       - name: Checkout
         uses: actions/checkout@v4
       - name: Setup .NET 8
