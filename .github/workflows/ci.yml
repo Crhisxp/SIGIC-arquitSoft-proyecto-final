@@ -52,7 +52,7 @@ jobs:
       - name: Capture sanitized service diagnostics on failure
         if: failure()
         env:
-          SIGIC_POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+          SIGIC_POSTGRES_CONTAINER: sigic-ci-postgres
         run: |
           mkdir -p TestResults/diagnostics
           if test -n "${SIGIC_POOL_DIR:-}" && test -f "$SIGIC_POOL_DIR/pgbouncer.log"; then
