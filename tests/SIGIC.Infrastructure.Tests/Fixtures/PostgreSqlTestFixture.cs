@@ -80,6 +80,9 @@ public class PostgreSqlTestFixture : IAsyncLifetime
             string permSql = await File.ReadAllTextAsync(permPath);
             await adminConn.ExecuteAsync(permSql);
         }
+
+        string reportingSql = await File.ReadAllTextAsync(Path.Combine(scriptsDir, "02_cierres_analiticos.sql"));
+        await adminConn.ExecuteAsync(reportingSql);
     }
 
     public Task DisposeAsync() => Task.CompletedTask;

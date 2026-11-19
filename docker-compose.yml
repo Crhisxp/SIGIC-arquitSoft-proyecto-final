@@ -11,6 +11,7 @@ services:
       - datos:/var/lib/postgresql/data
       - ./src/SIGIC.Infrastructure/Persistence/Scripts/00_init_schema.sql:/docker-entrypoint-initdb.d/00_init_schema.sql:ro
       - ./src/SIGIC.Infrastructure/Persistence/Scripts/01_append_only_permissions.sql:/docker-entrypoint-initdb.d/01_append_only_permissions.sql:ro
+      - ./src/SIGIC.Infrastructure/Persistence/Scripts/02_cierres_analiticos.sql:/docker-entrypoint-initdb.d/02_cierres_analiticos.sql:ro
     healthcheck:
       test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-U", "postgres", "-d", "postgres"]
       interval: 2s
@@ -94,6 +95,8 @@ services:
       pooler: {condition: service_healthy}
     environment:
       ASPNETCORE_URLS: http://+:8080
+      GeminiSettings__Model: ${GeminiSettings__Model:-}
+      GeminiSettings__ApiKey: ${GeminiSettings__ApiKey:-}
       ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=postgres;Username=sigic_app;Password=sigic_fixture_ephemeral
       ConnectionStrings__PosConnection: Host=pooler;Port=6432;Database=sigic_pos_pool;Username=sigic_app;Password=sigic_fixture_ephemeral;Pooling=false
       ConnectionStrings__WebConnection: Host=pooler;Port=6432;Database=sigic_web_pool;Username=sigic_app;Password=sigic_fixture_ephemeral;Pooling=false
@@ -118,6 +121,8 @@ services:
       retries: 25
 
   web:
+    environment:
+      INTERNAL_BACKEND_URL: http://api:8080
     build:
       context: ./src/SIGIC.Web
       dockerfile_inline: |

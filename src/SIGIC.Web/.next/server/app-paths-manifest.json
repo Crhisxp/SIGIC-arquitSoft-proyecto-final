@@ -1,8 +1,13 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
-  "/checkout/page": "app/checkout/page.js",
+  "/login/page": "app/login/page.js",
   "/pdp/[id]/page": "app/pdp/[id]/page.js",
-  "/pedidos/[id]/page": "app/pedidos/[id]/page.js",
+  "/checkout/page": "app/checkout/page.js",
   "/page": "app/page.js",
-  "/login/page": "app/login/page.js"
+  "/admin/analitica/page": "app/admin/analitica/page.js",
+  "/pedidos/[id]/page": "app/pedidos/[id]/page.js",
+  "/admin/analitica/logout/route": "app/admin/analitica/logout/route.js",
+  "/admin/analitica/consultas/route": "app/admin/analitica/consultas/route.js",
+  "/admin/analitica/login-staff/route": "app/admin/analitica/login-staff/route.js",
+  "/admin/analitica/session/route": "app/admin/analitica/session/route.js"
 }

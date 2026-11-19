@@ -25,9 +25,13 @@ public class UserContextMiddleware
         string path = context.Request.Path.Value?.ToLowerInvariant() ?? string.Empty;
         string clientIp = context.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";
 
+        bool esAnalitica = context.Request.Path.StartsWithSegments("/api/v1/analitica", StringComparison.OrdinalIgnoreCase);
+        if (esAnalitica) context.Response.Headers.CacheControl = "no-store";
+
         bool isInternalStaffRoute = path.StartsWith("/api/v1/pos") ||
                                     path.StartsWith("/api/v1/caja") ||
-                                    path.StartsWith("/api/v1/inventario");
+                                    path.StartsWith("/api/v1/inventario") ||
+                                    esAnalitica;
 
         bool isWebRoute = path.StartsWith("/api/v1/web");
 

@@ -1,0 +1,929 @@
+{
+  "info": {
+    "name": "SIGIC Ferretería v2.2",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Seleccionar SIGIC Local. Usar una BD descartable, cuentas de Cajero, Tesoreria y ClienteWeb, un producto web con stock en tienda y central, un producto solo POS y una caja sin turno abierto. Completar los valores locales del entorno antes de ejecutar en orden. La venta descuenta una unidad, el cierre declara el fondo de 100 más el cobro y la reserva Yape compromete una unidad."
+  },
+  "item": [
+    {
+      "name": "Autenticación",
+      "item": [
+        {
+          "name": "Login staff",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/login-staff",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{staffUsername}}\",\n  \"password\": \"{{staffPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const resultado = pm.response.json();",
+                  "pm.test(\"token presente\", () => pm.expect(resultado.token).to.exist);",
+                  "if (resultado.token !== undefined) pm.environment.set(\"staffToken\", resultado.token);",
+                  "pm.test(\"userId presente\", () => pm.expect(resultado.userId).to.exist);",
+                  "if (resultado.userId !== undefined) pm.environment.set(\"staffId\", resultado.userId);"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.unset(\"staffToken\");"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login web",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/login-web",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{webUsername}}\",\n  \"password\": \"{{webPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const resultado = pm.response.json();",
+                  "pm.test(\"token presente\", () => pm.expect(resultado.token).to.exist);",
+                  "if (resultado.token !== undefined) pm.environment.set(\"webToken\", resultado.token);",
+                  "pm.test(\"userId presente\", () => pm.expect(resultado.userId).to.exist);",
+                  "if (resultado.userId !== undefined) pm.environment.set(\"webId\", resultado.userId);"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.unset(\"webToken\");"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login tesoreria",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/login-staff",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{tesoreriaUsername}}\",\n  \"password\": \"{{tesoreriaPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const resultado = pm.response.json();",
+                  "pm.test(\"token presente\", () => pm.expect(resultado.token).to.exist);",
+                  "if (resultado.token !== undefined) pm.environment.set(\"tesoreriaToken\", resultado.token);",
+                  "pm.test(\"userId presente\", () => pm.expect(resultado.userId).to.exist);",
+                  "if (resultado.userId !== undefined) pm.environment.set(\"tesoreriaId\", resultado.userId);"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.unset(\"tesoreriaToken\");"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Caja y mostrador POS",
+      "item": [
+        {
+          "name": "Abrir turno",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/caja/turnos/apertura",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{staffToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cajaId\": \"{{cajaId}}\",\n  \"cajeroId\": \"{{staffId}}\",\n  \"almacenId\": \"{{almacenId}}\",\n  \"fondoInicial\": 100\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "const resultado = pm.response.json();",
+                  "pm.test(\"turnoId presente\", () => pm.expect(resultado.turnoId).to.exist);",
+                  "if (resultado.turnoId !== undefined) pm.environment.set(\"turnoId\", resultado.turnoId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Turno actual",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/caja/turnos/actual?cajeroId={{staffId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{staffToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Venta",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/pos/ventas",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{staffToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"turnoCajaId\": \"{{turnoId}}\",\n  \"clienteId\": \"{{webId}}\",\n  \"items\": [\n    {\n      \"productoId\": \"{{productoId}}\",\n      \"cantidad\": 1,\n      \"unidadMedida\": \"UND\",\n      \"precioUnitario\": \"{{precioUnitario}}\"\n    }\n  ],\n  \"pagos\": [\n    {\n      \"metodoPago\": \"Efectivo\",\n      \"monto\": \"{{precioUnitario}}\"\n    }\n  ],\n  \"tipoComprobante\": \"Boleta\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "const resultado = pm.response.json();",
+                  "pm.test(\"ventaId presente\", () => pm.expect(resultado.ventaId).to.exist);",
+                  "if (resultado.ventaId !== undefined) pm.environment.set(\"ventaId\", resultado.ventaId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Leer venta",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/pos/ventas/{{ventaId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{staffToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cierre ciego",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/caja/turnos/cierre",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{staffToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"turnoCajaId\": \"{{turnoId}}\",\n  \"desgloseFisico\": [\n    {\n      \"valorUnitario\": 1,\n      \"cantidad\": \"{{efectivoDeclarado}}\"\n    }\n  ],\n  \"totalDigitalDeclarado\": 0,\n  \"justificacion\": \"Ensayo local Postman\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Inventario y catálogo",
+      "item": [
+        {
+          "name": "Stock",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/inventario/stock?almacenId={{almacenId}}&productoId={{productoId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{staffToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Kardex",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/inventario/kardex/{{productoId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{staffToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/public/catalogo/productos?almacenId={{almacenId}}&search={{search}}",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const resultado = pm.response.json();",
+                  "pm.test(\"JSON de catálogo\", () => pm.expect(resultado).to.exist);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PDP visible",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/public/catalogo/productos/{{productoId}}",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PDP oculto",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/public/catalogo/productos/{{productoOcultoId}}",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Calcular tarifa",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/public/catalogo/calcular-precio",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productoId\": \"{{productoId}}\",\n  \"cantidad\": 1,\n  \"unidadMedida\": \"UND\",\n  \"rolCliente\": \"PublicoGeneral\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sin token",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/inventario/stock?almacenId={{almacenId}}&productoId={{productoId}}",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Audiencia cruzada",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/inventario/stock?almacenId={{almacenId}}&productoId={{productoId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{webToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Pedidos Web",
+      "item": [
+        {
+          "name": "Reserva manual",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/web/pedidos/reservar",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{webToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clienteId\": \"{{webId}}\",\n  \"metodoPago\": \"Yape\",\n  \"modalidadEntrega\": \"RetiroEnTienda\",\n  \"tiendaDestinoId\": \"{{tiendaDestinoId}}\",\n  \"items\": [\n    {\n      \"productoId\": \"{{productoId}}\",\n      \"cantidad\": 1,\n      \"precioUnitario\": \"{{precioUnitario}}\",\n      \"unidadMedida\": \"UND\",\n      \"factorConversion\": 1\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "const resultado = pm.response.json();",
+                  "pm.test(\"pedidoId presente\", () => pm.expect(resultado.pedidoId).to.exist);",
+                  "if (resultado.pedidoId !== undefined) pm.environment.set(\"pedidoId\", resultado.pedidoId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Leer pedido",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/web/pedidos/{{pedidoId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{webToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Copiloto analítico (RF-ANA-001)",
+      "item": [
+        {
+          "name": "Ventas",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/analitica/consultas",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tesoreriaToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pregunta\": \"¿Cuáles fueron las ventas?\",\n  \"desde\": \"{{desde}}\",\n  \"hastaExclusivo\": \"{{hastaExclusivo}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Resumen y hechos analíticos\", () => {",
+                  "  const datos = pm.response.json();",
+                  "  pm.expect(datos.resumen).to.be.a(\"string\");",
+                  "  pm.expect(datos.hechos).to.be.an(\"array\");",
+                  "  pm.expect(datos.estado).not.to.equal(\"requiere_aclaracion\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Rotación",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/analitica/consultas",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tesoreriaToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pregunta\": \"¿Cuál fue la rotación de inventario?\",\n  \"desde\": \"{{desde}}\",\n  \"hastaExclusivo\": \"{{hastaExclusivo}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Resumen y hechos analíticos\", () => {",
+                  "  const datos = pm.response.json();",
+                  "  pm.expect(datos.resumen).to.be.a(\"string\");",
+                  "  pm.expect(datos.hechos).to.be.an(\"array\");",
+                  "  pm.expect(datos.estado).not.to.equal(\"requiere_aclaracion\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Quiebres",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/analitica/consultas",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tesoreriaToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pregunta\": \"¿Hay quiebres de stock?\",\n  \"desde\": \"{{desde}}\",\n  \"hastaExclusivo\": \"{{hastaExclusivo}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Resumen y hechos analíticos\", () => {",
+                  "  const datos = pm.response.json();",
+                  "  pm.expect(datos.resumen).to.be.a(\"string\");",
+                  "  pm.expect(datos.hechos).to.be.an(\"array\");",
+                  "  pm.expect(datos.estado).not.to.equal(\"requiere_aclaracion\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Márgenes",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/analitica/consultas",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tesoreriaToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pregunta\": \"¿Cuál fue el margen operativo?\",\n  \"desde\": \"{{desde}}\",\n  \"hastaExclusivo\": \"{{hastaExclusivo}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Resumen y hechos analíticos\", () => {",
+                  "  const datos = pm.response.json();",
+                  "  pm.expect(datos.resumen).to.be.a(\"string\");",
+                  "  pm.expect(datos.hechos).to.be.an(\"array\");",
+                  "  pm.expect(datos.estado).not.to.equal(\"requiere_aclaracion\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cliente web",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/analitica/consultas",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{webToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pregunta\": \"Ventas\",\n  \"desde\": \"{{desde}}\",\n  \"hastaExclusivo\": \"{{hastaExclusivo}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Anónimo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/analitica/consultas",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pregunta\": \"Ventas\",\n  \"desde\": \"{{desde}}\",\n  \"hastaExclusivo\": \"{{hastaExclusivo}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "if (pm.request.body && pm.request.body.mode === \"raw\") {",
+          "  const numeric = [\"cantidad\", \"precioUnitario\", \"monto\"];",
+          "  const body = JSON.parse(pm.request.body.raw, (key, value) => {",
+          "    if (typeof value !== \"string\") return value;",
+          "    const resolved = pm.variables.replaceIn(value);",
+          "    return numeric.includes(key) ? Number(resolved) : resolved;",
+          "  });",
+          "  pm.request.body.update(JSON.stringify(body));",
+          "}"
+        ]
+      }
+    }
+  ]
+}

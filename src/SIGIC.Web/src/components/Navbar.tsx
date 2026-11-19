@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { ShoppingCart, User, Wrench, ShieldCheck, LogOut, Package } from "lucide-react";
+import { ShoppingCart, User, Wrench, ShieldCheck, LogOut, Package, BarChart3 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 import { RolClienteWeb } from "../types/web";
@@ -48,6 +48,16 @@ export const Navbar: React.FC = () => {
           >
             <Package className="w-4 h-4" />
             <span>Catálogo</span>
+          </Link>
+
+          {/* Copiloto Analítica Link Descubrible */}
+          <Link
+            href="/admin/analitica"
+            className="text-[#8a8f98] hover:text-[#e4f222] transition-colors flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#161718] border border-[#23252a] hover:border-[#e4f222]/40 font-mono text-[11px]"
+            title="Copiloto Analítico Staff"
+          >
+            <BarChart3 className="w-3.5 h-3.5 text-[#e4f222]" />
+            <span className="font-semibold">Analítica</span>
           </Link>
 
           {/* Cart */}

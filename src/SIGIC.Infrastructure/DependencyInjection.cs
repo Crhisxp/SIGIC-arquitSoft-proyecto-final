@@ -4,6 +4,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.IdentityModel.Tokens;
+using SIGIC.Application.Analytics.Ports;
+using SIGIC.Application.Analytics.Services;
 using SIGIC.Application.CashManagement.Handlers;
 using SIGIC.Application.CashManagement.Ports;
 using SIGIC.Application.Common.Interfaces;
@@ -18,6 +20,7 @@ using SIGIC.Application.SalesPOS.Handlers;
 using SIGIC.Application.SalesPOS.Ports;
 using SIGIC.Application.Security.Ports;
 using SIGIC.Application.Security.Services;
+using SIGIC.Infrastructure.Adapters.Analytics;
 using SIGIC.Infrastructure.Adapters.CashManagement;
 using SIGIC.Infrastructure.Adapters.Common;
 using SIGIC.Infrastructure.Adapters.Inventory;
@@ -119,6 +122,10 @@ public static class DependencyInjection
         services.AddScoped<RegistrarArqueoCiegoCommandHandler>();
         services.AddScoped<ValidarVoucherPagoCommandHandler>();
         services.AddScoped<CalcularPDPYDescuentoQueryHandler>();
+
+        // Copiloto Analítico IA (RF-ANA-001)
+        services.AddScoped<ILecturaAnaliticaPort, PostgresLecturaAnaliticaPort>();
+        services.AddScoped<ICopilotoAnaliticoService, CopilotoAnaliticoService>();
 
         // Background Service de Expiración de Reservas Web
         services.AddHostedService<ReservationExpirationBackgroundService>();
