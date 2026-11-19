@@ -1,0 +1,3 @@
+# The Compose inline Dockerfile builds only from the official upstream release.
+# Keep deployment references and static SCRAM verifiers out of the build context.
+*

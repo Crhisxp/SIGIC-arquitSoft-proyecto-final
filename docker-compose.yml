@@ -1,0 +1,198 @@
+name: sigic-local
+services:
+  postgres:
+    image: postgres:16-bookworm
+    command: ["postgres", "-c", "max_connections=300"]
+    environment:
+      POSTGRES_PASSWORD: sigic_ci_ephemeral
+      POSTGRES_DB: postgres
+    ports: ["127.0.0.1:54329:5432"]
+    volumes:
+      - datos:/var/lib/postgresql/data
+      - ./src/SIGIC.Infrastructure/Persistence/Scripts/00_init_schema.sql:/docker-entrypoint-initdb.d/00_init_schema.sql:ro
+      - ./src/SIGIC.Infrastructure/Persistence/Scripts/01_append_only_permissions.sql:/docker-entrypoint-initdb.d/01_append_only_permissions.sql:ro
+    healthcheck:
+      test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-U", "postgres", "-d", "postgres"]
+      interval: 2s
+      timeout: 3s
+      retries: 40
+
+  init-auth:
+    image: postgres:16-bookworm
+    depends_on:
+      postgres: {condition: service_healthy}
+    environment:
+      PGHOST: postgres
+      PGUSER: postgres
+      PGDATABASE: postgres
+      PGPASSWORD: sigic_ci_ephemeral
+      APP_PASSWORD: sigic_fixture_ephemeral
+    volumes: ["auth:/auth"]
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        umask 077
+        psql -X -v ON_ERROR_STOP=1 -v app_pw="$${APP_PASSWORD}" <<'SQL'
+        SET password_encryption='scram-sha-256';
+        SELECT format('ALTER ROLE sigic_app LOGIN PASSWORD %L', :'app_pw')
+        FROM pg_authid WHERE rolname='sigic_app' AND rolpassword IS NULL
+        \gexec
+        SQL
+        PGUSER=sigic_app PGPASSWORD="$${APP_PASSWORD}" psql -XAt -v ON_ERROR_STOP=1 -c 'SELECT current_user' | grep -qx sigic_app
+        psql -XAt -v ON_ERROR_STOP=1 -c "SELECT format('%s%s%s %s%s%s',chr(34),rolname,chr(34),chr(34),rolpassword,chr(34)) FROM pg_authid WHERE rolname='sigic_app' AND rolpassword LIKE 'SCRAM-SHA-256%'" > /auth/userlist.tmp
+        test -s /auth/userlist.tmp
+        chown postgres:postgres /auth/userlist.tmp
+        mv /auth/userlist.tmp /auth/userlist.txt
+
+  pooler:
+    build:
+      context: ./infrastructure/pgbouncer
+      dockerfile_inline: |
+        FROM postgres:16-bookworm AS build
+        RUN apt-get update && apt-get install -y --no-install-recommends build-essential pkg-config libevent-dev libssl-dev ca-certificates curl
+        WORKDIR /build
+        RUN curl -fsSLO https://www.pgbouncer.org/downloads/files/1.22.1/pgbouncer-1.22.1.tar.gz && curl -fsSLO https://www.pgbouncer.org/downloads/files/1.22.1/pgbouncer-1.22.1.tar.gz.sha256 && awk 'NR==1 {print $1 "  pgbouncer-1.22.1.tar.gz"}' pgbouncer-1.22.1.tar.gz.sha256 | sha256sum -c - && tar xzf pgbouncer-1.22.1.tar.gz
+        WORKDIR /build/pgbouncer-1.22.1
+        RUN ./configure && make -j2 pgbouncer
+        FROM postgres:16-bookworm
+        RUN apt-get update && apt-get install -y --no-install-recommends libevent-2.1-7 libssl3 && rm -rf /var/lib/apt/lists/*
+        COPY --from=build /build/pgbouncer-1.22.1/pgbouncer /usr/local/bin/pgbouncer
+        USER postgres
+        ENTRYPOINT ["/usr/local/bin/pgbouncer"]
+        CMD ["/etc/sigic-pool.ini"]
+    depends_on:
+      init-auth: {condition: service_completed_successfully}
+    configs:
+      - {source: pool_ini, target: /etc/sigic-pool.ini}
+    volumes: ["auth:/auth:ro"]
+    ports: ["127.0.0.1:6432:6432"]
+    environment:
+      PGUSER: sigic_app
+      PGPASSWORD: sigic_fixture_ephemeral
+    healthcheck:
+      test: ["CMD-SHELL", "psql -XAt -h 127.0.0.1 -p 6432 -d sigic_pos_pool -c 'SELECT 1' | grep -qx 1 && psql -XAt -h 127.0.0.1 -p 6432 -d sigic_web_pool -c 'SELECT 1' | grep -qx 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    build:
+      context: ./src
+      dockerfile_inline: |
+        FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+        WORKDIR /src
+        COPY SIGIC.Domain/ SIGIC.Domain/
+        COPY SIGIC.Application/ SIGIC.Application/
+        COPY SIGIC.Infrastructure/ SIGIC.Infrastructure/
+        COPY SIGIC.WebApi/ SIGIC.WebApi/
+        RUN find . -type d \( -name obj -o -name bin \) -prune -exec rm -rf {} + && dotnet publish SIGIC.WebApi/SIGIC.WebApi.csproj -c Release -o /publish
+        FROM mcr.microsoft.com/dotnet/aspnet:8.0
+        RUN apt-get update && apt-get install -y --no-install-recommends openssl curl && rm -rf /var/lib/apt/lists/*
+        WORKDIR /app
+        COPY --from=build /publish/ ./
+    depends_on:
+      pooler: {condition: service_healthy}
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=postgres;Username=sigic_app;Password=sigic_fixture_ephemeral
+      ConnectionStrings__PosConnection: Host=pooler;Port=6432;Database=sigic_pos_pool;Username=sigic_app;Password=sigic_fixture_ephemeral;Pooling=false
+      ConnectionStrings__WebConnection: Host=pooler;Port=6432;Database=sigic_web_pool;Username=sigic_app;Password=sigic_fixture_ephemeral;Pooling=false
+    ports: ["127.0.0.1:5000:8080"]
+    volumes: ["jwt:/keys"]
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        umask 077
+        if [ ! -s /keys/sign.pem ]; then
+          openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out /keys/sign.tmp
+          mv /keys/sign.tmp /keys/sign.pem
+        fi
+        JwtSettings__PrivateKeyPem=$$(cat /keys/sign.pem)
+        JwtSettings__PublicKeyPem=$$(openssl pkey -in /keys/sign.pem -pubout)
+        export JwtSettings__PrivateKeyPem JwtSettings__PublicKeyPem
+        exec dotnet SIGIC.WebApi.dll
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/api/v1/public/catalogo/productos"]
+      interval: 5s
+      timeout: 5s
+      retries: 25
+
+  web:
+    build:
+      context: ./src/SIGIC.Web
+      dockerfile_inline: |
+        FROM node:20-bookworm-slim
+        WORKDIR /app
+        COPY package*.json ./
+        RUN npm ci
+        COPY next-env.d.ts next.config.mjs postcss.config.js tailwind.config.js tsconfig.json vitest.config.ts ./
+        COPY src/ src/
+        ENV NEXT_TELEMETRY_DISABLED=1 NEXT_PUBLIC_API_URL=/api/v1
+        RUN npm run build
+        CMD ["npm","run","start","--","-H","0.0.0.0","-p","3000"]
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  pos:
+    build:
+      context: ./src/SIGIC.POS
+      dockerfile_inline: |
+        FROM node:20-bookworm-slim AS build
+        WORKDIR /app
+        COPY package*.json ./
+        RUN npm ci
+        COPY index.html postcss.config.js tailwind.config.js tsconfig*.json vite.config.ts ./
+        COPY src/ src/
+        RUN npm run build
+        FROM caddy:2-alpine
+        COPY --from=build /app/dist/ /srv/pos/
+    ports: ["127.0.0.1:3000:3000", "127.0.0.1:3001:3001"]
+    depends_on:
+      api: {condition: service_healthy}
+      web: {condition: service_healthy}
+    configs:
+      - {source: caddy, target: /etc/caddy/Caddyfile}
+
+volumes:
+  datos: {}
+  auth: {}
+  jwt: {}
+
+configs:
+  pool_ini:
+    content: |
+      [databases]
+      sigic_pos_pool = host=postgres port=5432 dbname=postgres pool_size=50 max_db_connections=50 reserve_pool=0
+      sigic_web_pool = host=postgres port=5432 dbname=postgres pool_size=30 max_db_connections=30 reserve_pool=0
+      [pgbouncer]
+      listen_addr = 0.0.0.0
+      listen_port = 6432
+      pool_mode = transaction
+      auth_type = scram-sha-256
+      auth_file = /auth/userlist.txt
+      max_client_conn = 500
+      query_wait_timeout = 3
+      stats_users = sigic_app
+  caddy:
+    content: |
+      :3000 {
+        handle /api/* {
+          reverse_proxy api:8080
+        }
+        handle {
+          root * /srv/pos
+          try_files {path} /index.html
+          file_server
+        }
+      }
+      :3001 {
+        handle /api/* {
+          reverse_proxy api:8080
+        }
+        handle {
+          reverse_proxy web:3000
+        }
+      }

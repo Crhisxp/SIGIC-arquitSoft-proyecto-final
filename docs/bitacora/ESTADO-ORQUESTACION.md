@@ -1,5 +1,49 @@
 # Bitácora de Orquestación Híbrida — SIGIC Ferretería v2.2
 
+## Iteración 2026-11-19 — Reparación exacta de CI y Compose según Astra
+
+**Responsable:** Codex. **Fuente:** lectura completa de `/tmp/astra_ci_analysis.md`.
+**Alcance:** workflow, infraestructura local y documentación; archivos de código
+en `src/` y `tests/` preservados. Se conserva el historial fechado inferior.
+
+- `.github/workflows/ci.yml` sustituido literalmente por el bloque del apartado 2:
+  creación de `sigic-ci-postgres` con `max_connections=300`, comprobación SQL de
+  PostgreSQL 16 y límite efectivo 300, diagnósticos sanitizados por CID, retirada
+  del contenedor propio y su volumen anónimo. Se conservan las cuatro suites
+  secuenciales, las mil carreras, el umbral Domain ≥95 % y Node 20 por canal.
+- `docker-compose.yml` reproduce literalmente el apartado 3: PostgreSQL,
+  inicialización SCRAM, PgBouncer 1.22.1, API, Web y POS/Caddy; pools 50/30,
+  cola global 3 s, claves RSA persistentes y puertos publicados en loopback.
+  Los soportes de construcción, ini, autenticación y proxy están integrados en
+  el manifiesto. `infrastructure/pgbouncer/.dockerignore` excluye referencias y
+  verificadores estáticos del contexto de imagen; los tres soportes existentes
+  permanecen intactos y el verificador operativo se genera en el volumen `auth`.
+- `docs/GUIA-EJECUCION.md` documenta `docker compose up -d`, reconstrucción con
+  espera, requisitos Windows/Linux/macOS, tres comprobaciones HTTP, diagnóstico,
+  reinicio y conservación de volúmenes. El ensayo Bash separado también usa 300
+  conexiones. `.github/workflows/sigic-sdd-gate.yml` permanece intacto.
+
+| Checklist local pre-push de Astra | Evidencia de esta iteración |
+|---|---|
+| Igualdad con los bloques aprobados por Astra | Ambos YAML idénticos byte por byte al informe |
+| Parser YAML de CI y Compose | PyYAML 6.0.2: válido en ambos archivos |
+| Sintaxis Bash/Python | `bash -n` en todos los scripts CI y bloques `run`; AST de todos los Python CI; `sh -n` en init-auth y API: válidos |
+| Agregador de cobertura | 4/4 pruebas unitarias aprobadas; no equivale a cobertura nueva de Domain |
+| Dos bloques documentales del gate real | Cero wikilinks; DAG 85 nodos, 107 aristas, 0 ciclos, conjuntos idénticos y máximo 4 salidas |
+| Whitespace | `git diff --check` sin errores |
+| actionlint | No instalado (exit 127); descarga oficial impedida por fallo DNS de github.com |
+| Modelo oficial de Compose | Comando intentado; plugin Compose ausente. El parser YAML no sustituye `config --quiet` |
+| Backend completo del checklist | Bloque exacto intentado; aborta al crear el PostgreSQL descartable: acceso denegado al socket Docker. Sin nueva build, TRX ni medición de 300 conexiones |
+| Matrices frontend con Node 20 | Precondición exacta rechazada: Node local v26.13.1; suites/build Node 20 no ejecutados |
+| Arranque, HTTP y reinicio Windows/Linux/macOS | Pendientes: sin acceso Docker ni hosts de las demás plataformas |
+| Cadena SDD | Transporte MCP requiere aprobación incompatible con política `never`; módulo local de solo lectura: 47 documentos, 0 bloqueos, 0 observaciones |
+
+**Veredicto: RECHAZADO para aceptación integral pre-push.** La reparación está
+aplicada y las verificaciones estáticas disponibles pasan; faltan actionlint,
+`docker compose config --quiet`, ejecución backend/frontend en el entorno requerido
+y ensayos multiplataforma. No se realizó push ni se atribuyeron resultados remotos
+al árbol reparado. No se ejecutó sincronización Obsidian sobre el DAG canónico.
+
 > Archivo histórico trasladado el 2026-11-19. Las menciones de directorios y
 > resultados fechados conservan su alcance original. La estructura vigente reside
 > en docs/especificaciones, docs/arquitectura y docs/entregables; la operación se

@@ -12,6 +12,46 @@ estado: "ACTIVO_EN_PROCESO"
 
 # Bitácora Oficial de Control de Cambios y Subsanación de Observaciones (SIGIC v2.2)
 
+## Cambio 2026-11-19 — Reparación de CI y arranque Compose (análisis Astra)
+
+**Fuente:** `/tmp/astra_ci_analysis.md`, leído completo. Se sustituyó
+`.github/workflows/ci.yml` por su bloque exacto, con contenedor descartable
+`sigic-ci-postgres`, comprobación SQL explícita de PostgreSQL 16 y
+`max_connections=300`, diagnósticos sanitizados por CID, cleanup y conservación
+de suites, concurrencia y cobertura ≥95 %. El nuevo `docker-compose.yml` copia
+literalmente el manifiesto de Astra para Windows/Linux/macOS: seis servicios,
+PgBouncer 1.22.1, SCRAM generado desde el servidor, pools 50/30, cola 3 s,
+claves RSA y datos persistentes, y proxy Caddy de origen único por canal.
+
+La receta de PgBouncer, el ini, la inicialización y Caddy quedan integrados en
+Compose como prescribe el informe. Se añadió
+`infrastructure/pgbouncer/.dockerignore` para excluir referencias y verificadores
+estáticos del contexto de construcción; `pgbouncer.ini`, `pgbouncer.ini.in` y
+`userlist.txt` existentes permanecen intactos. La guía documenta
+`docker compose up -d`, aceptación con `--build -d --wait`, smoke tests HTTP,
+diagnóstico y reinicio con conservación de volúmenes. El arranque Bash de pruebas
+se ajustó al mismo presupuesto de 300 conexiones.
+
+**Validación nueva:** igualdad literal de los dos YAML con Astra; parser
+PyYAML 6.0.2 válido; Bash de scripts CI y bloques del workflow, AST Python y shell
+de inicialización Compose válidos; 4/4 regresiones del agregador; cero wikilinks;
+gate documental real **85 nodos / 107 aristas / 0 ciclos**, conjuntos idénticos;
+`git diff --check` limpio. No se modificaron archivos de código en `src/` ni
+`tests/`, ni el workflow `sigic-sdd-gate.yml`; no se añadieron aristas al DAG.
+
+**Pendientes del checklist y veredicto RECHAZADO:** actionlint no instalado,
+descarga bloqueada por DNS; plugin Compose ausente, por lo que falta validar su
+modelo oficial; ensayo backend exacto abortado por acceso denegado al socket
+Docker; precondición de matriz Node 20 incumplida por Node local v26.13.1.
+No se obtuvieron nuevas builds, TRX, JUnit, cobertura Domain ni smoke tests o
+reinicios del stack en Windows/Linux/macOS. La aceptación remota de ambos
+workflows sobre el SHA reparado queda pendiente; no se realizó push.
+
+La llamada MCP de cadena SDD requiere aprobación y fue impedida por la política
+`never`. Su módulo local de solo lectura informa 47 documentos, 0 bloqueos y
+0 observaciones, sin atribuir certificación al transporte MCP. Se omite la
+sincronización Obsidian conforme a la directiva de preservación del DAG.
+
 > **Documento:** `docs/bitacora/HISTORIAL-CAMBIOS-OBSERVACIONES.md`  
 > **Sistema:** SIGIC Ferretería v2.2 (Ayacucho, Perú)  
 > **Metodología:** Desarrollo Guiado por Especificaciones (SDD – *Spec-Driven Development*)  

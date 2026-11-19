@@ -14,7 +14,6 @@ jobs:
     name: .NET 8, PostgreSQL 16, PgBouncer 1.22.1 & Domain coverage >=95%
     runs-on: ubuntu-24.04
     timeout-minutes: 25
-    # Ephemeral credentials shared with PostgreSqlTestFixture; no production secrets.
     env:
       SIGIC_DB_HOST: 127.0.0.1
       SIGIC_DB_PORT: '54329'
@@ -25,46 +24,87 @@ jobs:
       SIGIC_DB_PASSWORD: sigic_fixture_ephemeral
       SIGIC_POS_CONNECTION_STRING: Host=127.0.0.1;Port=6432;Database=sigic_pos_pool;Username=sigic_app;Password=sigic_fixture_ephemeral;Pooling=false
       SIGIC_WEB_CONNECTION_STRING: Host=127.0.0.1;Port=6432;Database=sigic_web_pool;Username=sigic_app;Password=sigic_fixture_ephemeral;Pooling=false
-          steps:
-      - name: Start PostgreSQL 16 (max_connections=300)
-        run: |
-          docker run -d --name sigic-ci-postgres \n            -e POSTGRES_USER=postgres \n            -e POSTGRES_PASSWORD=sigic_ci_ephemeral \n            -e POSTGRES_DB=postgres \n            -p 54329:5432 \n            postgres:16 -c max_connections=300
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Setup .NET 8
-        uses: actions/setup-dotnet@v4
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Start disposable PostgreSQL 16
+        run: >-
+          docker run --detach --name sigic-ci-postgres
+          --cidfile "$RUNNER_TEMP/sigic-postgres.cid"
+          --env "POSTGRES_USER=$SIGIC_DB_ADMIN_USER"
+          --env "POSTGRES_PASSWORD=$SIGIC_DB_ADMIN_PASSWORD"
+          --env "POSTGRES_DB=$SIGIC_DB_NAME"
+          --publish "127.0.0.1:${SIGIC_DB_PORT}:5432"
+          --health-cmd "pg_isready -h 127.0.0.1 -p 5432 -U postgres -d postgres"
+          --health-interval 2s --health-timeout 3s --health-retries 30
+          postgres:16 -c max_connections=300
+
+      - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
-      - name: Install pooler build and PostgreSQL client dependencies
+
+      - name: Install PostgreSQL client and pooler build dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y postgresql-client build-essential pkg-config libevent-dev libssl-dev curl
-      - name: Verify coverage aggregation regressions
-        run: python3 -m unittest discover -s scripts/ci -p 'test_*.py' -v
-      - name: Bootstrap schema, SCRAM and PgBouncer 1.22.1; verify both pools
+
+      - name: Test coverage aggregation
+        run: python3 -B -m unittest discover -s scripts/ci -p 'test_*.py' -v
+
+      - name: Initialize database and verify both PgBouncer aliases
         run: bash scripts/ci/bootstrap.sh
-      - name: Restore
-        run: dotnet restore SIGIC.sln
-      - name: Build Release with warnings as errors
-        run: dotnet build SIGIC.sln --configuration Release --no-restore -warnaserror
-      - name: Four sequential suites, TRX and merged line coverage
-        run: bash scripts/ci/test-backend.sh
-      - name: Capture sanitized service diagnostics on failure
+
+      - name: Assert effective PostgreSQL version and connection budget
+        run: |
+          export PGHOST="$SIGIC_DB_HOST" PGPORT="$SIGIC_DB_PORT" PGDATABASE="$SIGIC_DB_NAME"
+          export PGUSER="$SIGIC_DB_ADMIN_USER" PGPASSWORD="$SIGIC_DB_ADMIN_PASSWORD"
+          psql -X -v ON_ERROR_STOP=1 -c 'SHOW server_version' -c 'SHOW max_connections'
+          psql -XAt -v ON_ERROR_STOP=1 -c "SELECT current_setting('server_version_num')::int / 10000 = 16 AND current_setting('max_connections')::int = 300" | grep -qx t
+
+      - name: Restore and build Release
+        run: |
+          dotnet restore SIGIC.sln
+          dotnet build SIGIC.sln -c Release --no-restore -warnaserror
+
+      - name: Run four sequential suites and verify TRX and coverage
+        run: |
+          bash scripts/ci/test-backend.sh
+          for layer in Domain Application Infrastructure WebApi; do
+            test -n "$(find "TestResults/$layer" -type f -name coverage.cobertura.xml -print -quit)"
+          done
+
+      - name: Collect sanitized diagnostics
         if: failure()
-        env:
-          SIGIC_POSTGRES_CONTAINER: sigic-ci-postgres
         run: |
           mkdir -p TestResults/diagnostics
-          if test -n "${SIGIC_POOL_DIR:-}" && test -f "$SIGIC_POOL_DIR/pgbouncer.log"; then
-            python3 scripts/ci/sanitize-log.py "$SIGIC_POOL_DIR/pgbouncer.log" > TestResults/diagnostics/pgbouncer.log
+          if [[ -f scripts/ci/sanitize-log.py ]]; then
+            if [[ -n "${SIGIC_POOL_DIR:-}" && -f "$SIGIC_POOL_DIR/pgbouncer.log" ]]; then
+              python3 scripts/ci/sanitize-log.py "$SIGIC_POOL_DIR/pgbouncer.log" > TestResults/diagnostics/pgbouncer.log
+            fi
+            if [[ -s "$RUNNER_TEMP/sigic-postgres.cid" ]]; then
+              cid=$(cat "$RUNNER_TEMP/sigic-postgres.cid")
+              docker logs "$cid" 2>&1 | python3 scripts/ci/sanitize-log.py > TestResults/diagnostics/postgres.log
+              docker inspect --format '{{.State.Status}} {{if .State.Health}}{{.State.Health.Status}}{{end}}' "$cid" > TestResults/diagnostics/postgres-state.txt
+            fi
           fi
-          docker logs "$SIGIC_POSTGRES_CONTAINER" 2>&1 | python3 scripts/ci/sanitize-log.py > TestResults/diagnostics/postgres.log
-      - name: Stop own pooler
+
+      - name: Stop own PgBouncer
         if: always()
-        run: bash scripts/ci/stop-pgbouncer.sh
-      - name: Upload backend evidence
+        run: |
+          if [[ -f scripts/ci/stop-pgbouncer.sh ]]; then bash scripts/ci/stop-pgbouncer.sh; fi
+
+      - name: Remove disposable PostgreSQL and its anonymous volume
         if: always()
-        uses: actions/upload-artifact@v4
+        run: |
+          if [[ -s "$RUNNER_TEMP/sigic-postgres.cid" ]]; then
+            docker rm --force --volumes "$(cat "$RUNNER_TEMP/sigic-postgres.cid")"
+          fi
+
+      - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: backend-${{ github.sha }}
           path: TestResults/
@@ -80,28 +120,28 @@ jobs:
         channel: [SIGIC.POS, SIGIC.Web]
     defaults:
       run:
+        shell: bash
         working-directory: src/${{ matrix.channel }}
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Setup Node 20
-        uses: actions/setup-node@v4
+    env:
+      SIGIC_CHANNEL: ${{ matrix.channel }}
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: npm
           cache-dependency-path: src/${{ matrix.channel }}/package-lock.json
-      - name: Install locked dependencies
-        run: npm ci
-      - name: Run Vitest
+      - run: npm ci
+      - name: Test channel and require JUnit evidence
         run: |
-          mkdir -p "$GITHUB_WORKSPACE/TestResults/${{ matrix.channel }}"
-          npm test -- --reporter=default --reporter=junit --outputFile="$GITHUB_WORKSPACE/TestResults/${{ matrix.channel }}/vitest.xml"
-      - name: Build
-        env:
-          NEXT_TELEMETRY_DISABLED: '1'
-        run: npm run build
-      - name: Upload frontend evidence
+          report_dir="$GITHUB_WORKSPACE/TestResults/$SIGIC_CHANNEL"
+          mkdir -p "$report_dir"
+          npm test -- --reporter=default --reporter=junit --outputFile="$report_dir/vitest.xml"
+          test -s "$report_dir/vitest.xml"
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
         if: always()
-        uses: actions/upload-artifact@v4
         with:
           name: frontend-${{ matrix.channel }}-${{ github.sha }}
           path: TestResults/${{ matrix.channel }}/

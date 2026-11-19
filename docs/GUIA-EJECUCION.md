@@ -7,10 +7,106 @@ aprobado: false
 
 # Guía de ejecución de SIGIC Ferretería v2.2
 
-Ejecutar desde la raíz del repositorio en Bash/Linux. Este runbook prepara una BD
-**descartable** de pruebas; para operar manualmente usar otra instancia y otro
-dataset. Los resultados y limitaciones se registran en las actas de
+Ejecutar desde la raíz del repositorio. La sección 0 levanta el stack local con
+Docker Compose en Windows, Linux y macOS; las secciones 1–8 requieren Bash/Linux
+y preparan una BD **descartable** de pruebas, separada del stack de desarrollo.
+Los resultados y limitaciones se registran en las actas de
 [Sprint 2](entregables/sprint-2/cierre.md) y [Sprint 3](entregables/sprint-3/cierre.md).
+
+## 0. Stack local con Docker Compose (Windows, Linux y macOS)
+
+Requiere Docker con contenedores Linux y Compose v2 ≥2.23.1, con soporte para
+`dockerfile_inline` y `configs.content`. En Windows usar Docker Desktop con
+virtualización/WSL 2; en Linux, Docker Engine con el plugin Compose; en macOS,
+Docker Desktop o un motor compatible. En ARM64 construir para la arquitectura
+nativa y verificar las imágenes en el equipo de destino. La primera construcción
+necesita acceso a registros de imágenes, NuGet, npm y al release oficial de PgBouncer.
+
+El manifiesto `docker-compose.yml` incluye PostgreSQL 16 con 300 conexiones,
+inicialización SQL y SCRAM, PgBouncer 1.22.1 compilado dentro de Linux, API .NET 8,
+POS y Web. El contexto `infrastructure/pgbouncer/` excluye los verificadores
+estáticos mediante `.dockerignore`: la receta de imagen, el ini, la inicialización
+de autenticación y Caddy están integrados en el manifiesto, tal como propone Astra.
+Los archivos `pgbouncer.ini`, `pgbouncer.ini.in` y `userlist.txt` existentes conservan
+su función de referencia de despliegue o bootstrap Bash; Compose obtiene el mismo
+verificador SCRAM del servidor inicializado en un volumen privado.
+
+Con los puertos 54329, 6432, 5000, 3000 y 3001 libres, ejecutar desde PowerShell,
+una terminal Linux o macOS:
+
+```text
+docker version
+docker compose version
+docker compose config --quiet
+docker compose up -d
+docker compose ps -a
+```
+
+`docker compose up -d` construye las imágenes que faltan. Para reconstruir y
+esperar la disponibilidad de los servicios, usar la variante de aceptación:
+
+```text
+docker compose up --build -d --wait
+docker compose exec -T postgres psql -U postgres -d postgres -c "SHOW max_connections"
+docker compose exec -T pooler psql -h 127.0.0.1 -p 6432 -d pgbouncer -c "SHOW DATABASES"
+docker compose exec -T pooler psql -h 127.0.0.1 -p 6432 -d pgbouncer -c "SHOW POOLS"
+docker compose logs --tail 80 api pos web
+```
+
+`SHOW max_connections` debe devolver 300. El pooler usa transacciones, alias
+`sigic_pos_pool` limitado a 50 y `sigic_web_pool` a 30 conexiones, sin reserva extra,
+y espera global de cola de 3 s. Corre en primer plano como `postgres`; SQL y la
+generación del par RSA se ejecutan dentro de contenedores. El volumen `jwt`
+conserva el par de claves entre reinicios. No se requiere Bash ni un pooler en el
+host para este modo de ejecución.
+
+Abrir POS en http://localhost:3000 y Web en http://localhost:3001. Caddy sirve
+el POS y reenvía Web y `/api` al destino interno, con origen único por canal.
+La API también está disponible en http://localhost:5000. Los nombres internos
+`postgres:5432`, `pooler:6432`, `api:8080` y `web:3000` solo se usan entre servicios.
+Verificar los tres caminos HTTP en Linux/macOS:
+
+```bash
+curl -fsS http://localhost:5000/api/v1/public/catalogo/productos
+curl -fsS http://localhost:3000/api/v1/public/catalogo/productos
+curl -fsS http://localhost:3001/api/v1/public/catalogo/productos
+```
+
+En PowerShell:
+
+```powershell
+(Invoke-WebRequest http://localhost:5000/api/v1/public/catalogo/productos).StatusCode
+(Invoke-WebRequest http://localhost:3000/api/v1/public/catalogo/productos).StatusCode
+(Invoke-WebRequest http://localhost:3001/api/v1/public/catalogo/productos).StatusCode
+```
+
+Los tres deben responder 200; un catálogo vacío verifica el circuito de lectura.
+Las credenciales del manifiesto son de ejemplo para desarrollo local y los
+puertos publicados se enlazan a loopback. El backend recibe la cuenta de aplicación;
+la cuenta administradora solo inicializa la BD y la autenticación. Los SQL 00/01
+preparan esquema y permisos, pero una venta de demostración requiere almacén central,
+tienda, productos, tarifas y usuarios staff con hash Argon2id mediante un seed
+independiente de las fixtures. El registro web permite crear un cliente.
+
+```text
+docker compose stop
+docker compose start
+docker compose ps -a
+docker compose down
+```
+
+`stop` pausa y `start` reanuda; repetir las comprobaciones HTTP tras reiniciar
+con los mismos volúmenes. `down` retira contenedores y conserva los volúmenes
+nombrados `datos`, `auth` y `jwt`. La inicialización SQL solo corre con un volumen
+PostgreSQL vacío. Para ensayar otra instalación usar otro nombre de proyecto y
+puertos libres. Las pruebas del fixture deben usar una BD descartable separada
+del backend y su worker, siguiendo las secciones 1–8. Producción requiere gestión
+propia de secretos, datos y ciclo de claves.
+
+La validación de YAML comprueba estructura; la aceptación del stack requiere
+`docker compose config --quiet`, construcción, healthchecks, tres smoke tests y
+reinicio con volúmenes al menos en Windows y Linux. Registrar macOS/ARM64 cuando
+se ensaye; un CI Linux satisfactorio no certifica las demás plataformas.
 
 ## 1. Requisitos y evidencia del entorno
 
@@ -52,7 +148,7 @@ source scripts/ci/env.sh
 # SIGIC_WEB_CONNECTION_STRING='Host=127.0.0.1;Port=6432;Database=sigic_web_pool;Username=sigic_app;Password=sigic_fixture_ephemeral;Pooling=false'
 docker run -d --name sigic-blueprint-postgres -p 127.0.0.1:54329:5432 \
   -e POSTGRES_USER="$SIGIC_DB_ADMIN_USER" -e POSTGRES_PASSWORD="$SIGIC_DB_ADMIN_PASSWORD" \
-  -e POSTGRES_DB="$SIGIC_DB_NAME" postgres:16
+  -e POSTGRES_DB="$SIGIC_DB_NAME" postgres:16 -c max_connections=300
 bash scripts/ci/bootstrap.sh
 # Copiar el export SIGIC_POOL_DIR=... emitido al terminar: se usa para diagnóstico y parada.
 ```
@@ -69,7 +165,7 @@ compartida `infrastructure/pgbouncer/pgbouncer.ini.in`: POS 50, Web 30,
 `pool_mode=transaction`, `query_wait_timeout=3` global y escucha en 127.0.0.1:6432.
 No depende de una IP de bridge fija. El ini estático es referencia de despliegue.
 
-En CI el servicio Docker ya existe y solo se ejecuta el bootstrap. El script
+En CI el job crea primero `sigic-ci-postgres` y luego ejecuta el bootstrap. El script
 exporta su directorio temporal a `GITHUB_ENV` aun si un paso posterior falla.
 Se verifican ambos alias autenticados, `SHOW POOLS` y ausencia de UPDATE/DELETE
 efectivos en `caja_arqueo`.
@@ -87,8 +183,9 @@ psql -XAt -v ON_ERROR_STOP=1 -p "$SIGIC_DB_PORT" -d "$SIGIC_DB_NAME" -c \
 El timeout global comparte la política de cola entre ambos alias en el ensayo;
 para políticas distintas en producción hacen falta instancias separadas y pruebas
 de sus DSN. `pool_size=50` no acredita precalentamiento ni adquisición submilisegundo.
-Registrar presupuesto de conexiones de fixtures, pools y administración antes de
-ajustar `max_connections`. Consultar configuración de
+El ensayo usa `max_connections=300` para dar margen a las conexiones de fixtures,
+pools y administración. CI verifica explícitamente PostgreSQL 16 y el valor 300
+mediante SQL antes de ejecutar las suites. Consultar configuración de
 [PgBouncer 1.22.1](https://raw.githubusercontent.com/pgbouncer/pgbouncer/pgbouncer_1_22_1/doc/config.md)
 y [distribución oficial](https://www.pgbouncer.org/downloads/).
 
