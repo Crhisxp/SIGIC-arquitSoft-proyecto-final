@@ -17,6 +17,12 @@ jobs:
     services:
       postgres:
         image: postgres:16
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        command: ["postgres", "-c", "max_connections=300"]
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: sigic_ci_ephemeral
