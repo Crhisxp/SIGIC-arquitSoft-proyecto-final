@@ -5,7 +5,9 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using SIGIC.Application.Security.Ports;
+using SIGIC.Infrastructure;
 using SIGIC.Infrastructure.Tests.Fixtures;
 using Xunit;
 
@@ -62,6 +64,13 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>, IAsyn
 
         builder.ConfigureServices(services =>
         {
+            // Minimal hosting captures these options before ConfigureAppConfiguration runs.
+            // Replace the captured values while preserving the fixture's separate POS/Web pools.
+            services.Replace(ServiceDescriptor.Singleton(new DatabasePoolOptions(
+                Fixture.AppConnectionString,
+                Fixture.PosPoolConnectionString,
+                Fixture.WebPoolConnectionString)));
+
             var rsaPrivate = RSA.Create();
             rsaPrivate.ImportFromPem(_privateKeyPem);
             var signingKey = new Microsoft.IdentityModel.Tokens.RsaSecurityKey(rsaPrivate) { KeyId = "sigic-core-signing-key" };

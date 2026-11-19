@@ -12,6 +12,54 @@ estado: "ACTIVO_EN_PROCESO"
 
 # Bitácora Oficial de Control de Cambios y Subsanación de Observaciones (SIGIC v2.2)
 
+## Cambio 2026-11-19 — Opciones de conexión del host WebApi y fallo SASL
+
+**Referencia:** fallo `08P01: SASL authentication failed` comunicado para el run
+44562329555. Se inspeccionaron los siete archivos indicados y se reprodujo el
+defecto de configuración sin conexiones SQL. El log remoto no estuvo accesible
+desde este entorno; no se atribuye una nueva ejecución al run referido.
+
+`AddSigicInfrastructure` construye el singleton `DatabasePoolOptions` antes del
+callback `ConfigureAppConfiguration` de `CustomWebApplicationFactory` en hosting
+mínimo. Aunque `IConfiguration` termina con las cadenas del fixture, el singleton
+retiene las de `appsettings.json` y su contraseña local. El contexto POS/Web y EF
+usan esas opciones al abrir conexiones Dapper, causando el rechazo SCRAM de
+PgBouncer 6432 con las credenciales efímeras de CI. El fixture directo en 54329
+usa el entorno correcto. Bootstrap comparte el verificador SCRAM del servidor;
+ni el fixture ni las pruebas Infrastructure cambian la contraseña al finalizar.
+
+**Archivos de código modificados:**
+
+- `tests/SIGIC.WebApi.Tests/CustomWebApplicationFactory.cs`: reemplazo explícito
+  del singleton capturado con las conexiones Default/POS/Web del fixture dentro
+  de `ConfigureServices`, preservando los alias de pools segregados.
+- `tests/SIGIC.WebApi.Tests/DatabaseConfigurationTests.cs`: regresión del host
+  real para POS, Web y Worker, sin inicialización SQL ni workers, con comprobación
+  de configuración, opciones únicas, selección de canal y conexión EF.
+
+Se actualizan ambas bitácoras. No se modifican código de producción, fixtures
+compartidos, scripts CI, roles, SCRAM-SHA-256, límites 50/30 ni timeout de cola.
+
+**Evidencia nueva:** regresión RED con tres fallos antes del cambio y GREEN 3/3
+después, incluido el entorno de CI; Domain 18/18, Application 87/87 y 27/27
+pruebas Infrastructure sin base de datos (DI, Argon2id y JWT RSA), con cero
+omitidos mediante xUnit en proceso. Build Release con `-warnaserror -m:1
+--no-restore`: 0 advertencias/errores; el intento con restore no pudo consultar
+NuGet (NU1900). Gate documental del workflow real: **85 nodos / 107 aristas /
+0 ciclos**, conjuntos idénticos, máximo 4 salidas y cero wikilinks.
+Auditorías mediante módulos locales de lectura: arquitectura sin violaciones,
+cadena con 47 documentos sin bloqueos/observaciones y calidad de archivos GO
+(140 archivos dentro de 300 líneas); no constituyen cobertura nueva ni
+certificación del transporte MCP.
+
+**RECHAZADO para certificación integral de CI:** falta repetir Infrastructure y
+WebApi completos contra PostgreSQL 16/PgBouncer 1.22.1. El sandbox impide sockets,
+VSTest y Docker; `agy` tampoco pudo iniciar su listener. Las llamadas MCP de
+gobernanza exigen aprobación y la política `never` las impide; se documentó el
+fallback local sin atribuirles éxito remoto. Stock, TTL y ergonomía POS no aplican
+a esta corrección de configuración. Se conserva la prohibición de sincronizar
+Obsidian sobre el DAG canónico. Sin push ni nueva aceptación remota.
+
 ## Cambio 2026-11-19 — Reparación de CI y arranque Compose (análisis Astra)
 
 **Fuente:** `/tmp/astra_ci_analysis.md`, leído completo. Se sustituyó

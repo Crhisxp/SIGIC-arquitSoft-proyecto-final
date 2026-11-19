@@ -1,5 +1,56 @@
 # Bitácora de Orquestación Híbrida — SIGIC Ferretería v2.2
 
+## Iteración 2026-11-19 — Corrección SASL en la fábrica WebApi (run 44562329555)
+
+**Responsable:** Codex. **Alcance:** configuración del host de pruebas y regresión;
+sin cambios en producción, roles SQL, verificadores SCRAM ni pools 50 POS / 30 Web.
+
+**Causa reproducida:** `Program.cs` ejecuta `AddSigicInfrastructure` y registra un
+`DatabasePoolOptions` singleton con las cadenas de `appsettings.json` antes de que
+el hosting mínimo aplique el callback `ConfigureAppConfiguration` de la fábrica.
+El `IConfiguration` final sí contiene las credenciales del fixture, pero el objeto
+ya construido conserva la contraseña local, distinta de la efímera de CI.
+`OperationChannelContext` selecciona esas cadenas POS/Web obsoletas y
+`SigicDbContext` las entrega a los repositorios, incluido
+`PostgresAccountLockoutRepository`. La apertura Dapper autentica entonces contra
+PgBouncer en 6432 con una contraseña que no corresponde al verificador SCRAM.
+La conexión directa del fixture en 54329 usa las variables correctas.
+
+Se inspeccionaron los siete archivos solicitados. `bootstrap.sh` asigna la
+contraseña efímera y exporta el mismo verificador de PostgreSQL a PgBouncer;
+`test-backend.sh` ejecuta las capas secuencialmente. El fixture solo reaplica DDL
+y permisos y los tests Infrastructure no alteran contraseñas: su ejecución previa
+no explica la discrepancia. No se pudo descargar el log remoto del run citado
+por falta de acceso a `api.github.com`; el diagnóstico se respalda en el código
+y en la reproducción local del host, sin atribuirle evidencia remota nueva.
+
+**Corrección mínima:** `tests/SIGIC.WebApi.Tests/CustomWebApplicationFactory.cs`
+reemplaza el singleton dentro de `ConfigureServices` con las tres cadenas del
+fixture, manteniendo `sigic_pos_pool` y `sigic_web_pool` separados. La nueva teoría
+`DatabaseConfigurationTests.cs` arranca el host sin inicializar PostgreSQL ni
+workers y verifica configuración, singleton único, contexto de canal y conexión
+EF para POS, Web y Worker. No imprime contraseñas ni modifica el entorno global.
+
+| Verificación nueva | Evidencia y alcance |
+|---|---|
+| Regresión RED → GREEN | Antes: 3 fallos por opciones distintas del fixture; después: 3/3, también con el entorno de `scripts/ci/env.sh`. Ejecutor xUnit en proceso, sin VSTest ni conexiones SQL |
+| Domain / Application | 18/18 y 87/87, cero fallos y cero omitidos, con el ejecutor xUnit en proceso; no se generó cobertura nueva |
+| Infrastructure sin base de datos | 27/27 de DependencyInjection, Argon2id y JWT RSA mediante xUnit en proceso; no sustituye la suite de integración PostgreSQL/PgBouncer |
+| Build Release | `dotnet build SIGIC.sln --configuration Release -warnaserror -m:1 --no-restore`: 0 advertencias y 0 errores. Compilación con paquetes locales; el intento con restore falló por NU1900 al no acceder a NuGet |
+| Gate documental real | Bloques del workflow `sigic-sdd-gate.yml`: cero wikilinks, 85 nodos, 107 aristas, 0 ciclos, conjuntos idénticos y máximo 4 destinos |
+| Gobernanza local de solo lectura | Módulos de las herramientas: 0 violaciones arquitectónicas; 47 documentos, 0 bloqueos y 0 observaciones; calidad de archivos GO, 140 archivos sin exceder 300 líneas. No equivale a certificación del transporte MCP ni de cobertura |
+
+**Límites y veredicto:** corrección aplicada y regresión verificada;
+**RECHAZADO para certificación integral de CI**, pendiente de repetir las suites
+con PostgreSQL 16 y PgBouncer 1.22.1. El sandbox deniega sockets y Docker:
+VSTest aborta antes de ejecutar tests y `agy` no puede iniciar su listener local,
+por lo que Codex ejecutó la corrección tras el intento fallido del ejecutor.
+Las tres llamadas MCP de gobernanza exigen aprobación incompatible con la política
+`never`; se ejecutaron sus módulos locales de lectura y se distingue esa evidencia.
+Stock, TTL y ergonomía POS no aplican al cambio de configuración; se omite
+`obsidian_vault_sync` conforme a la directiva de Fase 2C para conservar el DAG.
+No se realizó push ni se declaró aprobado un nuevo pipeline remoto.
+
 ## Iteración 2026-11-19 — Reparación exacta de CI y Compose según Astra
 
 **Responsable:** Codex. **Fuente:** lectura completa de `/tmp/astra_ci_analysis.md`.
