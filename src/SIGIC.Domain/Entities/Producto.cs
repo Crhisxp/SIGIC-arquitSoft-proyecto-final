@@ -13,6 +13,7 @@ public class Producto
     public string CodigoSku { get; private set; }
     public string Ean13 { get; private set; }
     public string NombreComercial { get; private set; }
+    public string? ImagenUrl { get; private set; }
     public string UnidadBase { get; private set; }
     public Guid FamiliaId { get; private set; }
     public Guid SubfamiliaId { get; private set; }
@@ -41,7 +42,8 @@ public class Producto
         string ean13 = "",
         Guid familiaId = default,
         Guid subfamiliaId = default,
-        decimal stockComprometidoInicial = 0m)
+        decimal stockComprometidoInicial = 0m,
+        string? imagenUrl = null)
     {
         if (string.IsNullOrWhiteSpace(codigoSku))
             throw new ArgumentException("El código SKU no puede ser vacío.", nameof(codigoSku));
@@ -70,6 +72,7 @@ public class Producto
         Id = id == Guid.Empty ? Guid.NewGuid() : id;
         CodigoSku = codigoSku;
         NombreComercial = nombreComercial;
+        ImagenUrl = imagenUrl;
         UnidadBase = unidadBase;
         PrecioVenta = precioVenta;
         CostoUnitario = costoUnitario;

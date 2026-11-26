@@ -64,6 +64,9 @@ public class ExceptionMiddlewareTests
         Assert.Equal((int)HttpStatusCode.BadRequest, status);
         Assert.Equal(400, json.RootElement.GetProperty("status").GetInt32());
         Assert.Equal("Bad Request", json.RootElement.GetProperty("title").GetString());
+        const string expected = "El precio solicitado no está disponible. Revise el precio vigente.";
+        Assert.Equal(expected, json.RootElement.GetProperty("detail").GetString());
+        Assert.Equal(expected, Assert.Single(json.RootElement.GetProperty("errors").EnumerateArray()).GetString());
     }
 
     [Fact]

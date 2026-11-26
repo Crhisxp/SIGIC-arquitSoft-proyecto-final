@@ -6,8 +6,8 @@ import { CartItemWeb } from "../types/web";
 interface CartContextType {
   items: CartItemWeb[];
   addItem: (item: CartItemWeb) => boolean;
-  removeItem: (productoId: string) => void;
-  updateQuantity: (productoId: string, cantidad: number) => boolean;
+  removeItem: (productoId: string, unidadMedida?: string) => void;
+  updateQuantity: (productoId: string, cantidad: number, unidadMedida?: string) => boolean;
   clearCart: () => void;
   total: number;
   totalItemsCount: number;
@@ -43,18 +43,19 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     setItems((prev) => {
-      const idx = prev.findIndex((i) => i.productoId === newItem.productoId);
+      const enCarrito = prev.filter((i) => i.productoId === newItem.productoId)
+        .reduce((total, i) => total + i.cantidadBase, 0);
+      if (enCarrito + newItem.cantidadBase > newItem.stockDisponible) return prev;
+
+      const idx = prev.findIndex((i) => i.productoId === newItem.productoId && i.unidadMedida === newItem.unidadMedida);
       let updated: CartItemWeb[];
       if (idx >= 0) {
         const existing = prev[idx];
         const newQty = existing.cantidad + newItem.cantidad;
         const newQtyBase = existing.cantidadBase + newItem.cantidadBase;
-        if (newQtyBase > newItem.stockDisponible) {
-          return prev;
-        }
-        const subtotal = Math.round(newQty * existing.precioUnitario * 100) / 100;
+        const subtotal = Math.round(newQty * newItem.precioUnitario * 100) / 100;
         updated = [...prev];
-        updated[idx] = { ...existing, cantidad: newQty, cantidadBase: newQtyBase, subtotal };
+        updated[idx] = { ...newItem, cantidad: newQty, cantidadBase: newQtyBase, subtotal };
       } else {
         updated = [...prev, newItem];
       }
@@ -68,9 +69,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return true;
   }, []);
 
-  const removeItem = useCallback((productoId: string) => {
+  const removeItem = useCallback((productoId: string, unidadMedida?: string) => {
     setItems((prev) => {
-      const updated = prev.filter((i) => i.productoId !== productoId);
+      const updated = prev.filter((i) =>
+        i.productoId !== productoId || (unidadMedida !== undefined && i.unidadMedida !== unidadMedida));
       try {
         localStorage.setItem("sigic_web_cart", JSON.stringify(updated));
       } catch {
@@ -80,16 +82,19 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   }, []);
 
-  const updateQuantity = useCallback((productoId: string, cantidad: number): boolean => {
+  const updateQuantity = useCallback((productoId: string, cantidad: number, unidadMedida?: string): boolean => {
     if (cantidad <= 0) return false;
     let ok = true;
     setItems((prev) => {
-      const idx = prev.findIndex((i) => i.productoId === productoId);
+      const idx = prev.findIndex((i) => i.productoId === productoId &&
+        (unidadMedida === undefined || i.unidadMedida === unidadMedida));
       if (idx < 0) return prev;
       const item = prev[idx];
       const factor = item.cantidadBase / item.cantidad;
       const newQtyBase = Math.round(cantidad * factor * 10000) / 10000;
-      if (newQtyBase > item.stockDisponible) {
+      const otrasPresentaciones = prev.reduce((total, otra, indice) =>
+        otra.productoId === productoId && indice !== idx ? total + otra.cantidadBase : total, 0);
+      if (newQtyBase + otrasPresentaciones > item.stockDisponible) {
         ok = false;
         return prev;
       }

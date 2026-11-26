@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { ShoppingCart } from "lucide-react";
 import { CartItem } from "../../types/pos";
 
@@ -15,8 +15,14 @@ export const CartTable: React.FC<CartTableProps> = ({
   onSelectItem,
   onRemoveItem,
 }) => {
+  const filaSeleccionada = useRef<HTMLTableRowElement>(null);
+
+  useEffect(() => {
+    filaSeleccionada.current?.scrollIntoView?.({ block: "nearest", inline: "nearest" });
+  }, [selectedIndex, items.length]);
+
   return (
-    <div className="flex-1 bg-[#0f1011] border border-[#23252a] rounded overflow-hidden flex flex-col h-full">
+    <section aria-label="Detalle de facturación" className="min-h-0 min-w-0 bg-[#0f1011] border border-[#23252a] rounded overflow-hidden flex flex-col">
       {/* Cabecera de Tabla */}
       <div className="bg-[#161718] border-b border-[#23252a] px-3 py-2 flex items-center justify-between text-xs font-mono text-[#8a8f98] shrink-0">
         <div className="flex items-center gap-2">
@@ -24,14 +30,14 @@ export const CartTable: React.FC<CartTableProps> = ({
           <span className="font-bold text-[#f7f8f8]">DETALLE DE FACTURACIÓN</span>
           <span className="text-[#8a8f98]">({items.length} ítems)</span>
         </div>
-        <div className="text-[11px] text-[#5e636e]">
+        <div className="hidden xl:block text-[11px] text-[#8a8f98]">
           Navegación: flechas ↑ ↓ • F4 Cantidad • F8 Eliminar
         </div>
       </div>
 
       {/* Contenedor con Scroll Vertical Interno y sin Scroll Horizontal */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden sigic-scrollbar">
-        <table className="w-full text-left border-collapse text-xs">
+      <div className="flex-1 min-h-0 overflow-auto sigic-scrollbar">
+        <table className="w-full text-left border-collapse text-xs md:table-fixed">
           <thead className="bg-[#161718]/80 text-[#8a8f98] font-mono border-b border-[#23252a] sticky top-0 z-10">
             <tr>
               <th className="py-2 px-2 text-center w-8">#</th>
@@ -65,6 +71,7 @@ export const CartTable: React.FC<CartTableProps> = ({
                 return (
                   <tr
                     key={item.id}
+                    ref={isSelected ? filaSeleccionada : null}
                     tabIndex={0}
                     onClick={() => onSelectItem(idx)}
                     onKeyDown={(e) => {
@@ -83,7 +90,7 @@ export const CartTable: React.FC<CartTableProps> = ({
                       {idx + 1}
                     </td>
 
-                    <td className="py-2.5 px-2 font-mono tabular-nums text-[#8a8f98]">
+                    <td className="py-2.5 px-2 font-mono tabular-nums text-[#8a8f98] [overflow-wrap:anywhere]">
                       <div>{item.producto.codigoSku}</div>
                       {item.producto.codigoBarras && (
                         <div className="text-[10px] text-[#5e636e]">{item.producto.codigoBarras}</div>
@@ -148,6 +155,6 @@ export const CartTable: React.FC<CartTableProps> = ({
           </tbody>
         </table>
       </div>
-    </div>
+    </section>
   );
 };

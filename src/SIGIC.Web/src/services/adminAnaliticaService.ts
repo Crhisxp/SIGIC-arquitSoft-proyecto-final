@@ -1,5 +1,7 @@
 import type { ConsultaAnaliticaRequest, ConsultaAnaliticaResponse, StaffUser } from "../types/analitica";
 
+export const staffSessionChanged = "sigic:staff-session-changed";
+
 export class AnaliticaHttpError extends Error {
   constructor(readonly status: number, message: string) { super(message); }
 }
@@ -15,7 +17,7 @@ async function llamar<T>(ruta: string, body?: unknown, signal?: AbortSignal): Pr
 }
 
 export const adminAnaliticaService = {
-  sesion: () => llamar<StaffUser>("session"),
+  sesion: (signal?: AbortSignal) => llamar<StaffUser>("session", undefined, signal),
   login: (username: string, password: string) => llamar<StaffUser>("login-staff", { username, password }),
   logout: () => llamar("logout", {}),
   consultar: (consulta: ConsultaAnaliticaRequest, signal: AbortSignal) =>

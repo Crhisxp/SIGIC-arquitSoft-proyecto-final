@@ -34,6 +34,7 @@ public class GlobalExceptionMiddleware
 
     private async Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
+        const string precioNoDisponible = "El precio solicitado no está disponible. Revise el precio vigente.";
         var (statusCode, title, detail, errors) = exception switch
         {
             StockInsuficienteException stockEx => (
@@ -48,11 +49,11 @@ public class GlobalExceptionMiddleware
                 valEx.Message,
                 valEx.Errores.ToArray()
             ),
-            MargenInvalidoException margenEx => (
+            MargenInvalidoException => (
                 HttpStatusCode.BadRequest,
                 "Bad Request",
-                margenEx.Message,
-                new[] { margenEx.Message }
+                precioNoDisponible,
+                new[] { precioNoDisponible }
             ),
             UnauthorizedException unauthEx => (
                 HttpStatusCode.Forbidden,

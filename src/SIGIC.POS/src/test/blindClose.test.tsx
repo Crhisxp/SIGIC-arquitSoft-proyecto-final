@@ -1,16 +1,33 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import { App } from "../App";
+import { simularTurnoActivo, turnoDePrueba } from "./turnoFixture";
 import { api } from "../services/api";
 
-describe("Arqueo Ciego e Inmutable de Caja (RF-CAJ-002)", () => {
+afterEach(() => vi.restoreAllMocks());
+
+describe("Arqueo ciego de caja (RF-CAJ-002)", () => {
+  it("envía la denominación con el campo que espera la API", async () => {
+    const request = vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({}));
+    await api.cerrarTurnoArqueoCiego({
+      turnoCajaId: turnoDePrueba.turnoId,
+      desgloseFisico: [{ valor: 100, cantidad: 2 }],
+      totalDigitalDeclarado: 85.5,
+    });
+
+    const [, opciones] = request.mock.calls[0];
+    expect(JSON.parse(String(opciones?.body)).desgloseFisico).toEqual([{ valorUnitario: 100, cantidad: 2 }]);
+  });
+
   it("computa denominaciones y oculta estrictamente cualquier saldo teórico esperado", async () => {
+    simularTurnoActivo();
     render(<App />);
+    await screen.findByText("Turno abierto");
 
     // F12 para abrir Arqueo Ciego
     fireEvent.keyDown(window, { key: "F12" });
     const dialog = screen.getByRole("dialog");
-    expect(within(dialog).getByText(/Arqueo Ciego e Inmutable de Caja/i)).toBeInTheDocument();
+    expect(within(dialog).getByText(/Arqueo ciego de caja/i)).toBeInTheDocument();
 
     // Verificación estricta de Invariante Arqueo Ciego: Cero visibilidad de saldos teóricos
     expect(within(dialog).queryByText(/saldo teórico/i)).not.toBeInTheDocument();
@@ -38,7 +55,7 @@ describe("Arqueo Ciego e Inmutable de Caja (RF-CAJ-002)", () => {
     // Mock de API exitosa para arqueo ciego
     vi.spyOn(api, "cerrarTurnoArqueoCiego").mockResolvedValueOnce({
       arqueoId: "ARQ-AYAC-2026-001",
-      turnoCajaId: "TRN-AYAC-8841",
+      turnoCajaId: turnoDePrueba.turnoId,
       fechaArqueoUtc: new Date().toISOString(),
       estado: "CERRADO_CONCILIADO",
       mensaje: "Arqueo ciego registrado e inmutable append-only.",
@@ -51,6 +68,9 @@ describe("Arqueo Ciego e Inmutable de Caja (RF-CAJ-002)", () => {
       expect(screen.getByText(/Arqueo de Turno Registrado Exitosamente/i)).toBeInTheDocument();
     });
 
+    expect(api.cerrarTurnoArqueoCiego).toHaveBeenCalledWith(expect.objectContaining({ turnoCajaId: turnoDePrueba.turnoId }));
+    expect(screen.getByText("Sin turno abierto")).toBeInTheDocument();
+
     // Aún tras el cierre no se revela saldo teórico al cajero
     expect(screen.queryByText(/saldo teórico/i)).not.toBeInTheDocument();
   });
@@ -60,11 +80,13 @@ describe("Arqueo Ciego e Inmutable de Caja (RF-CAJ-002)", () => {
       new Error("Error 500 al persistir arqueo inmutable en PostgreSQL 16")
     );
 
+    simularTurnoActivo();
     render(<App />);
+    await screen.findByText("Turno abierto");
 
     fireEvent.keyDown(window, { key: "F12" });
     const dialog = screen.getByRole("dialog");
-    expect(within(dialog).getByText(/Arqueo Ciego e Inmutable de Caja/i)).toBeInTheDocument();
+    expect(within(dialog).getByText(/Arqueo ciego de caja/i)).toBeInTheDocument();
 
     const inputs = within(dialog).getAllByPlaceholderText("0");
     fireEvent.change(inputs[1], { target: { value: "1" } });
@@ -75,7 +97,7 @@ describe("Arqueo Ciego e Inmutable de Caja (RF-CAJ-002)", () => {
     // Muestra error en el modal
     await waitFor(() => {
       expect(
-        within(dialog).getByText(/Error 500 al persistir arqueo inmutable en PostgreSQL 16/i)
+        within(dialog).getByText(/No se pudo cerrar la caja/i)
       ).toBeInTheDocument();
     });
 

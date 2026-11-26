@@ -56,15 +56,13 @@ El siguiente bloque define la configuración oficial de tokens de diseño para e
 
 /* Reglas Base de Comportamiento Ergonómico */
 @layer base {
-  /* Contención estricta para terminal de mostrador 1024x768 (RNF-USA-002) */
+  /* Contención del viewport disponible en el mostrador (RNF-USA-002) */
   body.sigic-pos-viewport {
     background-color: var(--color-sigic-canvas);
     color: var(--color-sigic-text-primary);
     font-family: var(--font-sans);
     width: 100vw;
     height: 100vh;
-    max-width: 1024px;
-    max-height: 768px;
     overflow: hidden; /* Prohibido el scroll horizontal y el scroll global de página */
     user-select: none;
     -webkit-font-smoothing: antialiased;
@@ -116,20 +114,26 @@ El siguiente bloque define la configuración oficial de tokens de diseño para e
 
 ---
 
-## 3. Ergonomía del Mostrador POS en `1024x768` (`RNF-USA-002` y `RF-POS-003`)
+## 3. Ergonomía del Mostrador POS (`RNF-USA-002` y `RF-POS-003`)
 
-### 3.1 Presupuesto Exacto de Píxeles en Viewport `1024px × 768px`
-Para garantizar **cero scroll horizontal (`overflow-x: hidden`)** y visibilidad instantánea de toda la transacción en monitores estándar de punto de venta de `1024x768`:
+### 3.1 Distribución adaptable al viewport
 
-| Zona Estructural | Ancho × Alto Exacto | Contenido y Comportamiento |
+La raíz ocupa el ancho y alto útiles del navegador en `1024 × 768`, `1366 × 768`
+y `1920 × 1080`. El área central recibe el espacio restante entre la cabecera y
+los atajos. El desplazamiento se contiene en los paneles y las acciones críticas
+permanecen visibles en el primer viewport.
+
+| Zona | Tamaño | Contenido y comportamiento |
 | :--- | :--- | :--- |
-| **A. Barra de Telemetría y Turno** | `1024px × 36px` | Indicador de conexión a PgBouncer (`POS-PRIORITY-POOL`), sucursal activa, cajero, estado de lectora láser y hora del servidor en `--font-mono`. |
-| **B. Barra Omnicanal de Escaneo (`F1`)** | `1024px × 52px` | Input principal de código de barras / búsqueda rápida (`width: 620px`) con borde activo `#e4f222` + tarjeta compacta de Cliente/RUC (`F3`, `width: 404px`). |
-| **C. Área Central de Trabajo** | `1024px × 560px` | Dividida en 2 columnas fijas sin desbordamiento:<br>• **Columna Izquierda (`714px × 560px`):** Tabla de ticket actual con scroll vertical interno exclusivo por teclado (`↑`/`↓`/`PgUp`/`PgDn`).<br>• **Columna Derecha (`310px × 560px`):** Inspector Técnico del ítem seleccionado y panel de stock multi-almacén. |
-| **D. Zócalo de Liquidación y Comandos** | `1024px × 120px` | Fila superior (`64px`): Resumen tributario (Op. Gravada, Descuento, IGV 18%, **TOTAL A PAGAR** en `28px bold #e4f222`).<br>Fila inferior (`56px`): Grilla de 12 bloques físicos visuales para los atajos `F1` a `F12` + `Enter` y `Esc`. |
+| **A. Barra de turno** | Ancho completo, altura mínima de 36 px | Estado del turno consultado para la sesión del cajero y reloj local. |
+| **B. Escáner (`F1`)** | Ancho completo, altura mínima de 52 px | Campo de código de barras que crece con el espacio disponible y acciones de búsqueda y despacho. |
+| **C. Área central** | Ancho y alto restantes | El ticket ocupa la columna flexible y desplaza sus filas internamente. El inspector y el resumen se adaptan al ancho. El cobro permanece visible al pie del resumen. |
+| **D. Barra de atajos** | Ancho completo, altura según filas | Botones de `F1` a `F12` con área interactiva mínima de 44 × 44 px. |
 
-### 3.2 Distribución de Columnas en la Tabla de Facturación POS (`Ancho total: 714px`)
-Cada fila del carrito tiene una altura máxima fija de `44px` con borde inferior `1px solid #18191c`:
+### 3.2 Distribución de columnas en la tabla de facturación POS
+
+Estos anchos son referencias de densidad. La columna de descripción absorbe el
+espacio disponible y admite dos líneas más el distintivo de medida.
 
 1. **`#` (Índice):** `34px` (`--font-mono`, `#5e636e`, alineado al centro).
 2. **`SKU / Código`:** `96px` (`--font-mono`, `#8a8f98`, alineado a la izquierda).

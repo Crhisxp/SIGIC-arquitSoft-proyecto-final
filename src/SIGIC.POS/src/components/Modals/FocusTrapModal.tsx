@@ -78,14 +78,14 @@ export const FocusTrapModal: React.FC<FocusTrapModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm overflow-hidden"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm overflow-hidden p-3"
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"
     >
       <div
         ref={modalRef}
-        className={`relative w-full ${maxWidth} bg-[#161718] border border-[#23252a] rounded-lg shadow-2xl overflow-hidden flex flex-col`}
+        className={`relative w-full max-h-full ${maxWidth} bg-[#161718] border border-[#23252a] rounded-lg shadow-2xl overflow-hidden flex flex-col`}
       >
         {/* Cabecera */}
         <div className="flex items-center justify-between px-4 py-3 bg-[#0f1011] border-b border-[#23252a] shrink-0">
@@ -110,7 +110,7 @@ export const FocusTrapModal: React.FC<FocusTrapModalProps> = ({
         </div>
 
         {/* Contenido */}
-        <div className="p-4 overflow-y-auto max-h-[560px] sigic-scrollbar">
+        <div className="min-h-0 p-4 overflow-y-auto max-h-[560px] sigic-scrollbar">
           {children}
         </div>
       </div>

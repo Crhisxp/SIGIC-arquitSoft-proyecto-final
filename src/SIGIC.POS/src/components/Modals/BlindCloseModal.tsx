@@ -75,9 +75,8 @@ export const BlindCloseModal: React.FC<BlindCloseModalProps> = ({
       });
 
       setResult(res);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Error al registrar arqueo";
-      setError(msg);
+    } catch {
+      setError("No se pudo cerrar la caja. Revise el turno e inténtelo de nuevo.");
     } finally {
       setIsSubmitting(false);
     }
@@ -87,17 +86,15 @@ export const BlindCloseModal: React.FC<BlindCloseModalProps> = ({
     <FocusTrapModal
       isOpen={isOpen}
       onClose={onClose}
-      title="Arqueo Ciego e Inmutable de Caja (RF-CAJ-002)"
+      title="Arqueo ciego de caja"
       badge="F12"
       maxWidth="max-w-2xl"
     >
       <div className="flex flex-col gap-3 text-xs">
-        {/* Aviso Invariante Arqueo Ciego */}
         <div className="p-2.5 bg-[#0f1011] border border-[#23252a] rounded flex items-center gap-2 text-[#8a8f98]">
           <Lock className="w-4 h-4 text-[#e4f222] shrink-0" />
           <span>
-            <strong>Arqueo Ciego:</strong> Ingrese el conteo físico real. El sistema registrará el
-            arqueo inmutable de forma append-only sin mostrar saldos teóricos esperados.
+            Ingresa el efectivo contado y el total de pagos digitales para cerrar el turno.
           </span>
         </div>
 
@@ -107,10 +104,6 @@ export const BlindCloseModal: React.FC<BlindCloseModalProps> = ({
             <div className="text-base font-bold text-[#f7f8f8]">
               Arqueo de Turno Registrado Exitosamente
             </div>
-            <div className="font-mono text-xs text-[#8a8f98]">
-              Arqueo ID: {result.arqueoId} • Estado: {result.estado}
-            </div>
-            <div className="text-xs text-[#f7f8f8] mt-1">{result.mensaje}</div>
             <button
               type="button"
               onClick={onClose}

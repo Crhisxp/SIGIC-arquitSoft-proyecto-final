@@ -9,6 +9,16 @@ import {
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
 
+type PerfilWebResponse = Omit<AuthWebUser, "token" | "rolComercial"> & { rolComercial?: string };
+
+function perfilWeb(data: PerfilWebResponse, token: string): AuthWebUser {
+  const perfil = data.rolComercial?.normalize("NFD").replace(/[\u0300-\u036f\s]/g, "").toLowerCase();
+  const rolComercial = perfil === "maestroobra" || perfil === "maestrodeobra"
+    ? "MaestroObra"
+    : perfil === "contratista" || perfil === "contratistab2b" ? "ContratistaB2B" : "PublicoGeneral";
+  return { ...data, token, rolComercial };
+}
+
 export class ApiError extends Error {
   constructor(public statusCode: number, message: string, public errors?: string[]) {
     super(message);
@@ -35,13 +45,15 @@ async function handleResponse<T>(res: Response): Promise<T> {
 }
 
 export const webApi = {
-  async listarProductos(search?: string, almacenId?: string): Promise<ProductoCatalogo[]> {
+  async listarProductos(search?: string, almacenId?: string, token?: string, signal?: AbortSignal): Promise<ProductoCatalogo[]> {
     const params = new URLSearchParams();
     if (search) params.append("search", search);
     if (almacenId) params.append("almacenId", almacenId);
     const query = params.toString() ? `?${params.toString()}` : "";
     const res = await fetch(`${API_BASE}/public/catalogo/productos${query}`, {
       cache: "no-store",
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      signal,
     });
     return handleResponse<ProductoCatalogo[]>(res);
   },
@@ -57,14 +69,13 @@ export const webApi = {
     productoId: string;
     cantidad: number;
     unidadMedida?: string;
-    rolCliente?: string;
-    clienteId?: string;
     almacenId?: string;
-  }): Promise<CalculoPDPResultado> {
+  }, token?: string, signal?: AbortSignal): Promise<CalculoPDPResultado> {
     const res = await fetch(`${API_BASE}/public/catalogo/calcular-precio`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...(token && { Authorization: `Bearer ${token}` }) },
       body: JSON.stringify(params),
+      signal,
     });
     return handleResponse<CalculoPDPResultado>(res);
   },
@@ -75,14 +86,8 @@ export const webApi = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, password }),
     });
-    const data = await handleResponse<any>(res);
-    return {
-      token: data.token,
-      userId: data.userId,
-      username: data.username,
-      roles: data.roles || ["ClienteWeb"],
-      rolComercial: "PublicoGeneral",
-    };
+    const data = await handleResponse<PerfilWebResponse & { token: string }>(res);
+    return perfilWeb(data, data.token);
   },
 
   async register(username: string, password: string, email?: string, nombres?: string): Promise<AuthWebUser> {
@@ -91,14 +96,15 @@ export const webApi = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, password, email, nombres }),
     });
-    const data = await handleResponse<any>(res);
-    return {
-      token: data.token,
-      userId: data.userId,
-      username: data.username,
-      roles: data.roles || ["ClienteWeb"],
-      rolComercial: "PublicoGeneral",
-    };
+    const data = await handleResponse<PerfilWebResponse & { token: string }>(res);
+    return perfilWeb(data, data.token);
+  },
+
+  async sesion(token: string, signal: AbortSignal): Promise<AuthWebUser> {
+    const res = await fetch(`${API_BASE}/auth/sesion-web`, {
+      headers: { Authorization: `Bearer ${token}` }, cache: "no-store", signal,
+    });
+    return perfilWeb(await handleResponse<PerfilWebResponse>(res), token);
   },
 
   async reservarPedido(request: ReservarPedidoRequest, token: string): Promise<ReservarPedidoResponse> {

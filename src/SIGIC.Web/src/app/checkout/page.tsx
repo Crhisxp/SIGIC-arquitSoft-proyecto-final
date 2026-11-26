@@ -26,7 +26,7 @@ export default function CheckoutPage() {
   const handleConfirmOrder = async () => {
     if (items.length === 0) return;
     if (!isAuthenticated || !user) {
-      setError("Debe iniciar sesión como Cliente Web antes de proceder al checkout.");
+      setError("Inicie sesión para confirmar su pedido.");
       return;
     }
 
@@ -37,7 +37,12 @@ export default function CheckoutPage() {
       // Revalidación y ordenamiento ascendente por ID (Havender anti-deadlock)
       const itemsOrdenados = [...items]
         .sort((a, b) => a.productoId.localeCompare(b.productoId))
-        .map((i) => ({ productoId: i.productoId, cantidad: i.cantidadBase, precioUnitario: i.precioUnitario }));
+        .map((i) => ({
+          productoId: i.productoId,
+          cantidad: i.cantidad,
+          unidadMedida: i.unidadMedida,
+          precioUnitario: i.precioUnitario,
+        }));
 
       const response = await webApi.reservarPedido(
         {
@@ -55,10 +60,10 @@ export default function CheckoutPage() {
     } catch (err: unknown) {
       if (err instanceof ApiError) {
         setError(err.statusCode === 409
-          ? `Conflicto de Inventario (409): ${err.message}. El stock disponible varió durante su compra.`
-          : `Error ${err.statusCode}: ${err.message}`);
+          ? "El precio o la disponibilidad cambió durante su compra. Revise su carrito antes de confirmar."
+          : "No pudimos confirmar su pedido. Revise los datos e inténtelo nuevamente.");
       } else {
-        setError(err instanceof Error ? err.message : "Error al procesar reserva de checkout");
+        setError("No pudimos conectar con la tienda. Inténtelo nuevamente.");
       }
     } finally {
       setIsSubmitting(false);
@@ -70,7 +75,7 @@ export default function CheckoutPage() {
       <div className="p-12 text-center text-xs font-mono border border-dashed border-[#23252a] rounded flex flex-col items-center gap-4 max-w-xl mx-auto">
         <AlertTriangle className="w-8 h-8 text-[#e4f222]" />
         <div className="text-sm font-bold text-[#f7f8f8]">Su carrito de compras está vacío</div>
-        <p className="text-[#8a8f98]">Agregue artículos técnicos desde el catálogo para iniciar el checkout transaccional.</p>
+        <p className="text-[#8a8f98]">Agregue productos desde el catálogo para hacer su pedido.</p>
         <Link href="/" className="px-4 py-2 bg-[#e4f222] text-[#08090a] font-bold rounded flex items-center gap-2">
           <ArrowLeft className="w-4 h-4" /> Ir al Catálogo Web
         </Link>
@@ -84,7 +89,7 @@ export default function CheckoutPage() {
         <Link href="/" className="inline-flex items-center gap-1.5 text-[#8a8f98] hover:text-[#f7f8f8] font-mono transition-colors">
           <ArrowLeft className="w-4 h-4" /> Volver al Catálogo
         </Link>
-        <span className="font-mono text-[#8a8f98]">CHECKOUT ATÓMICO (RF-WEB-005, RF-WEB-002)</span>
+        <span className="font-mono text-[#8a8f98]">Finalizar compra</span>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -92,7 +97,7 @@ export default function CheckoutPage() {
           {/* Modalidad de Pago */}
           <div className="p-5 bg-[#0f1011] border border-[#23252a] rounded-lg space-y-3">
             <h2 className="font-bold text-sm text-[#f7f8f8] font-mono flex items-center gap-2">
-              <CreditCard className="w-4 h-4 text-[#e4f222]" /> <span>1. Modalidad de Pago y TTL de Reserva</span>
+              <CreditCard className="w-4 h-4 text-[#e4f222]" /> <span>1. Forma de pago</span>
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <button
@@ -103,13 +108,13 @@ export default function CheckoutPage() {
               >
                 <div>
                   <div className="font-bold text-[#f7f8f8] flex items-center justify-between">
-                    <span>Pasarela de Tarjeta (Online)</span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#e4f222]/20 text-[#e4f222] font-mono">TTL 20 min</span>
+                    <span>Tarjeta en línea</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#e4f222]/20 text-[#e4f222] font-mono">20 min de reserva</span>
                   </div>
-                  <p className="text-[11px] text-[#8a8f98] mt-1">Pago inmediato con tarjeta. Reserva atómica con límite de 20 min (RF-WEB-002).</p>
+                  <p className="text-[11px] text-[#8a8f98] mt-1">Pague con tarjeta antes de que venza la reserva.</p>
                 </div>
                 <div className="mt-3 flex items-center gap-1 text-[10px] text-[#22c55e] font-mono">
-                  <Clock className="w-3.5 h-3.5" /> Liberación automática post-vencimiento
+                  <Clock className="w-3.5 h-3.5" /> La reserva se cancela al vencer
                 </div>
               </button>
 
@@ -121,13 +126,13 @@ export default function CheckoutPage() {
               >
                 <div>
                   <div className="font-bold text-[#f7f8f8] flex items-center justify-between">
-                    <span>Pago Manual Diferido</span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#38bdf8]/20 text-[#38bdf8] font-mono">TTL 240 min</span>
+                    <span>Yape, Plin o transferencia</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#38bdf8]/20 text-[#38bdf8] font-mono">Hasta 4 h de reserva</span>
                   </div>
-                  <p className="text-[11px] text-[#8a8f98] mt-1">Reserva de 4 horas (240 min). Requiere comprobante en máx. 60 min.</p>
+                  <p className="text-[11px] text-[#8a8f98] mt-1">Adjunte su comprobante para que podamos confirmar el pago.</p>
                 </div>
                 <div className="mt-3 flex items-center gap-1 text-[10px] text-[#f59e0b] font-mono">
-                  <Clock className="w-3.5 h-3.5" /> Ventana de voucher: 60 minutos
+                  <Clock className="w-3.5 h-3.5" /> 60 minutos para adjuntar su comprobante
                 </div>
               </button>
             </div>
@@ -160,7 +165,7 @@ export default function CheckoutPage() {
           {/* Modalidad de Entrega */}
           <div className="p-5 bg-[#0f1011] border border-[#23252a] rounded-lg space-y-3">
             <h2 className="font-bold text-sm text-[#f7f8f8] font-mono flex items-center gap-2">
-              <Truck className="w-4 h-4 text-[#e4f222]" /> <span>2. Modalidad de Entrega (RF-INV-003, RF-POS-011)</span>
+              <Truck className="w-4 h-4 text-[#e4f222]" /> <span>2. Entrega</span>
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <button
@@ -172,7 +177,7 @@ export default function CheckoutPage() {
                 <div className="font-bold text-[#f7f8f8] flex items-center gap-1.5">
                   <Store className="w-4 h-4 text-[#e4f222]" /> Retiro en Tienda (Ayacucho)
                 </div>
-                <p className="text-[11px] text-[#8a8f98] mt-1">Genera Guía Interna de Traslado desde Almacén Central para entrega en mostrador.</p>
+                <p className="text-[11px] text-[#8a8f98] mt-1">Elija el local donde desea recoger sus materiales.</p>
               </button>
 
               <button
@@ -184,7 +189,7 @@ export default function CheckoutPage() {
                 <div className="font-bold text-[#f7f8f8] flex items-center gap-1.5">
                   <Truck className="w-4 h-4 text-[#e4f222]" /> Despacho a Domicilio
                 </div>
-                <p className="text-[11px] text-[#8a8f98] mt-1">Despacho consolidado directamente desde Almacén Central hacia obra o residencia.</p>
+                <p className="text-[11px] text-[#8a8f98] mt-1">Reciba los materiales en su obra o domicilio.</p>
               </button>
             </div>
 
@@ -210,14 +215,14 @@ export default function CheckoutPage() {
               <h2 className="font-bold text-sm text-[#f7f8f8] font-mono mb-3">Resumen ({totalItemsCount} ítems)</h2>
               <div className="divide-y divide-[#18191c] max-h-[220px] overflow-y-auto mb-4">
                 {items.map((i) => (
-                  <div key={i.productoId} className="py-2 flex justify-between items-center text-[11px]">
+                  <div key={`${i.productoId}:${i.unidadMedida}`} className="py-2 flex justify-between items-center text-[11px]">
                     <div>
                       <div className="font-semibold text-[#f7f8f8] max-w-[150px] truncate">{i.nombreComercial}</div>
-                      <div className="font-mono text-[#8a8f98]">{i.cantidad} {i.unidadMedida} ({i.cantidadBase} base)</div>
+                      <div className="font-mono text-[#8a8f98]">{i.cantidad} {i.unidadMedida}</div>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="font-mono sigic-tabular text-[#f7f8f8]">S/ {i.subtotal.toFixed(2)}</span>
-                      <button type="button" onClick={() => removeItem(i.productoId)} className="text-[#8a8f98] hover:text-[#ef4444]" title="Quitar">
+                      <button type="button" onClick={() => removeItem(i.productoId, i.unidadMedida)} className="text-[#8a8f98] hover:text-[#ef4444]" title="Quitar">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
@@ -242,7 +247,7 @@ export default function CheckoutPage() {
 
             {!isAuthenticated ? (
               <div className="mt-4 p-3 bg-[#161718] border border-[#23252a] rounded text-center">
-                <span className="text-[#8a8f98] block mb-2 font-mono text-[11px]">Requiere Cliente Web</span>
+                <span className="text-[#8a8f98] block mb-2 font-mono text-[11px]">Inicie sesión para hacer su pedido</span>
                 <Link href="/login" className="w-full py-2 bg-[#e4f222] text-[#08090a] font-mono font-bold text-xs rounded hover:bg-[#d3e015] block">
                   Iniciar Sesión para Reservar
                 </Link>
@@ -252,7 +257,7 @@ export default function CheckoutPage() {
                 type="button" disabled={isSubmitting} onClick={handleConfirmOrder}
                 className="mt-4 w-full py-3 bg-[#e4f222] text-[#08090a] font-mono font-bold text-sm rounded hover:bg-[#d3e015] disabled:opacity-40 transition-colors"
               >
-                {isSubmitting ? "Bloqueando Inventario..." : "Confirmar Reserva y Proceder"}
+                {isSubmitting ? "Confirmando pedido…" : "Confirmar pedido"}
               </button>
             )}
           </div>

@@ -18,7 +18,8 @@ public record PDPResultDto(
     decimal StockDisponible,
     bool AplicaDescuentoVolumen,
     decimal FactorConversion = 1.0000m,
-    decimal PrecioUnitarioComercial = 0m);
+    decimal PrecioUnitarioComercial = 0m,
+    string? ImagenUrl = null);
 
 public record ProductoCatalogoDto(
     Guid Id,
@@ -27,4 +28,5 @@ public record ProductoCatalogoDto(
     string UnidadBase,
     decimal PrecioVenta,
     decimal StockDisponible,
-    bool DisponibleEnWeb);
+    bool DisponibleEnWeb,
+    string? ImagenUrl = null);

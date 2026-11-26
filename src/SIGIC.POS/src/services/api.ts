@@ -6,7 +6,7 @@ import {
   TipoComprobante,
   VentaPOSResponse,
   ArqueoResponse,
-  Product,
+  StockAlmacenDetalle,
 } from "../types/pos";
 
 const API_BASE = "/api/v1";
@@ -98,15 +98,31 @@ class ApiService {
     return await res.json();
   }
 
-  async obtenerTurnoActual(cajeroId: string): Promise<TurnoCaja | null> {
+  async obtenerTurnoActual(cajeroId = this.cajeroDeSesion(), signal?: AbortSignal): Promise<TurnoCaja | null> {
+    if (!cajeroId) return null;
+
     const res = await fetch(`${API_BASE}/caja/turnos/actual?cajeroId=${encodeURIComponent(cajeroId)}`, {
       headers: this.getHeaders(),
+      cache: "no-store",
+      signal,
     });
-    if (res.status === 404) return null;
+    if (res.status === 401 || res.status === 404) return null;
     if (!res.ok) {
       throw new Error("No se pudo obtener el turno de caja actual.");
     }
     return await res.json();
+  }
+
+  private cajeroDeSesion(): string {
+    const payload = this.token?.split(".")[1];
+    if (!payload) return "";
+    try {
+      // Identifica la consulta. La API verifica el token de personal.
+      const { sub } = JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/")));
+      return typeof sub === "string" ? sub : "";
+    } catch {
+      return "";
+    }
   }
 
   async cerrarTurnoArqueoCiego(params: {
@@ -118,7 +134,7 @@ class ApiService {
     const body = {
       turnoCajaId: params.turnoCajaId,
       desgloseFisico: params.desgloseFisico.map((d) => ({
-        denominacion: d.valor,
+        valorUnitario: d.valor,
         cantidad: d.cantidad,
       })),
       totalDigitalDeclarado: params.totalDigitalDeclarado,
@@ -139,14 +155,14 @@ class ApiService {
     return await res.json();
   }
 
-  async obtenerStock(almacenId?: string, productoId?: string): Promise<Product[]> {
+  async obtenerStock(almacenId?: string, productoId?: string, signal?: AbortSignal): Promise<StockAlmacenDetalle[]> {
     let url = `${API_BASE}/inventario/stock`;
     const params = new URLSearchParams();
     if (almacenId) params.append("almacenId", almacenId);
     if (productoId) params.append("productoId", productoId);
     if (params.toString()) url += `?${params.toString()}`;
 
-    const res = await fetch(url, { headers: this.getHeaders() });
+    const res = await fetch(url, { headers: this.getHeaders(), cache: "no-store", signal });
     if (!res.ok) throw new Error("Error al consultar stock");
     return await res.json();
   }

@@ -55,12 +55,23 @@ export interface TurnoCaja {
   turnoId: string;
   cajaId: string;
   cajeroId: string;
-  cajeroNombre: string;
+  cajeroNombre?: string;
   almacenId: string;
-  almacenNombre: string;
+  almacenNombre?: string;
   fondoInicial: number;
   estado: "Aperturado" | "Cerrado";
   fechaAperturaUtc: string;
+}
+
+export interface StockAlmacenDetalle {
+  productoId: string;
+  codigoSku: string;
+  nombreComercial: string;
+  almacenId: string;
+  nombreAlmacen: string;
+  stockFisico: number;
+  stockComprometido: number;
+  stockDisponible: number;
 }
 
 export interface HeldTicket {

@@ -126,7 +126,8 @@ public class CalcularPDPYDescuentoQueryHandler
             StockDisponible: stockDisponible,
             AplicaDescuentoVolumen: descVolumen > 0m,
             FactorConversion: factor,
-            PrecioUnitarioComercial: precioUnitarioComercial);
+            PrecioUnitarioComercial: precioUnitarioComercial,
+            ImagenUrl: producto.ImagenUrl);
     }
 
     private class DefaultCustomerProfilePort : ICustomerProfilePort

@@ -12,11 +12,12 @@ public class PedidosWebApiTests
 {
     private readonly CustomWebApplicationFactory _factory;
     private readonly HttpClient _client;
+    private readonly Guid _clienteId = Guid.NewGuid();
 
     public PedidosWebApiTests(CustomWebApplicationFactory factory)
     {
         _factory = factory;
-        _client = factory.CreateAuthenticatedClient("ClienteWeb", "SIGIC_WebClient");
+        _client = factory.CreateAuthenticatedClient("ClienteWeb", "SIGIC_WebClient", _clienteId);
     }
 
     [Fact]
@@ -38,7 +39,7 @@ public class PedidosWebApiTests
 
         var response = await _client.PostAsJsonAsync("/api/v1/web/pedidos/reservar", new
         {
-            ClienteId = Guid.NewGuid(),
+            ClienteId = _clienteId,
             MetodoPago = "Yape",
             ModalidadEntrega = "DespachoDomicilio",
             Items = new[]
@@ -75,7 +76,7 @@ public class PedidosWebApiTests
         // Solicita 10 unidades cuando solo hay 2 disponibles
         var response = await _client.PostAsJsonAsync("/api/v1/web/pedidos/reservar", new
         {
-            ClienteId = Guid.NewGuid(),
+            ClienteId = _clienteId,
             MetodoPago = "Yape",
             ModalidadEntrega = "DespachoDomicilio",
             Items = new[]
@@ -85,6 +86,19 @@ public class PedidosWebApiTests
         });
 
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ReservarPedido_WithAnotherCustomerId_Returns403()
+    {
+        var response = await _client.PostAsJsonAsync("/api/v1/web/pedidos/reservar", new
+        {
+            ClienteId = Guid.NewGuid(),
+            MetodoPago = "Yape",
+            ModalidadEntrega = "DespachoDomicilio",
+            Items = new[] { new { ProductoId = Guid.NewGuid(), Cantidad = 1m, PrecioUnitario = 50m } }
+        });
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
     [Fact]

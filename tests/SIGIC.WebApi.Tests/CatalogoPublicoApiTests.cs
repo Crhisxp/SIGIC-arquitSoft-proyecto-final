@@ -45,6 +45,49 @@ public class CatalogoPublicoApiTests
     }
 
     [Fact]
+    public async Task CatalogoYCalculo_UsanPerfilAutenticado_YDevuelvenLaImagen()
+    {
+        var productoId = Guid.NewGuid();
+        var clienteId = Guid.NewGuid();
+        string sku = $"PRECIO-{productoId:N}";
+        string perfil = $"Homologado-{clienteId:N}";
+        const string imagen = "/productos/ferreteria.webp";
+
+        await using (var conn = await _factory.Fixture.CreateConnectionAsync())
+        {
+            await conn.ExecuteAsync("""
+                INSERT INTO productos (id, codigo_sku, nombre_comercial, precio_venta, costo_unitario, disponible_en_web, imagen_url)
+                VALUES (@productoId, @sku, 'Herramienta de prueba', 100, 40, TRUE, @imagen);
+                INSERT INTO usuarios (id, username, password_hash, perfil_cliente)
+                VALUES (@clienteId, @perfil, 'sin-login', @perfil);
+                INSERT INTO tarifas_rol (id, rol, porcentaje_descuento)
+                VALUES (gen_random_uuid(), @perfil, 0.12);
+                """, new { productoId, sku, clienteId, perfil, imagen });
+        }
+
+        using var cliente = _factory.CreateAuthenticatedClient("ClienteWeb", "SIGIC_WebClient", clienteId);
+        using var staff = _factory.CreateAuthenticatedClient("Superadmin", "SIGIC_InternalStaff", clienteId);
+        foreach (var (http, precio) in new[] { (_client, 100m), (cliente, 88m), (staff, 100m) })
+        {
+            using var listado = await http.GetAsync($"/api/v1/public/catalogo/productos?search={sku}");
+            listado.EnsureSuccessStatusCode();
+            Assert.True(listado.Headers.CacheControl?.NoStore);
+            var items = await listado.Content.ReadFromJsonAsync<JsonElement[]>();
+            var item = Assert.Single(items!);
+            Assert.Equal(precio, item.GetProperty("precioVenta").GetDecimal());
+            Assert.Equal(imagen, item.GetProperty("imagenUrl").GetString());
+            Assert.False(item.TryGetProperty("costoUnitario", out _));
+
+            using var calculo = await http.PostAsJsonAsync("/api/v1/public/catalogo/calcular-precio",
+                new { ProductoId = productoId, Cantidad = 1m, RolCliente = perfil, ClienteId = Guid.NewGuid() });
+            calculo.EnsureSuccessStatusCode();
+            var datos = await calculo.Content.ReadFromJsonAsync<JsonElement>();
+            Assert.Equal(precio, datos.GetProperty("precioFinalUnitario").GetDecimal());
+            Assert.Equal(imagen, datos.GetProperty("imagenUrl").GetString());
+        }
+    }
+
+    [Fact]
     public async Task ObtenerDetalleProducto_NonWebProduct_Returns404AbsoluteNotFound()
     {
         // Invariante 2 (RF-INV-001): Los productos no web retornan HTTP 404 absoluto

@@ -5,8 +5,8 @@ import { CartProvider } from "../context/CartContext";
 import { Navbar } from "../components/Navbar";
 
 export const metadata = {
-  title: "SIGIC Ferretería v2.2 — Portal E-Commerce B2B/B2C",
-  description: "Catálogo técnico ferretero, tarifas por rol, PDP de mediciones y checkout transaccional.",
+  title: "Ferretería SIGIC Ayacucho",
+  description: "Materiales, herramientas y suministros ferreteros con retiro en tienda o despacho a domicilio en Ayacucho.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -18,7 +18,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Navbar />
             <main className="flex-1 max-w-7xl w-full mx-auto p-4">{children}</main>
             <footer className="border-t border-[#23252a] bg-[#0f1011] py-4 text-center text-xs text-[#8a8f98] font-mono">
-              SIGIC Ferretería v2.2 • Ayacucho, Perú • Monolito Modular .NET 8 + PgBouncer + Next.js 14
+              Ferretería SIGIC Ayacucho · Ayacucho, Perú
             </footer>
           </CartProvider>
         </AuthProvider>

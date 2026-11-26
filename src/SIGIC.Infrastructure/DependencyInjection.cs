@@ -122,6 +122,7 @@ public static class DependencyInjection
         services.AddScoped<RegistrarArqueoCiegoCommandHandler>();
         services.AddScoped<ValidarVoucherPagoCommandHandler>();
         services.AddScoped<CalcularPDPYDescuentoQueryHandler>();
+        services.AddScoped<CatalogoWebService>();
 
         // Copiloto Analítico IA (RF-ANA-001)
         services.AddScoped<ILecturaAnaliticaPort, PostgresLecturaAnaliticaPort>();

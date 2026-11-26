@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using SIGIC.Application.Common.Exceptions;
+using SIGIC.Application.Common.Ports;
 using SIGIC.Application.Security.Ports;
 
 namespace SIGIC.WebApi.Controllers;
@@ -16,15 +17,18 @@ public class AuthController : ControllerBase
     private readonly IAccountLockoutRepository _accountLockoutRepo;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IJwtTokenService _jwtTokenService;
+    private readonly ICustomerProfilePort _perfiles;
 
     public AuthController(
         IAccountLockoutRepository accountLockoutRepo,
         IPasswordHasher passwordHasher,
-        IJwtTokenService jwtTokenService)
+        IJwtTokenService jwtTokenService,
+        ICustomerProfilePort perfiles)
     {
         _accountLockoutRepo = accountLockoutRepo ?? throw new ArgumentNullException(nameof(accountLockoutRepo));
         _passwordHasher = passwordHasher ?? throw new ArgumentNullException(nameof(passwordHasher));
         _jwtTokenService = jwtTokenService ?? throw new ArgumentNullException(nameof(jwtTokenService));
+        _perfiles = perfiles;
     }
 
     [HttpPost("login-staff")]
@@ -95,8 +99,20 @@ public class AuthController : ControllerBase
         var tokenResult = _jwtTokenService.GenerateToken(
             user.UserId, user.Username, user.Roles, "SIGIC_WebClient");
 
+        var perfil = await _perfiles.ObtenerPerfilClienteAsync(user.UserId, ct);
         return Ok(new AuthResponseDto(
-            tokenResult.Token, "Bearer", 15, user.UserId, user.Username, user.Roles));
+            tokenResult.Token, "Bearer", 15, user.UserId, user.Username, user.Roles, perfil));
+    }
+
+    [HttpGet("sesion-web")]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    public async Task<IActionResult> SesionWeb([FromServices] ICurrentUserContext usuario, CancellationToken ct)
+    {
+        if (usuario.ClienteWebAutenticadoId is not { } clienteId)
+            return Unauthorized();
+
+        var perfil = await _perfiles.ObtenerPerfilClienteAsync(clienteId, ct);
+        return Ok(new PerfilWebResponseDto(clienteId, usuario.Username, usuario.Roles, perfil));
     }
 
     [HttpPost("register-web")]
@@ -123,16 +139,18 @@ public class AuthController : ControllerBase
             newUserId, request.Username, roles, "SIGIC_WebClient");
 
         return StatusCode(StatusCodes.Status201Created, new AuthResponseDto(
-            tokenResult.Token, "Bearer", 15, newUserId, request.Username, roles));
+            tokenResult.Token, "Bearer", 15, newUserId, request.Username, roles, "PublicoGeneral"));
     }
 
     public record LoginRequestDto(string Username, string Password);
     public record RegisterWebRequestDto(string Username, string Password, string? Email = null, string? Nombres = null);
+    public record PerfilWebResponseDto(Guid UserId, string Username, IReadOnlyList<string> Roles, string RolComercial);
     public record AuthResponseDto(
         string Token,
         string TokenType,
         int ExpiresInMinutes,
         Guid UserId,
         string Username,
-        IReadOnlyList<string> Roles);
+        IReadOnlyList<string> Roles,
+        string? RolComercial = null);
 }

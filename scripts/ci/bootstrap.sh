@@ -38,6 +38,7 @@ ddl="$sigic_repo_root/src/SIGIC.Infrastructure/Persistence/Scripts"
 psql -X -v ON_ERROR_STOP=1 -f "$ddl/00_init_schema.sql"
 psql -X -v ON_ERROR_STOP=1 -f "$ddl/01_append_only_permissions.sql"
 psql -X -v ON_ERROR_STOP=1 -f "$ddl/02_cierres_analiticos.sql"
+psql -X -v ON_ERROR_STOP=1 -f "$ddl/03_producto_imagen.sql"
 psql -X -v ON_ERROR_STOP=1 -v fixture_password="$SIGIC_DB_PASSWORD" >/dev/null <<'SQL'
 SET password_encryption = 'scram-sha-256';
 ALTER ROLE sigic_app WITH LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE PASSWORD :'fixture_password';

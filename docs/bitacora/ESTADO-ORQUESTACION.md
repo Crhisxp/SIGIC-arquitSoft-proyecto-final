@@ -1,5 +1,39 @@
 # Bitácora de Orquestación Híbrida — SIGIC Ferretería v2.2
 
+## Iteración 2026-11-26 — Cierre de evidencia QA y SDD
+
+El guardián emitió GO con cobertura unitaria actual de Domain de 269/281 líneas
+(95,73 %). La cadena estricta validó 47 documentos y la auditoría de 163 archivos
+de código encontró cero violaciones de capas. Pasaron 227 pruebas xUnit,
+46 pruebas Vitest y 38 aserciones Newman. Se generó el informe HTML de cobertura.
+La siembra comercial produjo 10 registros con URL WebP. Los escenarios k6
+pasaron las comprobaciones cortas de contención y de capacidad. La prueba de
+capacidad a 2.000 usuarios virtuales queda pendiente.
+
+## Iteración 2026-11-26 — Layout fluido y operación del mostrador POS
+
+Se ajustó el mostrador para ocupar todo el viewport con desplazamiento interno
+en el área de trabajo y un área mínima de 44 × 44 px por atajo. El estado de caja
+proviene del turno activo de la sesión de personal. La consulta F5 usa las
+existencias por almacén del endpoint de inventario y muestra errores de consulta
+en lenguaje de mostrador.
+
+Pasaron 29 pruebas de POS y la compilación de TypeScript y Vite. Chromium
+confirmó el ajuste en 1024 × 768, 1366 × 768 y 1920 × 1080, el acceso al cobro sin
+desplazar la página y la devolución del foco al escáner al cerrar el diálogo F2.
+
+## Iteración 2026-11-26 — Catálogo comercial y sesiones del portal
+
+El portal toma el perfil homologado de la identidad validada por la API. La
+navegación comprueba la sesión de personal antes de mostrar Analítica. Se
+adaptaron los textos al catálogo comercial y se agregó la migración idempotente
+de imágenes, con recursos locales y una carga de diez productos de demostración.
+
+Verificación local: Domain 24/24 con 269 de 281 líneas cubiertas (95,73 %),
+Application 96/96, WebApi 50/50 sobre PostgreSQL 16 desechable con conexión
+directa, y Vitest Web 17/17. El build de Next.js terminó correctamente y dos
+ejecuciones del seed dejaron diez productos con imagen y stock central.
+
 ## Iteración 2026-11-19 — Corrección SASL en la fábrica WebApi (run 44562329555)
 
 **Responsable:** Codex. **Alcance:** configuración del host de pruebas y regresión;

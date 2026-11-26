@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { Wrench, CheckCircle, XCircle, Calculator, ShoppingCart, ArrowLeft, AlertTriangle } from "lucide-react";
+import { CheckCircle, XCircle, Calculator, ShoppingCart, ArrowLeft, AlertTriangle } from "lucide-react";
+import { ProductImage } from "../../../components/ProductImage";
 import { ProductoCatalogo, CalculoPDPResultado } from "../../../types/web";
 import { webApi } from "../../../services/api";
 import { useAuth } from "../../../context/AuthContext";
@@ -16,50 +17,56 @@ export default function ProductDetailPage() {
   const [producto, setProducto] = useState<ProductoCatalogo | null>(null);
   const [cantidad, setCantidad] = useState<number>(1);
   const [unidadSeleccionada, setUnidadSeleccionada] = useState<string>("UND");
-  const [calculo, setCalculo] = useState<CalculoPDPResultado | null>(null);
+  const [cotizacion, setCotizacion] = useState<{ clave: string; datos: CalculoPDPResultado }>();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
-  const { user, rolComercial } = useAuth();
+  const { user } = useAuth();
   const { addItem } = useCart();
+  const token = user?.token;
+  const clave = JSON.stringify([productoId, cantidad, unidadSeleccionada, token]);
+  const calculo = cotizacion?.clave === clave ? cotizacion.datos : null;
 
   useEffect(() => {
     if (!productoId) return;
+    let activo = true;
     setIsLoading(true);
+    setProducto(null);
+    setError(null);
     webApi.obtenerProducto(productoId)
       .then((data) => {
+        if (!activo) return;
         if (!data.disponibleEnWeb) {
-          setError("Este producto es exclusivo de mostrador presencial (RF-INV-001).");
-          setProducto(null);
+          setError("Producto no disponible.");
         } else {
           setProducto(data);
           setUnidadSeleccionada(data.unidadBase || "UND");
         }
       })
-      .catch((err) => setError(err instanceof Error ? err.message : "Producto no encontrado (404)"))
-      .finally(() => setIsLoading(false));
+      .catch(() => { if (activo) setError("Producto no disponible."); })
+      .finally(() => { if (activo) setIsLoading(false); });
+    return () => { activo = false; };
   }, [productoId]);
 
-  const recalcularPrecio = useCallback(async () => {
-    if (!productoId || cantidad <= 0) return;
-    try {
-      const res = await webApi.calcularPrecioPDP({
-        productoId, cantidad, unidadMedida: unidadSeleccionada, rolCliente: rolComercial, clienteId: user?.userId,
+  useEffect(() => {
+    if (!producto || producto.id !== productoId) return;
+    const controller = new AbortController();
+    setCotizacion(undefined);
+    setError(null);
+    webApi.calcularPrecioPDP({ productoId, cantidad, unidadMedida: unidadSeleccionada }, token, controller.signal)
+      .then((datos) => {
+        if (!controller.signal.aborted) setCotizacion({ clave, datos });
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setError("No pudimos calcular el precio. Revise la presentación o vuelva a intentar.");
       });
-      setCalculo(res);
-      setError(null);
-    } catch (err: unknown) {
-      setCalculo(null);
-      setError(err instanceof Error ? err.message : "Error al calcular precio vigente en el servidor.");
-    }
-  }, [productoId, cantidad, unidadSeleccionada, rolComercial, user?.userId]);
-
-  useEffect(() => { if (producto) recalcularPrecio(); }, [producto, recalcularPrecio]);
+    return () => controller.abort();
+  }, [producto, productoId, cantidad, unidadSeleccionada, token, clave]);
 
   const handleAddToCart = () => {
     if (!producto || !calculo) {
-      setError("No hay cálculo de precio vigente del servidor para agregar al carrito.");
+      setError("El precio aún no está disponible.");
       return;
     }
     if (calculo.cantidadBaseConvertida > calculo.stockDisponible) {
@@ -69,7 +76,7 @@ export default function ProductDetailPage() {
     const added = addItem({
       productoId: producto.id, codigoSku: producto.codigoSku, nombreComercial: producto.nombreComercial,
       unidadMedida: unidadSeleccionada, cantidad, cantidadBase: calculo.cantidadBaseConvertida,
-      precioUnitario: calculo.precioUnitarioComercial || calculo.precioFinalUnitario,
+      precioUnitario: calculo.precioFinalUnitario,
       subtotal: calculo.subtotal, stockDisponible: calculo.stockDisponible,
     });
     if (added) {
@@ -80,7 +87,7 @@ export default function ProductDetailPage() {
     }
   };
 
-  if (isLoading) return <div className="p-12 text-center text-xs font-mono text-[#8a8f98]">Cargando Ficha Técnica PDP...</div>;
+  if (isLoading) return <div className="p-12 text-center text-xs font-mono text-[#8a8f98]">Cargando producto…</div>;
 
   if (error && !producto) {
     return (
@@ -96,7 +103,7 @@ export default function ProductDetailPage() {
 
   if (!producto) return null;
 
-  const stockDisp = producto.stockDisponible;
+  const stockDisp = calculo?.stockDisponible ?? producto.stockDisponible;
   const tieneStock = stockDisp > 0;
   const factorActual = calculo ? calculo.factorConversion : null;
   const cantBaseConv = calculo ? calculo.cantidadBaseConvertida : null;
@@ -109,7 +116,8 @@ export default function ProductDetailPage() {
       </Link>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-[#0f1011] border border-[#23252a] rounded-lg p-6">
-        <div className="flex flex-col justify-between border-b md:border-b-0 md:border-r border-[#23252a] pb-6 md:pb-0 md:pr-6">
+        <div className="flex flex-col gap-4 border-b md:border-b-0 md:border-r border-[#23252a] pb-6 md:pb-0 md:pr-6">
+          <ProductImage nombre={producto.nombreComercial} imagenUrl={producto.imagenUrl ?? calculo?.imagenUrl} priority />
           <div>
             <div className="flex items-center gap-2 mb-2">
               <span className="font-mono font-bold text-[#e4f222] text-sm">{producto.codigoSku}</span>
@@ -125,23 +133,14 @@ export default function ProductDetailPage() {
             </div>
             <h1 className="text-lg font-bold text-[#f7f8f8] mt-1">{producto.nombreComercial}</h1>
             <p className="text-[#8a8f98] text-[11px] mt-2">
-              Especificación técnica oficial. Unidad base: <strong className="text-[#f7f8f8] font-mono">{producto.unidadBase}</strong>.
+              Presentación: <strong className="text-[#f7f8f8] font-mono">{producto.unidadBase}</strong>
             </p>
-          </div>
-          <div className="mt-6 p-4 bg-[#161718] border border-[#23252a] rounded space-y-2">
-            <div className="font-mono text-[#8a8f98] font-semibold flex items-center gap-1.5">
-              <Wrench className="w-4 h-4 text-[#e4f222]" /> GOBERNANZA DE PRECIOS Y STOCK (MÓDULO 5)
-            </div>
-            <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
-              <div><span className="text-[#8a8f98] block">Tarifa:</span><span className="text-[#f7f8f8] font-bold">{rolComercial}</span></div>
-              <div><span className="text-[#8a8f98] block">Almacén:</span><span className="text-[#f7f8f8]">Central Ayacucho</span></div>
-            </div>
           </div>
         </div>
 
         <div className="flex flex-col gap-4">
           <div className="flex items-center gap-2 font-mono font-bold text-sm text-[#f7f8f8]">
-            <Calculator className="w-4 h-4 text-[#e4f222]" /> <span>Calculadora de Conversiones (RF-INV-005)</span>
+            <Calculator className="w-4 h-4 text-[#e4f222]" /> <span>Calcula tu compra</span>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -186,7 +185,7 @@ export default function ProductDetailPage() {
             <div className="p-4 bg-[#161718] border border-[#23252a] rounded space-y-2">
               <div className="flex justify-between items-center font-mono text-[11px]">
                 <span className="text-[#8a8f98]">Precio Unitario ({unidadSeleccionada}):</span>
-                <span className="text-[#f7f8f8] sigic-tabular">S/ {(calculo.precioUnitarioComercial || calculo.precioFinalUnitario).toFixed(2)}</span>
+                <span className="text-[#f7f8f8] sigic-tabular">S/ {calculo.precioFinalUnitario.toFixed(2)}</span>
               </div>
               {calculo.descuentoUnitario > 0 && (
                 <div className="flex justify-between items-center font-mono text-[11px] text-[#22c55e]">

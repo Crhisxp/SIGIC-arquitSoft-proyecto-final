@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import CheckoutPage from "../app/checkout/page";
 import PedidoTrackingPage from "../app/pedidos/[id]/page";
@@ -23,6 +23,14 @@ const CartPopulator: React.FC<{ items: CartItemWeb[] }> = ({ items }) => {
 };
 
 describe("Checkout y Reservas Web (RF-WEB-002, RF-WEB-005, RNF-CON-003)", () => {
+  beforeEach(() => {
+    vi.spyOn(webApi, "sesion").mockResolvedValue({
+      token: "fake-jwt-token", userId: "00000000-0000-0000-0000-000000000022",
+      username: "cliente_test", roles: ["ClienteWeb"], rolComercial: "PublicoGeneral",
+    });
+  });
+  afterEach(() => vi.restoreAllMocks());
+
   it("valida parámetros de TTL: 20 min Pasarela vs 240 min Manual con ventana 60 min voucher", () => {
     expect(TTL_CONFIG.PASARELA_MINUTOS).toBe(20);
     expect(TTL_CONFIG.MANUAL_RESERVA_MINUTOS).toBe(240);
@@ -69,13 +77,13 @@ describe("Checkout y Reservas Web (RF-WEB-002, RF-WEB-005, RNF-CON-003)", () => 
     );
 
     await waitFor(() => {
-      expect(screen.getByText(/Confirmar Reserva y Proceder/i)).toBeInTheDocument();
+      expect(screen.getByText(/Confirmar pedido/i)).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByText(/Confirmar Reserva y Proceder/i));
+    fireEvent.click(screen.getByText(/Confirmar pedido/i));
 
     await waitFor(() => {
-      expect(screen.getByText(/Conflicto de Inventario \(409\)/i)).toBeInTheDocument();
+      expect(screen.getByText(/El precio o la disponibilidad cambió durante su compra/i)).toBeInTheDocument();
     });
   });
 
@@ -184,11 +192,11 @@ describe("Checkout y Reservas Web (RF-WEB-002, RF-WEB-005, RNF-CON-003)", () => 
     );
 
     await waitFor(() => {
-      expect(screen.getByText(/Confirmar Reserva y Proceder/i)).toBeInTheDocument();
+      expect(screen.getByText(/Confirmar pedido/i)).toBeInTheDocument();
     });
 
     // Seleccionar Pago Manual
-    fireEvent.click(screen.getByText(/Pago Manual Diferido/i));
+    fireEvent.click(screen.getByText(/Yape, Plin o transferencia/i));
 
     // Seleccionar Transferencia
     await waitFor(() => {
@@ -197,7 +205,7 @@ describe("Checkout y Reservas Web (RF-WEB-002, RF-WEB-005, RNF-CON-003)", () => 
     fireEvent.click(screen.getByText("Transferencia"));
 
     // Confirmar pedido
-    fireEvent.click(screen.getByText(/Confirmar Reserva y Proceder/i));
+    fireEvent.click(screen.getByText(/Confirmar pedido/i));
 
     await waitFor(() => {
       expect(reservarSpy).toHaveBeenCalledWith(

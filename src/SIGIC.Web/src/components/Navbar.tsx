@@ -1,19 +1,45 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { ShoppingCart, User, Wrench, ShieldCheck, LogOut, Package, BarChart3 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
-import { RolClienteWeb } from "../types/web";
+import { adminAnaliticaService, staffSessionChanged } from "../services/adminAnaliticaService";
 
 export const Navbar: React.FC = () => {
-  const { user, isAuthenticated, logout, rolComercial, setRolComercial } = useAuth();
+  const { user, isAuthenticated, logout } = useAuth();
   const { totalItemsCount, total } = useCart();
+  const [hasStaffSession, setHasStaffSession] = useState(false);
 
-  const handleRoleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setRolComercial(e.target.value as RolClienteWeb);
-  };
+  useEffect(() => {
+    let request: AbortController | undefined;
+    let refresh: number | undefined;
+
+    const checkSession = () => {
+      request?.abort();
+      window.clearTimeout(refresh);
+      const controller = new AbortController();
+      request = controller;
+      adminAnaliticaService.sesion(controller.signal).then(() => {
+        if (controller.signal.aborted) return;
+        setHasStaffSession(true);
+        refresh = window.setTimeout(checkSession, 30_000);
+      }).catch(() => {
+        if (!controller.signal.aborted) setHasStaffSession(false);
+      });
+    };
+
+    checkSession();
+    window.addEventListener(staffSessionChanged, checkSession);
+    window.addEventListener("focus", checkSession);
+    return () => {
+      request?.abort();
+      window.clearTimeout(refresh);
+      window.removeEventListener(staffSessionChanged, checkSession);
+      window.removeEventListener("focus", checkSession);
+    };
+  }, []);
 
   return (
     <header className="border-b border-[#23252a] bg-[#0f1011] sticky top-0 z-40 text-xs">
@@ -21,24 +47,8 @@ export const Navbar: React.FC = () => {
         {/* Brand */}
         <Link href="/" className="flex items-center gap-2 text-[#f7f8f8] hover:text-[#e4f222] transition-colors">
           <Wrench className="w-5 h-5 text-[#e4f222]" />
-          <span className="font-bold tracking-tight text-sm font-mono">SIGIC Ferretería v2.2</span>
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#23252a] text-[#8a8f98] font-mono">B2B/B2C</span>
+          <span className="font-bold tracking-tight text-sm">Ferretería SIGIC Ayacucho</span>
         </Link>
-
-        {/* Central: Tarifa selector (RF-PRE-002) */}
-        <div className="flex items-center gap-2 bg-[#161718] border border-[#23252a] rounded px-2.5 py-1">
-          <span className="text-[#8a8f98] text-[11px] font-mono">Tarifa Vigente:</span>
-          <select
-            value={rolComercial}
-            onChange={handleRoleChange}
-            aria-label="Tarifa Comercial"
-            className="bg-transparent font-mono text-[11px] font-bold text-[#e4f222] focus:outline-none cursor-pointer"
-          >
-            <option value="PublicoGeneral" className="bg-[#161718] text-[#f7f8f8]">Público General</option>
-            <option value="MaestroObra" className="bg-[#161718] text-[#f7f8f8]">Maestro de Obra</option>
-            <option value="ContratistaB2B" className="bg-[#161718] text-[#f7f8f8]">Contratista B2B</option>
-          </select>
-        </div>
 
         {/* Right actions */}
         <div className="flex items-center gap-4">
@@ -50,15 +60,13 @@ export const Navbar: React.FC = () => {
             <span>Catálogo</span>
           </Link>
 
-          {/* Copiloto Analítica Link Descubrible */}
-          <Link
+          {hasStaffSession && <Link
             href="/admin/analitica"
             className="text-[#8a8f98] hover:text-[#e4f222] transition-colors flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#161718] border border-[#23252a] hover:border-[#e4f222]/40 font-mono text-[11px]"
-            title="Copiloto Analítico Staff"
           >
             <BarChart3 className="w-3.5 h-3.5 text-[#e4f222]" />
             <span className="font-semibold">Analítica</span>
-          </Link>
+          </Link>}
 
           {/* Cart */}
           <Link

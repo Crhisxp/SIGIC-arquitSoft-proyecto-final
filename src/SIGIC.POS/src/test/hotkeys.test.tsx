@@ -1,6 +1,9 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { App } from "../App";
+import { simularTurnoActivo } from "./turnoFixture";
+
+afterEach(() => vi.restoreAllMocks());
 
 describe("Atajos Globales de Teclado F1-F12 y Focus Trap (RF-POS-003)", () => {
   it("abre modal de búsqueda con F2 y cierra con Escape", () => {
@@ -31,17 +34,19 @@ describe("Atajos Globales de Teclado F1-F12 y Focus Trap (RF-POS-003)", () => {
     render(<App />);
 
     fireEvent.keyDown(window, { key: "F11" });
-    expect(screen.getByText(/Gestión de Tickets en Espera/i)).toBeInTheDocument();
+    expect(screen.getByText(/Tickets en espera/i)).toBeInTheDocument();
 
     fireEvent.keyDown(window, { key: "Escape" });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it("abre modal de arqueo ciego con F12", () => {
+  it("abre modal de arqueo ciego con F12", async () => {
+    simularTurnoActivo();
     render(<App />);
+    await screen.findByText("Turno abierto");
 
     fireEvent.keyDown(window, { key: "F12" });
-    expect(screen.getByText(/Arqueo Ciego e Inmutable de Caja/i)).toBeInTheDocument();
+    expect(screen.getByText(/Arqueo ciego de caja/i)).toBeInTheDocument();
 
     fireEvent.keyDown(window, { key: "Escape" });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();

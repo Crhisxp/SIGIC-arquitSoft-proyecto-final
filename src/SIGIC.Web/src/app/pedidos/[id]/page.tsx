@@ -8,6 +8,19 @@ import { PedidoWebDetalle, TTL_CONFIG } from "../../../types/web";
 import { webApi, ApiError } from "../../../services/api";
 import { useAuth } from "../../../context/AuthContext";
 
+const estados: Record<string, string> = {
+  PendientePago: "Pendiente de pago",
+  PendienteValidacion: "En revisión",
+  PagadoConfirmado: "Pago confirmado",
+  EnPreparacion: "En preparación",
+  ListoParaRetiro: "Listo para retirar",
+  Entregado: "Entregado",
+  Cancelado: "Cancelado",
+  CanceladoPorExpiracion: "Reserva vencida",
+  Expirado: "Reserva vencida",
+  Rechazado: "Pago rechazado",
+};
+
 export default function PedidoTrackingPage() {
   const params = useParams();
   const pedidoId = params?.id as string;
@@ -46,7 +59,7 @@ export default function PedidoTrackingPage() {
     cargarPedido();
   }, [cargarPedido]);
 
-  // Temporizadores en vivo (RF-WEB-002)
+  // Temporizadores de reserva y comprobante.
   useEffect(() => {
     if (!pedido) return;
 
@@ -71,7 +84,7 @@ export default function PedidoTrackingPage() {
     if (!selected) return;
 
     if (selected.size > TTL_CONFIG.MAX_VOUCHER_BYTES) {
-      setError("El comprobante no debe superar los 5 MB (RF-WEB-002).");
+      setError("El comprobante no debe superar los 5 MB.");
       setFile(null);
       return;
     }
@@ -150,7 +163,7 @@ export default function PedidoTrackingPage() {
         <Link href="/" className="inline-flex items-center gap-1.5 text-[#8a8f98] hover:text-[#f7f8f8] font-mono transition-colors">
           <ArrowLeft className="w-4 h-4" /> Ir al Catálogo
         </Link>
-        <span className="font-mono text-[#8a8f98]">SEGUIMIENTO Y VOUCHERS (RF-WEB-002)</span>
+        <span className="font-mono text-[#8a8f98]">Seguimiento del pedido</span>
       </div>
 
       <div className="p-6 bg-[#0f1011] border border-[#23252a] rounded-lg space-y-6">
@@ -159,11 +172,12 @@ export default function PedidoTrackingPage() {
             <div className="flex items-center gap-2">
               <span className="font-mono font-bold text-sm text-[#e4f222]">{codigoDisplay}</span>
               <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[#161718] border border-[#23252a] text-[#f7f8f8]">
-                {pedido.estado}
+                {estados[pedido.estado] ?? "Estado en actualización"}
               </span>
             </div>
             <div className="text-[11px] text-[#8a8f98] font-mono mt-1">
-              Pago: {pedido.metodoPago} • Entrega: {pedido.modalidadEntrega}
+              Pago: {pedido.metodoPago === "PasarelaTarjeta" ? "Tarjeta" : pedido.metodoPago === "TransferenciaBancaria" ? "Transferencia bancaria" : pedido.metodoPago}
+              {" · Entrega: "}{pedido.modalidadEntrega === "DespachoDomicilio" ? "Despacho a domicilio" : "Retiro en tienda"}
             </div>
           </div>
           <div className="text-right font-mono sigic-tabular">
@@ -181,9 +195,6 @@ export default function PedidoTrackingPage() {
             <div className="text-lg font-bold font-mono sigic-tabular text-[#f7f8f8]">
               {timeRemainingSec > 0 ? formatTimer(timeRemainingSec) : <span className="text-[#ef4444]">RESERVA EXPIRADA</span>}
             </div>
-            <span className="text-[10px] text-[#8a8f98] block font-mono">
-              TTL: {isManual ? "240 min (4h)" : "20 min exactos"} (RF-WEB-002)
-            </span>
           </div>
 
           {isManual && (
@@ -209,10 +220,10 @@ export default function PedidoTrackingPage() {
         {pedido.numeroGuia && (
           <div className="p-4 bg-[#161718] border border-[#38bdf8]/40 rounded space-y-1 font-mono">
             <div className="text-[#38bdf8] font-bold flex items-center gap-1.5">
-              <Truck className="w-4 h-4" /> GUÍA INTERNA DE TRASLADO: {pedido.numeroGuia}
+              <Truck className="w-4 h-4" /> Guía de traslado: {pedido.numeroGuia}
             </div>
             <p className="text-[11px] text-[#8a8f98]">
-              Traslado desde Almacén Central hacia tienda destino generado automáticamente (RF-INV-003). Presente su DNI para despacho en mostrador (RF-POS-011).
+              Presente su DNI al recoger su pedido en la tienda.
             </p>
           </div>
         )}
@@ -242,7 +253,7 @@ export default function PedidoTrackingPage() {
                 onClick={handleUploadVoucher}
                 className="w-full sm:w-auto px-5 py-2 bg-[#e4f222] text-[#08090a] font-mono font-bold rounded hover:bg-[#d3e015] disabled:opacity-40 transition-colors shrink-0"
               >
-                {isUploading ? "Subiendo..." : "Subir Voucher"}
+                {isUploading ? "Subiendo…" : "Subir comprobante"}
               </button>
             </div>
           </div>

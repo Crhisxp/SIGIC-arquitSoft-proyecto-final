@@ -10,6 +10,7 @@ export interface ProductoCatalogo {
   precioVenta: number;
   stockDisponible: number;
   disponibleEnWeb: boolean;
+  imagenUrl?: string | null;
 }
 
 export interface CalculoPDPResultado {
@@ -27,6 +28,7 @@ export interface CalculoPDPResultado {
   aplicaDescuentoVolumen: boolean;
   factorConversion: number;
   precioUnitarioComercial: number;
+  imagenUrl?: string | null;
 }
 
 export interface CartItemWeb {
@@ -54,6 +56,7 @@ export interface ReservarPedidoRequest {
     productoId: string;
     cantidad: number;
     precioUnitario: number;
+    unidadMedida?: string;
   }[];
 }
 

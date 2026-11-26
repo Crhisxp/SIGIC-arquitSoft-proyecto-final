@@ -53,11 +53,14 @@ public class PedidosWebController : ControllerBase
         var authCheck = ValidarAccesoClienteWeb();
         if (authCheck != null) return authCheck;
 
+        if (request.ClienteId != _userContext.ClienteWebAutenticadoId)
+            throw new UnauthorizedException("Cliente", "El pedido debe corresponder a la cuenta que inició sesión.");
+
         if (request.Items == null || !request.Items.Any())
             throw new ValidationException("El pedido debe contener al menos un ítem.");
 
         var command = new ReservarPedidoWebCommand(
-            request.ClienteId,
+            _userContext.UserId,
             request.MetodoPago,
             request.ModalidadEntrega,
             request.TiendaDestinoId,

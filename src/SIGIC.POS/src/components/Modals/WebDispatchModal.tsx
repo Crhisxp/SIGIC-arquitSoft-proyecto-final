@@ -129,15 +129,13 @@ export const WebDispatchModal: React.FC<WebDispatchModalProps> = ({
     <FocusTrapModal
       isOpen={isOpen}
       onClose={onClose}
-      title="Despacho en Tienda de Pedidos Web (RF-POS-011)"
+      title="Entrega de pedidos web en tienda"
       badge="F6"
       maxWidth="max-w-xl"
     >
       <div className="flex flex-col gap-3 text-xs overflow-hidden" onKeyDown={handleKeyDown}>
-        {/* Aviso RF-POS-011 */}
         <div className="p-2.5 bg-[#0f1011] border border-[#23252a] rounded text-[#8a8f98]">
-          Despacho ligero de mostrador: Valida la Guía Interna de Traslado y entrega sin acceso a
-          vouchers financieros ni recálculo contable.
+          Busca el pedido y confirma la entrega con el DNI de quien lo recibe.
         </div>
 
         {/* Input Escáner / Código de Retiro / Guía Interna */}

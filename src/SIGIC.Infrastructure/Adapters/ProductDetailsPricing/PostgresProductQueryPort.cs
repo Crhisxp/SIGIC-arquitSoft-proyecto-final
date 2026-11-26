@@ -33,7 +33,7 @@ public class PostgresProductQueryPort : IProductQueryPort
             SELECT id AS Id, codigo_sku AS CodigoSku, nombre_comercial AS NombreComercial,
                    unidad_base AS UnidadBase, precio_venta AS PrecioVenta, costo_unitario AS CostoUnitario,
                    disponible_en_web AS DisponibleEnWeb, ean13 AS Ean13,
-                   familia_id AS FamiliaId, subfamilia_id AS SubfamiliaId,
+                   familia_id AS FamiliaId, subfamilia_id AS SubfamiliaId, imagen_url AS ImagenUrl,
                    stock_fisico AS StockFisico, stock_comprometido AS StockComprometido
             FROM productos
             WHERE id = @productoId{lockClause};
@@ -49,7 +49,7 @@ public class PostgresProductQueryPort : IProductQueryPort
             row.Id, row.CodigoSku, row.NombreComercial, row.UnidadBase,
             row.PrecioVenta, row.CostoUnitario, row.StockFisico, row.DisponibleEnWeb,
             row.Ean13 ?? string.Empty, row.FamiliaId, row.SubfamiliaId,
-            stockComprometidoInicial: row.StockComprometido);
+            stockComprometidoInicial: row.StockComprometido, imagenUrl: row.ImagenUrl);
     }
 
     public async Task<IReadOnlyList<Producto>> ObtenerMultiplesParaPDPAsync(
@@ -73,7 +73,7 @@ public class PostgresProductQueryPort : IProductQueryPort
             SELECT id AS Id, codigo_sku AS CodigoSku, nombre_comercial AS NombreComercial,
                    unidad_base AS UnidadBase, precio_venta AS PrecioVenta, costo_unitario AS CostoUnitario,
                    disponible_en_web AS DisponibleEnWeb, ean13 AS Ean13,
-                   familia_id AS FamiliaId, subfamilia_id AS SubfamiliaId,
+                   familia_id AS FamiliaId, subfamilia_id AS SubfamiliaId, imagen_url AS ImagenUrl,
                    stock_fisico AS StockFisico, stock_comprometido AS StockComprometido
             FROM productos
             WHERE id = ANY(@idList){lockClause};
@@ -86,7 +86,7 @@ public class PostgresProductQueryPort : IProductQueryPort
             row.Id, row.CodigoSku, row.NombreComercial, row.UnidadBase,
             row.PrecioVenta, row.CostoUnitario, row.StockFisico, row.DisponibleEnWeb,
             row.Ean13 ?? string.Empty, row.FamiliaId, row.SubfamiliaId,
-            stockComprometidoInicial: row.StockComprometido)).ToList();
+            stockComprometidoInicial: row.StockComprometido, imagenUrl: row.ImagenUrl)).ToList();
     }
 
     public async Task<decimal> ObtenerFactorConversionAsync(
@@ -119,7 +119,7 @@ public class PostgresProductQueryPort : IProductQueryPort
         return factor.Value;
     }
 
-    public async Task<IReadOnlyList<ProductoCatalogoDto>> ListarCatalogoWebAsync(
+    public async Task<IReadOnlyList<ProductoCatalogoLectura>> ListarCatalogoWebAsync(
         string? search = null,
         Guid? almacenId = null,
         CancellationToken cancellationToken = default)
@@ -128,9 +128,11 @@ public class PostgresProductQueryPort : IProductQueryPort
         var tx = _dbContext.Database.CurrentTransaction?.GetDbTransaction();
 
         string sql = """
-            SELECT p.id, p.codigo_sku, p.nombre_comercial, p.unidad_base, p.precio_venta, p.disponible_en_web,
-                   COALESCE(s.stock_fisico, p.stock_fisico) AS stock_fisico,
-                   COALESCE(s.stock_comprometido, p.stock_comprometido) AS stock_comprometido
+            SELECT p.id AS Id, p.codigo_sku AS CodigoSku, p.nombre_comercial AS NombreComercial,
+                   p.unidad_base AS UnidadBase, p.precio_venta AS PrecioVenta, p.costo_unitario AS CostoUnitario,
+                   p.disponible_en_web AS DisponibleEnWeb, p.imagen_url AS ImagenUrl,
+                   COALESCE(s.stock_fisico, p.stock_fisico) AS StockFisico,
+                   COALESCE(s.stock_comprometido, p.stock_comprometido) AS StockComprometido
             FROM productos p
             LEFT JOIN stock_almacen s ON p.id = s.producto_id AND (@almacenId IS NULL OR s.almacen_id = @almacenId)
             WHERE p.disponible_en_web = TRUE
@@ -140,19 +142,12 @@ public class PostgresProductQueryPort : IProductQueryPort
 
         string? searchPattern = string.IsNullOrWhiteSpace(search) ? null : $"%{search.Trim().ToUpperInvariant()}%";
         var cmd = new CommandDefinition(sql, new { almacenId, searchPattern }, tx, cancellationToken: cancellationToken);
-        var rows = await conn.QueryAsync<dynamic>(cmd);
+        var rows = await conn.QueryAsync<ProductRow>(cmd);
 
-        var list = new List<ProductoCatalogoDto>();
-        foreach (var r in rows)
-        {
-            decimal f = Convert.ToDecimal(r.stock_fisico);
-            decimal c = Convert.ToDecimal(r.stock_comprometido);
-            decimal disp = Math.Max(0m, f - c);
-            list.Add(new ProductoCatalogoDto(
-                r.id, r.codigo_sku, r.nombre_comercial, r.unidad_base,
-                Convert.ToDecimal(r.precio_venta), disp, Convert.ToBoolean(r.disponible_en_web)));
-        }
-        return list;
+        return rows.Select(r => new ProductoCatalogoLectura(
+            new ProductoCatalogoDto(r.Id, r.CodigoSku, r.NombreComercial, r.UnidadBase, r.PrecioVenta,
+                Math.Max(0m, r.StockFisico - r.StockComprometido), r.DisponibleEnWeb, r.ImagenUrl),
+            r.CostoUnitario)).ToList();
     }
 
     private class ProductRow
@@ -160,6 +155,7 @@ public class PostgresProductQueryPort : IProductQueryPort
         public Guid Id { get; set; }
         public string CodigoSku { get; set; } = string.Empty;
         public string NombreComercial { get; set; } = string.Empty;
+        public string? ImagenUrl { get; set; }
         public string UnidadBase { get; set; } = string.Empty;
         public decimal PrecioVenta { get; set; }
         public decimal CostoUnitario { get; set; }

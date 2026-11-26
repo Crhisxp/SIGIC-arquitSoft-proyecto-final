@@ -23,6 +23,13 @@ interface CoverageData {
   [filePath: string]: CoverageEntry;
 }
 
+interface DomainUnitCoverage {
+  assembly: "SIGIC.Domain";
+  suite: "Domain";
+  covered: number;
+  valid: number;
+}
+
 const DEFAULT_THRESHOLDS = {
   coverageMinimum: 95,
   criticalAreas: ["domain", "application", "core"],
@@ -31,12 +38,28 @@ const DEFAULT_THRESHOLDS = {
 
 function findCoverageReport(
   projectRoot: string
-): { path: string; data: CoverageData } | null {
+): { path: string; data: CoverageData; domain?: DomainUnitCoverage } | null {
+  const currentPath = path.join(projectRoot, "TestResults", "coverage-summary.json");
+  if (fs.existsSync(currentPath)) {
+    const { gate } = JSON.parse(fs.readFileSync(currentPath, "utf-8"));
+    if (gate?.assembly !== "SIGIC.Domain" || gate.suite !== "Domain" ||
+        !Number.isInteger(gate.covered) || !Number.isInteger(gate.valid) ||
+        gate.valid <= 0 || gate.covered < 0 || gate.covered > gate.valid) {
+      throw new Error("TestResults/coverage-summary.json no contiene cobertura válida de la suite unitaria Domain.");
+    }
+    return {
+      path: currentPath,
+      data: { total: { lines: { pct: 100 * gate.covered / gate.valid } } },
+      domain: gate,
+    };
+  }
+  // An initialized evidence directory represents the current run, even before it completes.
+  if (fs.existsSync(path.dirname(currentPath))) return null;
+
   const candidates = [
     path.join(projectRoot, "coverage", "coverage-summary.json"),
     path.join(projectRoot, "coverage", "coverage-final.json"),
     path.join(projectRoot, "test-results", "coverage-summary.json"),
-    path.join(projectRoot, "TestResults", "coverage-summary.json"),
   ];
 
   for (const candidate of candidates) {
@@ -195,14 +218,20 @@ export const qualityGateEnforcerTool: SddToolHandler = {
             reporteEncontrado: true,
             rutaReporte: path.relative(projectRoot, report.path),
             lineasTotal: linePct,
-            sentenciasTotal: total.statements?.pct ?? 0,
-            ramasTotal: total.branches?.pct ?? 0,
-            funcionesTotal: total.functions?.pct ?? 0,
-            cumpleUmbral: meetsThreshold,
-            fallosEnAreasCriticas:
-              Object.keys(criticalFailures).length > 0
+            ...(report.domain ? {
+              ensamble: report.domain.assembly,
+              suite: report.domain.suite,
+              lineasCubiertas: report.domain.covered,
+              lineasValidas: report.domain.valid,
+            } : {
+              sentenciasTotal: total.statements?.pct ?? 0,
+              ramasTotal: total.branches?.pct ?? 0,
+              funcionesTotal: total.functions?.pct ?? 0,
+              fallosEnAreasCriticas: Object.keys(criticalFailures).length > 0
                 ? criticalFailures
                 : "✅ Todas las áreas críticas cumplen el umbral",
+            }),
+            cumpleUmbral: meetsThreshold,
           };
         } else {
           verificaciones.cobertura = {

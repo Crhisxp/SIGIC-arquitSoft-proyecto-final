@@ -215,7 +215,15 @@ preparar almacén central `11111111-1111-1111-1111-111111111111` (o ajustar
 ocultos, tarifas, stock por almacén, cajas y turnos; usuarios staff/web con hash
 Argon2id y roles de Cajero, Tesoreria y Superadmin. Tomar como modelo las siembras
 de `tests/SIGIC.WebApi.Tests/CustomWebApplicationFactory.cs` y las suites de API.
-No hay un seed comercial automático ni credenciales universales documentadas.
+Para cargar el catálogo de demostración, usar `scripts/seed/seed_comercial.sql`.
+La carga agrega diez productos con imágenes y stock central, dos tiendas y tarifas
+de ejemplo. Se ejecuta manualmente y no crea usuarios. En un volumen existente,
+aplicar primero la migración `03_producto_imagen.sql`.
+
+```bash
+docker compose exec -T postgres psql -U postgres -d postgres -v ON_ERROR_STOP=1 < src/SIGIC.Infrastructure/Persistence/Scripts/03_producto_imagen.sql
+docker compose exec -T postgres psql -U postgres -d postgres -v ON_ERROR_STOP=1 < scripts/seed/seed_comercial.sql
+```
 
 ## 4. Mostrador POS — React 18 / Vite
 
@@ -276,8 +284,10 @@ npm --prefix src/SIGIC.Web run start -- -p 3001
 
 ## 6. Regresión y cobertura
 
-Usar `TestResults/` vacío por corrida; archivar evidencia anterior antes de empezar.
-El runner de backend se niega a mezclar resultados preexistentes.
+El runner de backend archiva el `TestResults/` anterior en un directorio temporal
+que indica al inicio y crea uno limpio para la nueva corrida.
+La receta de evaluación con ReportGenerator, Newman y k6 está en
+`docs/pruebas/GUIA-PRUEBAS-Y-DEMOSTRACION.md`.
 
 ```bash
 source scripts/ci/env.sh

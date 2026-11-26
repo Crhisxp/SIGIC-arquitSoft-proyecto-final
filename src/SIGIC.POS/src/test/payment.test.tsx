@@ -1,11 +1,16 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { App } from "../App";
+import { simularTurnoActivo } from "./turnoFixture";
 import { api } from "../services/api";
+
+afterEach(() => vi.restoreAllMocks());
 
 describe("Liquidación y Cobro con Pagos Mixtos (RF-POS-004, RF-POS-006)", () => {
   it("abre modal F9 y calcula vuelto en efectivo en tiempo real", async () => {
+    simularTurnoActivo();
     render(<App />);
+    await screen.findByText("Turno abierto");
 
     const barcodeInput = screen.getByPlaceholderText(/Escanear EAN-13/i);
     // Tubo PVC: S/ 18.00
@@ -28,7 +33,9 @@ describe("Liquidación y Cobro con Pagos Mixtos (RF-POS-004, RF-POS-006)", () =>
   });
 
   it("exige código de operación digital para pagos con Yape o Tarjeta", async () => {
+    simularTurnoActivo();
     render(<App />);
+    await screen.findByText("Turno abierto");
 
     const barcodeInput = screen.getByPlaceholderText(/Escanear EAN-13/i);
     fireEvent.change(barcodeInput, { target: { value: "7751234000103" } });
@@ -82,7 +89,9 @@ describe("Liquidación y Cobro con Pagos Mixtos (RF-POS-004, RF-POS-006)", () =>
       new Error("Stock insuficiente para completar la venta (HTTP 409 Conflict)")
     );
 
+    simularTurnoActivo();
     render(<App />);
+    await screen.findByText("Turno abierto");
 
     const barcodeInput = screen.getByPlaceholderText(/Escanear EAN-13/i);
     fireEvent.change(barcodeInput, { target: { value: "7751234000103" } });

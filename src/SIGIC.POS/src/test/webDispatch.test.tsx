@@ -28,7 +28,7 @@ describe("Despacho Ligero en Tienda de Pedidos Web (RF-POS-011)", () => {
     // Abrir despacho web desde cabecera
     fireEvent.click(screen.getByText("Despacho Web"));
     const dialog = screen.getByRole("dialog");
-    expect(within(dialog).getByText(/Despacho en Tienda de Pedidos Web/i)).toBeInTheDocument();
+    expect(within(dialog).getByText(/Entrega de pedidos web en tienda/i)).toBeInTheDocument();
 
     // Buscar por Guía Interna
     const searchInput = within(dialog).getByPlaceholderText(/Escanee código o ingrese Guía Interna/i);

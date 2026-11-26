@@ -2,7 +2,7 @@
 
 import React, { FormEvent, useEffect, useRef, useState } from "react";
 import { ArrowUpRight, BarChart3 } from "lucide-react";
-import { adminAnaliticaService as api, AnaliticaHttpError } from "@/services/adminAnaliticaService";
+import { adminAnaliticaService as api, AnaliticaHttpError, staffSessionChanged } from "@/services/adminAnaliticaService";
 import type { ConsultaAnaliticaResponse, StaffUser } from "@/types/analitica";
 import styles from "./panel.module.css";
 
@@ -40,7 +40,10 @@ export default function AnaliticaPage() {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     avisar(""); ocupar(true);
-    try { setStaff(await api.login(String(form.get("usuario")), String(form.get("password")))); }
+    try {
+      setStaff(await api.login(String(form.get("usuario")), String(form.get("password"))));
+      window.dispatchEvent(new Event(staffSessionChanged));
+    }
     catch (e) { avisar(e instanceof Error ? e.message : "No se pudo iniciar sesión."); }
     finally { ocupar(false); }
   }
@@ -58,14 +61,20 @@ export default function AnaliticaPage() {
       if (!ctrl.signal.aborted) mostrar(datos);
     } catch (e) {
       if (ctrl.signal.aborted) return;
-      if (e instanceof AnaliticaHttpError && e.status === 401) setStaff(null);
+      if (e instanceof AnaliticaHttpError && (e.status === 401 || e.status === 403)) {
+        setStaff(null);
+        window.dispatchEvent(new Event(staffSessionChanged));
+      }
       avisar(e instanceof Error ? e.message : "No se pudo completar la consulta.");
     } finally { if (peticion.current === ctrl) { peticion.current = null; ocupar(false); } }
   }
 
   async function salir() {
     avisar(""); ocupar(true);
-    try { await api.logout(); setStaff(null); mostrar(null); preguntar(""); }
+    try {
+      await api.logout(); setStaff(null); mostrar(null); preguntar("");
+      window.dispatchEvent(new Event(staffSessionChanged));
+    }
     catch { avisar("No se pudo cerrar la sesión. Vuelva a intentarlo."); }
     finally { ocupar(false); }
   }

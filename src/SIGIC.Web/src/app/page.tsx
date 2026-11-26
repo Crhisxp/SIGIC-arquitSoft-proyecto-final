@@ -1,69 +1,48 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { Search, Package, AlertTriangle, CheckCircle, XCircle, ArrowRight } from "lucide-react";
+import { Search, AlertTriangle, CheckCircle, XCircle, ArrowRight } from "lucide-react";
+import { ProductImage } from "../components/ProductImage";
 import { ProductoCatalogo } from "../types/web";
 import { webApi } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 
 export default function CatalogoPage() {
-  const [productos, setProductos] = useState<ProductoCatalogo[]>([]);
+  const [catalogo, setCatalogo] = useState<{ token: string | undefined; productos: ProductoCatalogo[] }>();
   const [searchTerm, setSearchTerm] = useState("");
+  const [busqueda, setBusqueda] = useState({ term: "" });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { rolComercial } = useAuth();
-
-  const cargarCatalogo = useCallback(async (busqueda?: string) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const data = await webApi.listarProductos(busqueda);
-      // Invariante 2 (RF-INV-001): Solo productos con disponibleEnWeb == true
-      const webOnly = data.filter((p) => p.disponibleEnWeb);
-      setProductos(webOnly);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Error al conectar con la API de Catálogo";
-      setError(msg);
-      setProductos([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const { user } = useAuth();
+  const token = user?.token;
+  const productos = catalogo?.token === token ? catalogo?.productos ?? [] : [];
 
   useEffect(() => {
-    cargarCatalogo();
-  }, [cargarCatalogo]);
+    const controller = new AbortController();
+    setIsLoading(true);
+    setError(null);
+    webApi.listarProductos(busqueda.term, undefined, token, controller.signal).then((data) => {
+      if (!controller.signal.aborted)
+        setCatalogo({ token, productos: data.filter((producto) => producto.disponibleEnWeb) });
+    }).catch(() => {
+      if (!controller.signal.aborted) setError("No pudimos cargar el catálogo. Vuelva a intentar la búsqueda.");
+    }).finally(() => {
+      if (!controller.signal.aborted) setIsLoading(false);
+    });
+    return () => controller.abort();
+  }, [busqueda, token]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    cargarCatalogo(searchTerm.trim());
-  };
-
-  const getPrecioTarifa = (precioBase: number): number => {
-    if (rolComercial === "ContratistaB2B") return Math.round(precioBase * 0.88 * 100) / 100;
-    if (rolComercial === "MaestroObra") return Math.round(precioBase * 0.94 * 100) / 100;
-    return precioBase;
+    setBusqueda({ term: searchTerm.trim() });
   };
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Banner de Presentación */}
-      <div className="p-6 bg-[#0f1011] border border-[#23252a] rounded-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-bold font-mono text-[#f7f8f8]">
-            Catálogo E-Commerce Técnico Ferretero
-          </h1>
-          <p className="text-xs text-[#8a8f98] mt-1">
-            Precios vigentes para canal web según tarifa:{" "}
-            <span className="font-bold text-[#e4f222] font-mono">{rolComercial}</span>.
-            Disponibilidad asíncrona real sobre Almacén Central (RF-INV-003, RNF-CON-003).
-          </p>
-        </div>
-        <div className="text-xs font-mono bg-[#161718] border border-[#23252a] rounded px-3 py-2 shrink-0">
-          <span className="text-[#8a8f98] block">Fórmula de Inventario:</span>
-          <span className="text-[#f7f8f8]">Disp = Físico - Comprometido</span>
-        </div>
+      <div className="p-6 bg-[#0f1011] border border-[#23252a] rounded-lg">
+        <h1 className="text-2xl font-bold text-[#f7f8f8]">Materiales y herramientas en Ayacucho</h1>
+        <p className="text-sm text-[#8a8f98] mt-1">Compre en línea y elija retiro en tienda o despacho a domicilio.</p>
       </div>
 
       {/* Buscador */}
@@ -74,7 +53,8 @@ export default function CatalogoPage() {
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Buscar por código SKU o nombre comercial ferretero..."
+            aria-label="Buscar productos"
+            placeholder="Buscar por nombre o código de producto"
             className="w-full pl-9 pr-3 py-2 bg-[#0f1011] border border-[#23252a] rounded text-xs text-[#f7f8f8] font-mono focus:border-[#e4f222] focus:outline-none"
           />
         </div>
@@ -97,7 +77,7 @@ export default function CatalogoPage() {
 
       {isLoading && (
         <div className="p-12 text-center text-xs text-[#8a8f98] font-mono">
-          Consultando catálogo y disponibilidad asíncrona en servidor...
+          Cargando productos…
         </div>
       )}
 
@@ -113,7 +93,6 @@ export default function CatalogoPage() {
               {productos.map((prod) => {
                 const stockDisp = prod.stockDisponible;
                 const tieneStock = stockDisp > 0;
-                const precio = getPrecioTarifa(prod.precioVenta);
 
                 return (
                   <div
@@ -121,6 +100,9 @@ export default function CatalogoPage() {
                     className="p-4 bg-[#0f1011] border border-[#23252a] hover:border-[#334155] rounded flex flex-col justify-between transition-colors text-xs"
                   >
                     <div>
+                      <Link href={`/pdp/${prod.id}`} className="mb-3 block">
+                        <ProductImage nombre={prod.nombreComercial} imagenUrl={prod.imagenUrl} />
+                      </Link>
                       {/* Cabecera Tarjeta */}
                       <div className="flex justify-between items-start gap-2 mb-2">
                         <span className="font-mono font-bold text-[#e4f222] text-[11px]">
@@ -144,7 +126,7 @@ export default function CatalogoPage() {
                         {prod.nombreComercial}
                       </h2>
                       <div className="text-[11px] text-[#8a8f98] font-mono mt-1">
-                        Unidad Base: <span className="text-[#f7f8f8]">{prod.unidadBase}</span>
+                        Presentación: <span className="text-[#f7f8f8]">{prod.unidadBase}</span>
                       </div>
                     </div>
 
@@ -152,22 +134,18 @@ export default function CatalogoPage() {
                     <div className="mt-4 pt-3 border-t border-[#18191c] flex items-end justify-between">
                       <div>
                         <span className="text-[10px] text-[#8a8f98] font-mono block">
-                          PRECIO {rolComercial !== "PublicoGeneral" ? `(${rolComercial})` : "LISTA"}
+                          Precio unitario
                         </span>
                         <div className="font-mono sigic-tabular text-base font-bold text-[#f7f8f8]">
-                          S/ {precio.toFixed(2)}
+                          S/ {prod.precioVenta.toFixed(2)}
                         </div>
                       </div>
 
                       <Link
                         href={`/pdp/${prod.id}`}
-                        className={`px-3 py-1.5 font-mono text-xs font-bold rounded flex items-center gap-1 transition-colors ${
-                          tieneStock
-                            ? "bg-[#23252a] text-[#e4f222] hover:bg-[#334155]"
-                            : "bg-[#18191c] text-[#8a8f98] pointer-events-none opacity-50"
-                        }`}
+                        className="px-3 py-1.5 font-mono text-xs font-bold rounded flex items-center gap-1 transition-colors bg-[#23252a] text-[#e4f222] hover:bg-[#334155]"
                       >
-                        <span>{tieneStock ? "Ver PDP" : "Sin Stock"}</span>
+                        <span>Ver producto</span>
                         <ArrowRight className="w-3.5 h-3.5" />
                       </Link>
                     </div>

@@ -2,6 +2,7 @@ import React, { useState, useRef, useCallback, useEffect } from "react";
 import { useCart } from "./hooks/useCart";
 import { useHotkeys } from "./hooks/useHotkeys";
 import { usePosModals } from "./hooks/usePosModals";
+import { useTurnoActual } from "./hooks/useTurnoActual";
 import { PosHeader } from "./components/Layout/PosHeader";
 import { CartTable } from "./components/Layout/CartTable";
 import { TotalsPanel } from "./components/Layout/TotalsPanel";
@@ -13,7 +14,6 @@ import {
   PaymentEntry,
   TipoComprobante,
   DespachoWebPedido,
-  TurnoCaja,
   CashDenomination,
 } from "./types/pos";
 import { api } from "./services/api";
@@ -26,22 +26,13 @@ export const App: React.FC = () => {
 
   const scannerRef = useRef<HTMLInputElement>(null);
   const modals = usePosModals();
-
-  const turnoActivo: TurnoCaja = {
-    turnoId: "TRN-AYAC-8841",
-    cajaId: "CAJA-01",
-    cajeroId: "00000000-0000-0000-0000-000000000010",
-    cajeroNombre: "Crhistian Flores",
-    almacenId: "00000000-0000-0000-0000-000000000001",
-    almacenNombre: "Sede Central Ayacucho",
-    fondoInicial: 250.0,
-    estado: "Aperturado",
-    fechaAperturaUtc: new Date().toISOString(),
-  };
+  const { turno: turnoActivo, estado: estadoTurno, marcarCerrado } = useTurnoActual();
+  const almacenActivoId = turnoActivo?.almacenId;
 
   useEffect(() => {
+    if (!almacenActivoId) return;
     let active = true;
-    api.obtenerStockAlmacen(turnoActivo.almacenId).then((rows) => {
+    api.obtenerStockAlmacen(almacenActivoId).then((rows) => {
       if (!active || !Array.isArray(rows)) return;
       setProducts((prev) =>
         prev.map((p) => {
@@ -59,7 +50,7 @@ export const App: React.FC = () => {
       );
     }).catch(() => {});
     return () => { active = false; };
-  }, [turnoActivo.almacenId]);
+  }, [almacenActivoId]);
 
   const {
     items,
@@ -123,6 +114,7 @@ export const App: React.FC = () => {
   };
 
   const handleConfirmSale = async (pagos: PaymentEntry[], tipoComp: TipoComprobante) => {
+    if (!turnoActivo) throw new Error("Se necesita un turno abierto para cobrar.");
     try {
       const res = await api.registrarVenta({
         turnoCajaId: turnoActivo.turnoId,
@@ -131,7 +123,7 @@ export const App: React.FC = () => {
         pagos,
         tipoComprobante: tipoComp,
       });
-      showToast(`¡Venta Registrada! Comprobante: ${res.numeroComprobante || "B001-000123"}`);
+      showToast(res.numeroComprobante ? `Venta registrada. Comprobante: ${res.numeroComprobante}` : "Venta registrada.");
       clearCart();
     } finally {
       refocusScanner();
@@ -144,23 +136,39 @@ export const App: React.FC = () => {
     totalDigitalDeclarado: number;
     justificacion?: string;
   }) => {
-    return await api.cerrarTurnoArqueoCiego(params);
+    if (!turnoActivo || params.turnoCajaId !== turnoActivo.turnoId)
+      throw new Error("Se necesita un turno abierto para cerrar la caja.");
+
+    const cierre = await api.cerrarTurnoArqueoCiego(params);
+    marcarCerrado();
+    return cierre;
+  };
+
+  const acciones = {
+    onF1: () => scannerRef.current?.focus(),
+    onF2: () => modals.setIsSearchOpen(true),
+    onF3: () => modals.setIsCustomerOpen(true),
+    onF4: () => items.length > 0 && modals.setIsQuantityOpen(true),
+    onF5: () => selectedItem && modals.setIsStockOpen(true),
+    onF6: () => (selectedItem ? modals.setIsDiscountOpen(true) : modals.setIsDispatchOpen(true)),
+    onF7: () => selectedItem && modals.setIsSubstitutesOpen(true),
+    onF8: () => items.length > 0 && removeItem(selectedIndex),
+    onF9: () => {
+      if (total <= 0) return;
+      if (!turnoActivo) return showToast("Se necesita un turno abierto para cobrar.", true);
+      modals.setIsPaymentOpen(true);
+    },
+    onF10: () => setTipoComprobante((prev) => (prev === "BOLETA" ? "FACTURA" : "BOLETA")),
+    onF11: () => modals.setIsHeldOpen(true),
+    onF12: () => {
+      if (!turnoActivo) return showToast("Sin turno abierto para cerrar la caja.", true);
+      modals.setIsBlindCloseOpen(true);
+    },
   };
 
   useHotkeys(
     {
-      onF1: () => scannerRef.current?.focus(),
-      onF2: () => modals.setIsSearchOpen(true),
-      onF3: () => modals.setIsCustomerOpen(true),
-      onF4: () => items.length > 0 && modals.setIsQuantityOpen(true),
-      onF5: () => selectedItem && modals.setIsStockOpen(true),
-      onF6: () => (selectedItem ? modals.setIsDiscountOpen(true) : modals.setIsDispatchOpen(true)),
-      onF7: () => selectedItem && modals.setIsSubstitutesOpen(true),
-      onF8: () => items.length > 0 && removeItem(selectedIndex),
-      onF9: () => total > 0 && modals.setIsPaymentOpen(true),
-      onF10: () => setTipoComprobante((prev) => (prev === "BOLETA" ? "FACTURA" : "BOLETA")),
-      onF11: () => modals.setIsHeldOpen(true),
-      onF12: () => modals.setIsBlindCloseOpen(true),
+      ...acciones,
       onEscape: () => {
         modals.closeAllModals();
         refocusScanner();
@@ -172,21 +180,19 @@ export const App: React.FC = () => {
   );
 
   return (
-    <div className="w-[1024px] h-[768px] max-w-[1024px] max-h-[768px] overflow-hidden overflow-x-hidden flex flex-col bg-[#0f172a] text-[#f7f8f8] font-sans antialiased select-none">
+    <div className="w-full h-screen flex flex-col overflow-hidden bg-[#0f172a] text-[#f7f8f8] font-sans antialiased select-none">
       <PosHeader
         ref={scannerRef}
-        cajeroNombre={turnoActivo.cajeroNombre}
-        cajaNumero={turnoActivo.cajaId}
-        turnoId={turnoActivo.turnoId}
-        almacenNombre={turnoActivo.almacenNombre}
+        turno={turnoActivo}
+        estadoTurno={estadoTurno}
         barcodeInput={barcodeInput}
         onBarcodeChange={setBarcodeInput}
         onBarcodeSubmit={handleBarcodeSubmit}
-        onOpenSearch={() => modals.setIsSearchOpen(true)}
+        onOpenSearch={acciones.onF2}
         onOpenDispatch={() => modals.setIsDispatchOpen(true)}
       />
 
-      <div className="flex-1 px-3 py-2 flex gap-3 overflow-hidden">
+      <main className="grid flex-1 min-h-0 min-w-0 grid-cols-1 grid-rows-[minmax(0,1fr)_minmax(0,45%)] gap-3 overflow-hidden px-3 py-2 md:grid-cols-[minmax(0,1fr)_clamp(15rem,28vw,26rem)] md:grid-rows-1">
         <CartTable
           items={items}
           selectedIndex={selectedIndex}
@@ -205,23 +211,12 @@ export const App: React.FC = () => {
           onOpenQuantity={() => modals.setIsQuantityOpen(true)}
           onOpenDiscount={() => modals.setIsDiscountOpen(true)}
           onRemoveItem={() => removeItem(selectedIndex)}
-          onOpenPayment={() => modals.setIsPaymentOpen(true)}
+          onOpenPayment={acciones.onF9}
         />
-      </div>
+      </main>
 
       <HotkeyBar
-        onF1={() => scannerRef.current?.focus()}
-        onF2={() => modals.setIsSearchOpen(true)}
-        onF3={() => modals.setIsCustomerOpen(true)}
-        onF4={() => items.length > 0 && modals.setIsQuantityOpen(true)}
-        onF5={() => selectedItem && modals.setIsStockOpen(true)}
-        onF6={() => (selectedItem ? modals.setIsDiscountOpen(true) : modals.setIsDispatchOpen(true))}
-        onF7={() => selectedItem && modals.setIsSubstitutesOpen(true)}
-        onF8={() => items.length > 0 && removeItem(selectedIndex)}
-        onF9={() => total > 0 && modals.setIsPaymentOpen(true)}
-        onF10={() => setTipoComprobante((prev) => (prev === "BOLETA" ? "FACTURA" : "BOLETA"))}
-        onF11={() => modals.setIsHeldOpen(true)}
-        onF12={() => modals.setIsBlindCloseOpen(true)}
+        {...acciones}
         disabledF4={items.length === 0}
         disabledF8={items.length === 0}
         disabledF9={total <= 0}
@@ -229,6 +224,7 @@ export const App: React.FC = () => {
 
       {toast && (
         <div
+          role={toast.err ? "alert" : "status"}
           className={`fixed bottom-16 right-4 z-50 px-4 py-2 rounded shadow-2xl font-mono text-xs tabular-nums shrink-0 line-clamp-2 border ${
             toast.err ? "bg-[#ef4444] text-white border-red-400" : "bg-[#e4f222] text-[#08090a] border-yellow-200"
           }`}
@@ -256,7 +252,7 @@ export const App: React.FC = () => {
         holdTicket={holdTicket}
         restoreTicket={restoreTicket}
         purgeExpiredTickets={purgeExpiredTickets}
-        turnoCajaId={turnoActivo.turnoId}
+        turnoCajaId={turnoActivo?.turnoId ?? ""}
         handleConfirmClose={handleConfirmClose}
         pedidosWeb={pedidosWeb}
         setPedidosWeb={setPedidosWeb}

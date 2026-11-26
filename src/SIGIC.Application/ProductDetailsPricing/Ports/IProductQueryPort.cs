@@ -11,8 +11,10 @@ public interface IProductQueryPort
     Task<Producto?> ObtenerParaPDPAsync(Guid productoId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<Producto>> ObtenerMultiplesParaPDPAsync(IEnumerable<Guid> productoIds, CancellationToken cancellationToken = default);
     Task<decimal> ObtenerFactorConversionAsync(string unidadOrigen, string unidadDestino, CancellationToken cancellationToken = default);
-    Task<IReadOnlyList<ProductoCatalogoDto>> ListarCatalogoWebAsync(
+    Task<IReadOnlyList<ProductoCatalogoLectura>> ListarCatalogoWebAsync(
         string? search = null,
         Guid? almacenId = null,
-        CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<ProductoCatalogoDto>>(Array.Empty<ProductoCatalogoDto>());
+        CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<ProductoCatalogoLectura>>(Array.Empty<ProductoCatalogoLectura>());
 }
+
+public record ProductoCatalogoLectura(ProductoCatalogoDto Producto, decimal CostoUnitario);

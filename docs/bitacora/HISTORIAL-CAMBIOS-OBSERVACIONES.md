@@ -12,6 +12,36 @@ estado: "ACTIVO_EN_PROCESO"
 
 # Bitácora Oficial de Control de Cambios y Subsanación de Observaciones (SIGIC v2.2)
 
+## Cambio 2026-11-26 — Reproducción de pruebas y cierre SDD
+
+La contención k6 informa los rechazos de stock por separado de los errores de
+servidor, transporte y contrato. En capacidad se distribuyen los SKU y los turnos
+POS para reducir la contención de la fixture. La reserva de tarjeta se verifica
+contra 20 minutos para cada HTTP 201. El runner archiva la evidencia previa y
+puede generar HTML con ReportGenerator. El guardián usa el resumen de la corrida
+y conserva el umbral unitario de 95 % para Domain.
+
+## Cambio 2026-11-26 — Ergonomía de mostrador y datos operativos
+
+Se eliminaron las dimensiones fijas y los rótulos técnicos de la interfaz del
+cajero. La cabecera muestra el estado de la caja y el POS exige un turno abierto
+para el cobro y el cierre. El desglose de efectivo usa el campo `valorUnitario`
+del contrato de cierre. F5 presenta la disponibilidad real por almacén.
+
+La suite de POS quedó en 29/29 y el build terminó correctamente. Se verificaron
+en Chromium las tres resoluciones del diseño y el tamaño de los doce atajos.
+
+## Cambio 2026-11-26 — Tarifas homologadas e imágenes de catálogo
+
+Se retiró la selección manual de tarifa y se vinculó la cotización y la reserva
+a la identidad de cliente validada. El middleware devuelve un mensaje comercial
+cuando la regla de margen rechaza el precio. Las imágenes opcionales se propagan
+por PostgreSQL, los DTO y el portal. Los recursos de demostración y la siembra
+comercial tienen una carga independiente de k6.
+
+Se aprobaron las suites Domain, Application y WebApi, y el build y Vitest del
+portal. La cobertura unitaria de Domain fue 95,73 % en esta corrida.
+
 ## Cambio 2026-11-19 — Opciones de conexión del host WebApi y fallo SASL
 
 **Referencia:** fallo `08P01: SASL authentication failed` comunicado para el run

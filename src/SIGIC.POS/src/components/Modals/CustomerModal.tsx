@@ -54,7 +54,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
     <FocusTrapModal
       isOpen={isOpen}
       onClose={onClose}
-      title="Selección y Captura de Cliente (RF-POS-002)"
+      title="Selección y captura de cliente"
       badge="F3"
       maxWidth="max-w-lg"
     >

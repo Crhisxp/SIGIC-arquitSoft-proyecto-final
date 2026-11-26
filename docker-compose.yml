@@ -12,6 +12,7 @@ services:
       - ./src/SIGIC.Infrastructure/Persistence/Scripts/00_init_schema.sql:/docker-entrypoint-initdb.d/00_init_schema.sql:ro
       - ./src/SIGIC.Infrastructure/Persistence/Scripts/01_append_only_permissions.sql:/docker-entrypoint-initdb.d/01_append_only_permissions.sql:ro
       - ./src/SIGIC.Infrastructure/Persistence/Scripts/02_cierres_analiticos.sql:/docker-entrypoint-initdb.d/02_cierres_analiticos.sql:ro
+      - ./src/SIGIC.Infrastructure/Persistence/Scripts/03_producto_imagen.sql:/docker-entrypoint-initdb.d/03_producto_imagen.sql:ro
     healthcheck:
       test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-U", "postgres", "-d", "postgres"]
       interval: 2s
@@ -132,6 +133,7 @@ services:
         RUN npm ci
         COPY next-env.d.ts next.config.mjs postcss.config.js tailwind.config.js tsconfig.json vitest.config.ts ./
         COPY src/ src/
+        COPY public/ public/
         ENV NEXT_TELEMETRY_DISABLED=1 NEXT_PUBLIC_API_URL=/api/v1
         RUN npm run build
         CMD ["npm","run","start","--","-H","0.0.0.0","-p","3000"]

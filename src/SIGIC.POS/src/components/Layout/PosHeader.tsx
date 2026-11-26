@@ -1,11 +1,10 @@
 import React, { useEffect, useState, forwardRef } from "react";
-import { Barcode, Wifi, Clock, Store, ShieldCheck } from "lucide-react";
+import { Barcode, Clock, Store } from "lucide-react";
+import type { TurnoCaja } from "../../types/pos";
 
 interface PosHeaderProps {
-  cajeroNombre: string;
-  cajaNumero: string;
-  turnoId: string;
-  almacenNombre: string;
+  turno: TurnoCaja | null;
+  estadoTurno: "consultando" | "listo" | "error";
   barcodeInput: string;
   onBarcodeChange: (val: string) => void;
   onBarcodeSubmit: (e: React.FormEvent) => void;
@@ -16,10 +15,8 @@ interface PosHeaderProps {
 export const PosHeader = forwardRef<HTMLInputElement, PosHeaderProps>(
   (
     {
-      cajeroNombre,
-      cajaNumero,
-      turnoId,
-      almacenNombre,
+      turno,
+      estadoTurno,
       barcodeInput,
       onBarcodeChange,
       onBarcodeSubmit,
@@ -41,32 +38,23 @@ export const PosHeader = forwardRef<HTMLInputElement, PosHeaderProps>(
     }, []);
 
     return (
-      <div className="flex flex-col shrink-0 border-b border-[#23252a]">
-        {/* Franja A: Telemetría y Estado de Conexión (36px) */}
-        <div className="h-[36px] bg-[#0f1011] px-4 flex items-center justify-between text-xs text-[#8a8f98] font-mono border-b border-[#18191c]">
-          <div className="flex items-center gap-4">
+      <header className="flex flex-col shrink-0 border-b border-[#23252a]">
+        <div className="min-h-9 bg-[#0f1011] px-4 py-1 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xs text-[#8a8f98] border-b border-[#18191c]">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
             <div className="flex items-center gap-1.5 text-[#f7f8f8] font-bold">
               <Store className="w-4 h-4 text-[#e4f222]" />
-              <span>SIGIC POS v2.2</span>
-              <span className="text-[#5e636e] font-normal">• {almacenNombre}</span>
+              <span>Mostrador SIGIC</span>
             </div>
-            <div className="flex items-center gap-1.5 text-[#8a8f98]">
-              <ShieldCheck className="w-3.5 h-3.5 text-[#38bdf8]" />
-              <span>{cajeroNombre}</span>
-              <span className="text-[#5e636e]">({cajaNumero})</span>
+            <div role="status" className={turno ? "text-[#22c55e]" : "text-[#8a8f98]"}>
+              {turno ? "Turno abierto" : estadoTurno === "consultando" ? "Consultando turno…" :
+                estadoTurno === "error" ? "No se pudo consultar el turno" : "Sin turno abierto"}
             </div>
-            <div className="text-[11px] text-[#8a8f98]">
-              Turno: <span className="text-[#e4f222]">{turnoId}</span>
-            </div>
+            {turno?.almacenNombre && <span>{turno.almacenNombre}</span>}
+            {turno?.cajeroNombre && <span>{turno.cajeroNombre}</span>}
           </div>
 
           <div className="flex items-center gap-4 text-[11px]">
-            <div className="flex items-center gap-1.5 text-[#22c55e]">
-              <span className="w-2 h-2 rounded-full bg-[#22c55e] animate-pulse" />
-              <Wifi className="w-3.5 h-3.5" />
-              <span>LAN POS (pool_pos)</span>
-            </div>
-            <div className="flex items-center gap-1 text-[#f7f8f8] tabular-nums font-semibold">
+            <div className="flex items-center gap-1 text-[#f7f8f8] font-mono tabular-nums font-semibold">
               <Clock className="w-3.5 h-3.5 text-[#8a8f98]" />
               <span>{currentTime}</span>
             </div>
@@ -74,9 +62,9 @@ export const PosHeader = forwardRef<HTMLInputElement, PosHeaderProps>(
         </div>
 
         {/* Franja B: Escáner y Entrada EAN-13 (52px) */}
-        <div className="h-[52px] bg-[#161718] px-4 py-2 flex items-center gap-3">
-          <form onSubmit={onBarcodeSubmit} className="flex-1 flex items-center gap-2">
-            <div className="relative flex-1">
+        <div className="min-h-[52px] bg-[#161718] px-4 py-2 flex flex-wrap items-center gap-2">
+          <form onSubmit={onBarcodeSubmit} className="w-full min-w-0 sm:w-auto sm:flex-1 flex items-center gap-2">
+            <div className="relative flex-1 min-w-0">
               <Barcode className="absolute left-3 top-2.5 w-5 h-5 text-[#e4f222]" />
               <input
                 ref={ref}
@@ -115,7 +103,7 @@ export const PosHeader = forwardRef<HTMLInputElement, PosHeaderProps>(
             </button>
           </div>
         </div>
-      </div>
+      </header>
     );
   }
 );

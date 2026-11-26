@@ -61,14 +61,14 @@ export const HotkeyBar: React.FC<HotkeyBarProps> = ({
   ];
 
   return (
-    <div className="h-[52px] bg-[#0f1011] border-t border-[#23252a] px-2 py-1.5 flex items-center justify-between gap-1 shrink-0 overflow-x-hidden">
+    <nav aria-label="Atajos de caja" className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-12 gap-1 shrink-0 bg-[#0f1011] border-t border-[#23252a] px-2 py-1.5">
       {actions.map((act) => (
         <button
           key={act.key}
           type="button"
           disabled={act.disabled}
           onClick={act.action}
-          className={`flex-1 min-h-[40px] px-1 py-1 rounded border flex flex-col items-center justify-center transition-colors text-center ${
+          className={`min-h-[44px] min-w-[44px] px-1 py-1 rounded border flex flex-col items-center justify-center transition-colors text-center ${
             act.highlight
               ? "bg-[#e4f222] text-[#08090a] border-[#e4f222] font-bold hover:bg-[#d3e015]"
               : act.disabled
@@ -84,11 +84,11 @@ export const HotkeyBar: React.FC<HotkeyBarProps> = ({
           >
             {act.key}
           </span>
-          <span className="text-[10px] truncate max-w-[70px] leading-tight">
+          <span className="text-[10px] leading-tight break-words max-w-full">
             {act.label}
           </span>
         </button>
       ))}
-    </div>
+    </nav>
   );
 };

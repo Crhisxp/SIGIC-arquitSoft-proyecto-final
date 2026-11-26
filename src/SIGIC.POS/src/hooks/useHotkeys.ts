@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useLayoutEffect } from "react";
 
 export interface HotkeyHandlers {
   onF1?: () => void; // Escáner / Entrada Código de Barras
@@ -20,7 +20,7 @@ export interface HotkeyHandlers {
 }
 
 export function useHotkeys(handlers: HotkeyHandlers, isModalOpen = false) {
-  useEffect(() => {
+  useLayoutEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Prevenir atajos nativos del navegador para F1-F12
       if (/^F[1-9]$|^F1[0-2]$/.test(e.key)) {

@@ -28,7 +28,7 @@ export default function LoginPage() {
         await login(username.trim(), password);
       } else {
         if (password.length < 8) {
-          throw new Error("La contraseña debe contener al menos 8 caracteres (RNF-SEG-001).");
+          throw new Error("La contraseña debe contener al menos 8 caracteres.");
         }
         await register(username.trim(), password, email.trim() || undefined, nombres.trim() || undefined);
       }
@@ -47,7 +47,7 @@ export default function LoginPage() {
           <ArrowLeft className="w-4 h-4" /> Catálogo
         </Link>
         <span className="font-mono text-[#8a8f98] flex items-center gap-1">
-          <ShieldCheck className="w-4 h-4 text-[#e4f222]" /> SIGIC Web Auth
+          <ShieldCheck className="w-4 h-4 text-[#e4f222]" /> Mi cuenta
         </span>
       </div>
 

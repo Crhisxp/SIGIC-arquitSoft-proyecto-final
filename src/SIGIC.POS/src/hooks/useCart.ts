@@ -146,7 +146,7 @@ export function useCart() {
       })
     );
     if (count > 0 && onAlert) {
-      onAlert(`Se purgaron ${count} ticket(s) en espera con más de 2 horas de antigüedad (RF-POS-005).`);
+      onAlert(`Se retiraron ${count} tickets en espera que superaron las 2 horas.`);
     }
     return count;
   }, []);
@@ -159,7 +159,7 @@ export function useCart() {
 
       if (now - ticket.createdAtMs > 7_200_000) {
         setHeldTickets((prev) => prev.filter((t) => t.id !== ticketId));
-        return { success: false, error: `El ticket ${ticketId} expiró por superar las 2 horas de espera permitidas (RF-POS-005).` };
+        return { success: false, error: `El ticket ${ticketId} expiró por superar las 2 horas de espera.` };
       }
 
       let stockVigente: any[];

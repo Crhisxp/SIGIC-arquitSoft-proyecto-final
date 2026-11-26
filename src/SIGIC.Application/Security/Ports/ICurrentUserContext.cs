@@ -11,6 +11,9 @@ public interface ICurrentUserContext
     string TerminalScope { get; }
     string ClientIp { get; }
 
+    Guid? ClienteWebAutenticadoId =>
+        UserId != Guid.Empty && TerminalScope == "WAN-WEB" && HasRole("ClienteWeb") ? UserId : null;
+
     bool HasRole(string role);
     bool IsInRole(string role);
 }

@@ -13,6 +13,7 @@ public class ProductoConfiguration : IEntityTypeConfiguration<ProductoEntity>
         builder.Property(p => p.CodigoSku).HasMaxLength(50).IsRequired();
         builder.Property(p => p.Ean13).HasMaxLength(50).IsRequired();
         builder.Property(p => p.NombreComercial).HasMaxLength(200).IsRequired();
+        builder.Property(p => p.ImagenUrl);
         builder.Property(p => p.UnidadBase).HasMaxLength(20).IsRequired();
         builder.Property(p => p.CostoUnitario).HasPrecision(18, 4).IsRequired();
         builder.Property(p => p.PrecioVenta).HasPrecision(18, 4).IsRequired();

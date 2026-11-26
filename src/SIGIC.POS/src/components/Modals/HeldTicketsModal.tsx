@@ -35,7 +35,7 @@ export const HeldTicketsModal: React.FC<HeldTicketsModalProps> = ({
     <FocusTrapModal
       isOpen={isOpen}
       onClose={onClose}
-      title="Gestión de Tickets en Espera (RF-POS-005)"
+      title="Tickets en espera"
       badge="F11"
       maxWidth="max-w-lg"
     >
@@ -46,7 +46,7 @@ export const HeldTicketsModal: React.FC<HeldTicketsModalProps> = ({
             <div>
               <div className="font-semibold text-[#f7f8f8]">Pausar Venta en Curso</div>
               <div className="text-[#8a8f98] text-[11px]">
-                Guarda los ítems actuales sin descontar Kardex (TTL máx 2h).
+                Puedes recuperar esta venta durante las próximas 2 horas.
               </div>
             </div>
             <button

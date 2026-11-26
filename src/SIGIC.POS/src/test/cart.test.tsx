@@ -102,7 +102,7 @@ describe("Operaciones del Carrito de Ventas Mostrador (RF-POS-001, RF-POS-003, R
 
     // Abrir F11 y encolar ticket
     fireEvent.keyDown(window, { key: "F11" });
-    expect(screen.getByText(/Gestión de Tickets en Espera/i)).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "Tickets en espera" })).toBeInTheDocument();
 
     const dialog = screen.getByRole("dialog");
     fireEvent.click(within(dialog).getByText(/Encolar Ticket/i));

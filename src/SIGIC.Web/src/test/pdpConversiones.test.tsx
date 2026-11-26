@@ -48,7 +48,7 @@ describe("PDP: Calculadora de Conversiones y Precios Dinámicos (RF-INV-005, RF-
       unidadBase: "UND",
       cantidadBaseConvertida: 100,
       precioBaseUnitario: 1.5,
-      precioFinalUnitario: 1.5,
+      precioFinalUnitario: 75.0,
       descuentoUnitario: 0,
       porcentajeDescuentoTotal: 0,
       subtotal: 150.0,
@@ -103,7 +103,7 @@ describe("PDP: Calculadora de Conversiones y Precios Dinámicos (RF-INV-005, RF-
     );
 
     await waitFor(() => {
-      expect(screen.getByText(/exclusivo de mostrador presencial/i)).toBeInTheDocument();
+      expect(screen.getByText(/producto no disponible/i)).toBeInTheDocument();
     });
     // No permite agregar al carrito
     expect(screen.queryByText(/Agregar al Carrito/i)).not.toBeInTheDocument();
@@ -133,7 +133,7 @@ describe("PDP: Calculadora de Conversiones y Precios Dinámicos (RF-INV-005, RF-
     );
 
     await waitFor(() => {
-      expect(screen.getByText(/Servicio de tarifas no disponible en servidor/i)).toBeInTheDocument();
+      expect(screen.getByText(/No pudimos calcular el precio/i)).toBeInTheDocument();
     });
 
     // El botón debe mostrar "Precio No Disponible" y estar deshabilitado

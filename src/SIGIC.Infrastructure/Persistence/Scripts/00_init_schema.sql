@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS productos (
     codigo_sku VARCHAR(50) NOT NULL UNIQUE,
     ean13 VARCHAR(50) NOT NULL DEFAULT '',
     nombre_comercial VARCHAR(200) NOT NULL,
+    imagen_url TEXT,
     unidad_base VARCHAR(20) NOT NULL DEFAULT 'UND',
     precio_venta NUMERIC(18, 4) NOT NULL,
     costo_unitario NUMERIC(18, 4) NOT NULL DEFAULT 0,

@@ -6,6 +6,7 @@ public class ProductoEntity
     public string CodigoSku { get; set; } = string.Empty;
     public string Ean13 { get; set; } = string.Empty;
     public string NombreComercial { get; set; } = string.Empty;
+    public string? ImagenUrl { get; set; }
     public string UnidadBase { get; set; } = "UND";
     public Guid FamiliaId { get; set; }
     public Guid SubfamiliaId { get; set; }

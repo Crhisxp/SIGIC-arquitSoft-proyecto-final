@@ -83,6 +83,8 @@ public class PostgreSqlTestFixture : IAsyncLifetime
 
         string reportingSql = await File.ReadAllTextAsync(Path.Combine(scriptsDir, "02_cierres_analiticos.sql"));
         await adminConn.ExecuteAsync(reportingSql);
+        string imagenSql = await File.ReadAllTextAsync(Path.Combine(scriptsDir, "03_producto_imagen.sql"));
+        await adminConn.ExecuteAsync(imagenSql);
     }
 
     public Task DisposeAsync() => Task.CompletedTask;

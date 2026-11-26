@@ -1,24 +1,28 @@
 using Microsoft.AspNetCore.Mvc;
 using SIGIC.Application.Common.Exceptions;
 using SIGIC.Application.ProductDetailsPricing.Commands;
-using SIGIC.Application.ProductDetailsPricing.Ports;
 using SIGIC.Application.ProductDetailsPricing.Services;
+using SIGIC.Application.Security.Ports;
 
 namespace SIGIC.WebApi.Controllers;
 
 [ApiController]
 [Route("api/v1/public/catalogo")]
+[ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 public class CatalogoPublicoController : ControllerBase
 {
-    private readonly IProductQueryPort _productQueryPort;
+    private readonly CatalogoWebService _catalogo;
     private readonly CalcularPDPYDescuentoQueryHandler _pdpQueryHandler;
+    private readonly ICurrentUserContext _usuario;
 
     public CatalogoPublicoController(
-        IProductQueryPort productQueryPort,
-        CalcularPDPYDescuentoQueryHandler pdpQueryHandler)
+        CatalogoWebService catalogo,
+        CalcularPDPYDescuentoQueryHandler pdpQueryHandler,
+        ICurrentUserContext usuario)
     {
-        _productQueryPort = productQueryPort ?? throw new ArgumentNullException(nameof(productQueryPort));
+        _catalogo = catalogo;
         _pdpQueryHandler = pdpQueryHandler ?? throw new ArgumentNullException(nameof(pdpQueryHandler));
+        _usuario = usuario;
     }
 
     [HttpGet("productos")]
@@ -27,33 +31,14 @@ public class CatalogoPublicoController : ControllerBase
         [FromQuery] Guid? almacenId = null,
         CancellationToken ct = default)
     {
-        var productos = await _productQueryPort.ListarCatalogoWebAsync(search, almacenId, ct);
+        var productos = await _catalogo.ListarAsync(search, almacenId, _usuario.ClienteWebAutenticadoId, ct);
         return Ok(productos);
     }
 
     [HttpGet("productos/{id:guid}")]
     public async Task<IActionResult> ObtenerDetalleProducto(Guid id, CancellationToken ct = default)
     {
-        var producto = await _productQueryPort.ObtenerParaPDPAsync(id, ct);
-
-        // Invariante 2 (RF-INV-001): Exclusión web absoluta (HTTP 404 si disponible_en_web == false)
-        if (producto == null || !producto.DisponibleEnWeb)
-        {
-            throw new NotFoundException("Producto", id);
-        }
-
-        decimal stockDisponible = Math.Max(0m, producto.StockFisico - producto.StockComprometido);
-
-        var dto = new ProductoCatalogoDto(
-            producto.Id,
-            producto.CodigoSku,
-            producto.NombreComercial,
-            producto.UnidadBase,
-            producto.PrecioVenta,
-            stockDisponible,
-            producto.DisponibleEnWeb);
-
-        return Ok(dto);
+        return Ok(await _catalogo.ObtenerAsync(id, _usuario.ClienteWebAutenticadoId, ct));
     }
 
     [HttpPost("calcular-precio")]
@@ -66,11 +51,11 @@ public class CatalogoPublicoController : ControllerBase
 
         var query = new CalcularPDPYDescuentoQuery(
             request.ProductoId,
-            request.RolCliente,
+            null,
             request.Cantidad,
             request.UnidadMedida ?? "UND",
             EsCanalWeb: true,
-            ClienteId: request.ClienteId,
+            ClienteId: _usuario.ClienteWebAutenticadoId,
             AlmacenId: request.AlmacenId);
 
         var result = await _pdpQueryHandler.Handle(query, ct);
